@@ -4,3 +4,9 @@ services:
     ports:
       - "8000:8000"
 
+  proxy:
+    build: proxy/
+    ports:
+      - "443:443"
+    depends_on:
+      - backend
