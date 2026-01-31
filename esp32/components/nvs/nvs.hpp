@@ -20,6 +20,7 @@ class I_NVS {
 class NVS : public I_NVS {
   public:
     NVS();
+    explicit NVS(const char *partition_label);
     ~NVS();
 
     esp_err_t erase();

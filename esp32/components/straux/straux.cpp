@@ -19,4 +19,11 @@ char *strcopy(const char *source) {
     memcpy(copy, source, len);
     return copy;
 }
+
+void *strtoarr(void *dest, std::string_view source, size_t n) {
+    memcpy(dest, source.data(), std::min(source.size(), n - 1));
+    ((uint8_t *)dest)[n - 1] = 0;
+    return dest;
+}
+
 } // namespace straux

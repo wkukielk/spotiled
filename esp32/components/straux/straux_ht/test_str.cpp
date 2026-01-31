@@ -40,3 +40,24 @@ TEST_F(StrauxTest, strcopyEmpty) {
     auto copy = std::unique_ptr<char>{straux::strcopy(str)};
     ASSERT_STREQ(str, copy.get());
 }
+
+TEST_F(StrauxTest, strtoarr) {
+    std::string str = "hello";
+    uint8_t arr[10] = {};
+    straux::strtoarr(arr, str, 10);
+    ASSERT_STREQ(str.data(), (char *)arr);
+}
+
+TEST_F(StrauxTest, strtoarrFit) {
+    std::string str = "hello";
+    uint8_t arr[6] = {};
+    straux::strtoarr(arr, str, 6);
+    ASSERT_STREQ(str.data(), (char *)arr);
+}
+
+TEST_F(StrauxTest, strtoarrTooLong) {
+    std::string str = "hello";
+    uint8_t arr[4] = {};
+    straux::strtoarr(arr, str, 4);
+    ASSERT_STREQ("hel", (char *)arr);
+}

@@ -1,5 +1,5 @@
 idf_component_register(
-     SRCS "Provisioning.cpp"
+     SRCS "CredentialsWiFiManager.cpp" "Provisioning.cpp"
           "ProvEventHandler.cpp"
           "WiFiEventHandler.cpp"
           "WiFiManager.cpp"

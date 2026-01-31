@@ -2,10 +2,21 @@
 #define GLOBAL_HPP
 
 #include "I_WiFi.hpp"
-#include "init.hpp"
 #include "nvs.hpp"
 #include "time_aux.hpp"
 #include <memory>
+
+class Netif {
+  public:
+    Netif();
+    ~Netif() noexcept;
+};
+
+class DefaultEventLoop {
+  public:
+    DefaultEventLoop();
+    ~DefaultEventLoop() noexcept;
+};
 
 class Global {
   private:
@@ -21,6 +32,7 @@ class Global {
 
     static Global *get_global();
     static void deinit();
+    static void init_default();
 
   private:
     static Global *instance;

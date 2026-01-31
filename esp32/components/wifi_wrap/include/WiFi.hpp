@@ -14,6 +14,7 @@ class WiFi : public I_WiFi {
     ~WiFi() noexcept override;
     esp_err_t start() override;
     esp_err_t stop() override;
+    esp_err_t set_config(WiFiIF ifx, wifi_config_t *conf) override;
     esp_err_t set_mode(WiFiMode mode) override;
     esp_err_t connect() override;
     esp_err_t get_mac(WiFiIF ifx, uint8_t mac[6]) override;

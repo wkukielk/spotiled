@@ -18,6 +18,9 @@ WiFi::~WiFi() noexcept {
 }
 esp_err_t WiFi::start() { return esp_wifi_start(); }
 esp_err_t WiFi::stop() { return esp_wifi_stop(); }
+esp_err_t WiFi::set_config(WiFiIF ifx, wifi_config_t *conf) {
+    return esp_wifi_set_config((wifi_interface_t)ifx, conf);
+}
 esp_err_t WiFi::set_mode(WiFiMode mode) {
     return esp_wifi_set_mode((wifi_mode_t)mode);
 }

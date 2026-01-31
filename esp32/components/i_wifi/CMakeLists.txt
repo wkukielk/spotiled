@@ -1,7 +1,7 @@
 idf_component_register(
      SRCS "I_WiFi.cpp"
      INCLUDE_DIRS "."
-     REQUIRES esp_event
+     REQUIRES esp_event esp_netif
      PRIV_REQUIRES util
 )
 
