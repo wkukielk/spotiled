@@ -8,6 +8,7 @@ set(EXTRA_COMPONENT_DIRS "../components")
 file(GLOB ht_dirs [RELATIVE <path>] LIST_DIRECTORIES true ../components/*/*_ht)
 message(STATUS "HOST_TEST_DIRS=${ht_dirs}")
 list(APPEND EXTRA_COMPONENT_DIRS ${ht_dirs})
+list(APPEND EXTRA_COMPONENT_DIRS htutils)
 message(STATUS "EXTRA_COMPONENT_DIRS=${EXTRA_COMPONENT_DIRS}")
 message(STATUS "TARGET=${IDF_TARGET}")
 
