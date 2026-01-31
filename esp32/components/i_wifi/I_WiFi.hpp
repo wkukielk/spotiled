@@ -6,6 +6,7 @@
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 #include "esp_event.h"
 #pragma GCC diagnostic pop
+#include "esp_wifi.h"
 
 extern "C" {
 ESP_EVENT_DECLARE_BASE(WIFI_EVENT);
@@ -34,6 +35,7 @@ class I_WiFi {
     virtual ~I_WiFi() noexcept {};
     virtual esp_err_t start() = 0;
     virtual esp_err_t stop() = 0;
+    virtual esp_err_t set_config(WiFiIF ifx, wifi_config_t *conf) = 0;
     virtual esp_err_t set_mode(WiFiMode mode) = 0;
     virtual esp_err_t connect() = 0;
     virtual esp_err_t get_mac(WiFiIF ifx, uint8_t mac[6]) = 0;

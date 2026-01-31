@@ -29,12 +29,14 @@ template <typename T> void write(const char *key, const T &value) {
 }
 } // namespace _NVS
 
-NVS::NVS() {
-    auto ret = nvs_flash_init();
+NVS::NVS() : NVS{"nvs"} {}
+
+NVS::NVS(const char *partition_label) {
+    auto ret = nvs_flash_init_partition(partition_label);
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES ||
         ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
         if (erase() == ESP_OK)
-            UTIL_LOGW("NVS erased");
+            UTIL_LOGW("NVS \"%s\" erased", partition_label);
         ret = nvs_flash_init();
     }
     UTIL_THROW(ret, InitError{"NVS"});

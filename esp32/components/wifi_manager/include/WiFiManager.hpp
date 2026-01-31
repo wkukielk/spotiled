@@ -10,16 +10,25 @@
 #include <memory>
 #include <string>
 
-class WiFiManager {
+class I_WiFiManager {
+  public:
+    virtual ~I_WiFiManager() noexcept {};
+    virtual int init() = 0;
+    virtual int connect() = 0;
+    virtual int disconnect() = 0;
+    virtual bool is_connected() = 0;
+};
+
+class WiFiManager : public I_WiFiManager {
   public:
     WiFiManager(std::unique_ptr<util::I_EventGroup> &&event_group,
                 std::unique_ptr<I_ToggleEventHandler> &&handler,
                 std::unique_ptr<I_Provisioning> &&provisioning);
     ~WiFiManager();
-    int init();
-    int connect();
-    int disconnect();
-    bool is_connected();
+    int init() override;
+    int connect() override;
+    int disconnect() override;
+    bool is_connected() override;
 
   private:
     int connect_without_prov();

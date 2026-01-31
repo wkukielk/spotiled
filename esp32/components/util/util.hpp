@@ -1,10 +1,14 @@
 #ifndef UTIL_HPP
 #define UTIL_HPP
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
+#define IGNORE_UNUSED_PUSH                                                     \
+    _Pragma("GCC diagnostic push")                                             \
+        _Pragma("GCC diagnostic ignored \"-Wunused-parameter\"")
+#define IGNORE_UNUSED_POP _Pragma("GCC diagnostic pop")
+
+IGNORE_UNUSED_PUSH
 #include "freertos/FreeRTOS.h"
-#pragma GCC diagnostic pop
+IGNORE_UNUSED_POP
 
 #include "esp_err.h"
 #include "esp_event.h"
@@ -13,7 +17,6 @@
 #include "straux.hpp"
 #include <span>
 
-extern "C" {
 #define UTIL_CHECK(ret, what)                                                  \
     do {                                                                       \
         auto err_rc_ = (ret);                                                  \
@@ -29,7 +32,6 @@ extern "C" {
         if (unlikely(err_rc_ != ESP_OK))                                       \
             return err_rc_;                                                    \
     } while (0)
-}
 
 #define UTIL_THROW(ret, what)                                                  \
     do {                                                                       \
@@ -168,5 +170,11 @@ class IntWrap {
         name() : derivative{id} {}                                             \
     };
 }; // namespace util
+
+template <typename T> using u_ptr = std::unique_ptr<T>;
+
+template <typename T, typename... Args> u_ptr<T> mkuptr(Args &&...args) {
+    return std::make_unique<T>(std::forward<Args>(args)...);
+}
 
 #endif

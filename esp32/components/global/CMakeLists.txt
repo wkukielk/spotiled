@@ -1,6 +1,5 @@
 idf_component_register(
-    SRCS "init.cpp"
-         "global.cpp"
+    SRCS "global.cpp"
     INCLUDE_DIRS "include"
     REQUIRES i_wifi
              time_aux

@@ -5,6 +5,7 @@
 #include <span>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace straux {
@@ -25,6 +26,7 @@ template <typename T> inline std::span<T> to_span(T *data, size_t size) {
 
 char *strapp(char *dest, const char *source);
 char *strcopy(const char *source);
+void *strtoarr(void *dest, std::string_view source, size_t n);
 
 template <typename T> struct NoInitAllocator : std::allocator<T> {
     template <typename U> void construct(U *) {}
