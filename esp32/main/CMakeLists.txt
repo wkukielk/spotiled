@@ -2,8 +2,7 @@ idf_component_register(
     SRCS "main.cpp"
          "app.cpp" 
     PRIV_INCLUDE_DIRS "include"
-    REQUIRES hello
-             global
+    REQUIRES global
              runtime
              config
     PRIV_REQUIRES time_aux     

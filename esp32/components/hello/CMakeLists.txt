@@ -1,6 +1,0 @@
-idf_component_register(
-    SRCS "hello.cpp"
-    INCLUDE_DIRS "include"
-)
-
-include("${PROJECT_DIR}/cmake/set_gccoptions.cmake")
