@@ -4,6 +4,7 @@
 #include "nvs_flash.h"
 #include "nvs_handle.hpp"
 #include "util.hpp"
+#include <cstring>
 
 static const char *TAG = "NVS";
 const char *nvs_ns = "storage";
@@ -52,7 +53,7 @@ esp_err_t NVS::erase() {
     return ESP_OK;
 }
 
-int NVS::read(const char *key, straux::cvector<char> &buf) {
+int NVS::read(const char *key, CharBuf &buf) const {
     esp_err_t err{};
     auto handle = nvs::open_nvs_handle(nvs_ns, NVS_READONLY, &err);
     UTIL_THROW(err, NVSError{"open"});
@@ -64,6 +65,16 @@ int NVS::read(const char *key, straux::cvector<char> &buf) {
     err = handle->get_string(key, buf.data(), buf.size());
     UTIL_THROW(err != ESP_OK && err != ESP_ERR_NVS_NOT_FOUND, NVSError{"read"});
     return err;
+}
+
+CharBuf NVS::read(K key, std::string_view dft) const {
+    CharBuf buf{};
+    if (read(key, buf) != ESP_OK) {
+        buf.resize(dft.size() + 1);
+        memcpy(buf.data(), dft.data(), dft.size());
+        buf.back() = '\0';
+    }
+    return buf;
 }
 
 void NVS::write(const char *key, const char *value) {
@@ -78,6 +89,6 @@ void NVS::write_time_t(const char *key, time_t value) {
     _NVS::write(key, value);
 }
 
-int NVS::read_time_t(const char *key, time_t &value) {
+int NVS::read_time_t(const char *key, time_t &value) const {
     return _NVS::read(key, value);
 }

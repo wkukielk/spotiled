@@ -35,4 +35,6 @@ template <typename T> struct NoInitAllocator : std::allocator<T> {
 template <typename T> using cvector = std::vector<T, NoInitAllocator<T>>;
 } // namespace straux
 
+using CharBuf = straux::cvector<char>;
+
 #endif

@@ -1,4 +1,5 @@
 #include "WiFiManager.hpp"
+#include "WiFiManagerFactory.hpp"
 #include "nvs.hpp"
 
 struct Config {
@@ -7,7 +8,7 @@ struct Config {
 
 class ConfigReader {
   public:
-    ConfigReader(I_NVS &cfgnvs);
+    explicit ConfigReader(I_NVS &cfgnvs);
     void preconfigure() const;
     Config get_config() const;
 
@@ -16,4 +17,5 @@ class ConfigReader {
 
   private:
     I_NVS *cfgnvs;
+    WiFiManagerFactory wifi_mgr_factory;
 };
