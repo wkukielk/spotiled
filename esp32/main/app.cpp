@@ -8,14 +8,16 @@
 const char *TAG = "APP";
 
 App::App() : cfgnvs{std::make_unique<NVS>("cfg")} {
-    Global::get_global()->set_nvs(std::make_unique<NVS>());
-    Global::get_global()->set_time(std::make_unique<Time>());
-    Global::get_global()->set_wifi(std::make_unique<WiFi>(&wifi::cfg));
+    Global::get_global()->set_nvs(mkuptr<NVS>());
+    Global::get_global()->set_time(mkuptr<Time>());
+    Global::get_global()->set_wifi(mkuptr<WiFi>(&wifi::cfg));
     auto cfg_reader = ConfigReader{*cfgnvs};
-    cfg_reader.get_config();
+    auto cfg = cfg_reader.get_config();
+    runtime = mkuptr<Runtime>(std::move(cfg.wifi_mgr));
 }
 
 void App::run() {
     UTIL_LOGI("hello");
+    runtime->run();
     time().delay_ms(1e5);
 }
