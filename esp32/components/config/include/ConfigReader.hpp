@@ -13,9 +13,6 @@ class ConfigReader {
     Config get_config() const;
 
   private:
-    Provisioning *get_provisioning(util::EventGroup &event_group) const;
-
-  private:
     I_NVS *cfgnvs;
     WiFiManagerFactory wifi_mgr_factory;
 };
