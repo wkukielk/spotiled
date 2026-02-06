@@ -1,31 +1,33 @@
 #include "esp_log.h"
+#include "nvs.h"
 #include "nvs.hpp"
 #include "unity.h"
+#include "unity_fixture_extras.h"
+
+namespace {
+std::unique_ptr<NVS> nvs;
+void setup() { nvs = std::make_unique<NVS>(); }
+void teardown() { nvs.reset(); }
+}; // namespace
 
 TEST_CASE("write read", "[nvs]") {
-    NVS::write("test", 42);
-    int read = 0;
-    TEST_ASSERT_EQUAL(0, NVS::read("test", read));
-    TEST_ASSERT_EQUAL(42, read);
+    setup();
+    nvs->write("test", "42");
+    auto read = CharBuf{};
+    TEST_ASSERT_EQUAL(0, nvs->read("test", read));
+    TEST_ASSERT_EQUAL_STRING("42", read.data());
 }
 
 TEST_CASE("read nonexistent", "[nvs]") {
-    int read = 0;
-    TEST_ASSERT_EQUAL(ESP_ERR_NVS_NOT_FOUND, NVS::read("nonex", read));
-    TEST_ASSERT_EQUAL(0, read);
+    auto read = CharBuf{};
+    TEST_ASSERT_EQUAL(ESP_ERR_NVS_NOT_FOUND, nvs->read("nonex", read));
+    TEST_ASSERT(read.empty());
 }
 
 TEST_CASE("erase", "[nvs]") {
-    NVS::write("test", 42);
-    TEST_ASSERT_EQUAL(ESP_OK, NVS::erase());
-    int read = 0;
-    TEST_ASSERT_EQUAL(ESP_ERR_NVS_NOT_FOUND, NVS::read("test", read));
-}
-
-extern "C" void app_main(void) {
-    NVS::init();
-
-    UNITY_BEGIN();
-    unity_run_all_tests();
-    UNITY_END();
+    nvs->write("test", "42");
+    TEST_ASSERT_EQUAL(ESP_OK, nvs->erase());
+    auto read = CharBuf{};
+    TEST_ASSERT_EQUAL(ESP_ERR_NVS_NOT_FOUND, nvs->read("test", read));
+    teardown();
 }

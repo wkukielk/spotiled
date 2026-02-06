@@ -59,7 +59,7 @@ int NVS::read(const char *key, CharBuf &buf) const {
     UTIL_THROW(err, NVSError{"open"});
     size_t size{};
     err = handle->get_item_size(nvs::ItemType::SZ, key, std::ref(size));
-    UTIL_RETURN(err == ESP_ERR_NVS_NOT_FOUND);
+    UTIL_RETURN(err == ESP_ERR_NVS_NOT_FOUND ? err : ESP_OK);
     UTIL_THROW(err, NVSError{"check size"});
     buf.resize(size);
     err = handle->get_string(key, buf.data(), buf.size());
