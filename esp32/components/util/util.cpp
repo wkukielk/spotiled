@@ -4,7 +4,7 @@
 namespace util {
 EventGroup::EventGroup() {
     handle = xEventGroupCreate();
-    UTIL_CHECK(handle == nullptr, "event group not created");
+    UTIL_THROW(handle == nullptr, InitError, "event group not created");
 };
 
 EventGroup::~EventGroup() noexcept { vEventGroupDelete(handle); }
@@ -42,15 +42,15 @@ Task::Task(TaskFunction_t fun, const char *name,
            const configSTACK_DEPTH_TYPE stack_depth, void *parameters,
            UBaseType_t priority)
     : s{xSemaphoreCreateBinary()} {
-    UTIL_THROW(s == NULL, InitError{"sem"});
+    UTIL_THROW(s == NULL, InitError, "sem");
     auto e = xTaskCreate(fun, name, stack_depth, parameters, priority, &handle);
-    UTIL_THROW(e != pdPASS, InitError{"task"});
+    UTIL_THROW(e != pdPASS, InitError, "task");
 }
 
 Task::Task(TaskFunction_t fun, const char *name) : s{xSemaphoreCreateBinary()} {
-    UTIL_THROW(s == NULL, InitError{"sem"});
+    UTIL_THROW(s == NULL, InitError, "sem");
     auto e = xTaskCreate(fun, name, 4096, NULL, tskIDLE_PRIORITY, &handle);
-    UTIL_THROW(e != pdPASS, InitError{"task"});
+    UTIL_THROW(e != pdPASS, InitError, "task");
 }
 
 Task::~Task() {
