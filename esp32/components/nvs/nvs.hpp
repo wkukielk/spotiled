@@ -2,7 +2,9 @@
 #define NVS_HPP
 
 #include "esp_err.h"
+#include "nvs_handle.hpp"
 #include "straux.hpp"
+#include "util.hpp"
 #include <ctime>
 #include <vector>
 
@@ -22,8 +24,8 @@ class I_NVS {
 class NVS : public I_NVS {
   public:
     NVS();
-    explicit NVS(const char *partition_label);
-    ~NVS();
+    explicit NVS(std::string_view partition_label);
+    ~NVS() noexcept override;
 
     esp_err_t erase();
     void write(const char *key, const char *value) override;
@@ -31,6 +33,11 @@ class NVS : public I_NVS {
     CharBuf read(K key, std::string_view dft) const override;
     void write_time_t(const char *key, time_t value) override;
     int read_time_t(const char *key, time_t &value) const override;
+
+  private:
+    u_ptr<nvs::NVSHandle> open(nvs_open_mode_t mode, esp_err_t *err) const;
+    std::string part{};
+    static const char *ns;
 };
 
 #endif

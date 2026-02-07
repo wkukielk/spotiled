@@ -5,6 +5,7 @@ extern "C" {
 #include "time_aux_core.hpp"
 }
 #include <chrono>
+#include <memory>
 #include <optional>
 #include <string>
 #include <time.h>

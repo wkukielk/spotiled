@@ -17,13 +17,18 @@ class BaseError : public std::exception {
 };
 
 struct InitError : public BaseError {
-    InitError(const char *msg) : BaseError("InitError", msg){};
-    InitError() : BaseError("InitError", ""){};
+    InitError(const char *msg) : BaseError("InitError", msg) {};
+    InitError() : BaseError("InitError", "") {};
 };
 
 struct NVSError : public BaseError {
-    NVSError(const char *msg) : BaseError("NVSError", msg){};
-    NVSError() : BaseError("InitError", ""){};
+    NVSError(const char *msg) : BaseError("NVSError", msg) {};
+    NVSError() : BaseError("InitError", "") {};
+};
+
+struct NullError : public BaseError {
+    NullError(const char *msg) : BaseError("NullError", msg) {};
+    NullError() : BaseError("NullError", "") {};
 };
 
 #endif
