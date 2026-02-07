@@ -45,7 +45,7 @@ using util::success_bit;
 
 TEST_F(ProvisioningTest, isProvisioned) {
     EXPECT_CALL(*wifi_prov, is_provisioned(_)).WillOnce(Return(ESP_FAIL));
-    EXPECT_THROW(manager->is_provisioned(), std::runtime_error);
+    EXPECT_THROW(manager->is_provisioned(), WiFiManagerError);
 }
 
 TEST_F(ProvisioningTest, success) {

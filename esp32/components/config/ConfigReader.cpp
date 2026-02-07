@@ -52,8 +52,8 @@ WiFiManagerFactory::get_credentials_wifi_manager() const {
     auto handler = mkuptr<WiFiEventHandler>(*event_group, 3);
 
     CharBuf ssid{}, passwd{};
-    UTIL_THROW(cfgnvs->read(key::WIFI_SSID, ssid), ConfigError{"no ssid"});
-    UTIL_THROW(cfgnvs->read(key::WIFI_PASSWD, ssid), ConfigError{"no passwd"});
+    UTIL_THROW(cfgnvs->read(key::WIFI_SSID, ssid), ConfigError, "no ssid");
+    UTIL_THROW(cfgnvs->read(key::WIFI_PASSWD, ssid), ConfigError, "no passwd");
     std::string_view ssid_v{ssid.data(), ssid.size()};
     std::string_view passwd_v{passwd.data(), passwd.size()};
     return mkuptr<CredentialsWiFiManager>(ssid_v, passwd_v, std::move(handler),

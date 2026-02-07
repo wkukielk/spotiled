@@ -1,4 +1,5 @@
 #include "WiFiProv.hpp"
+#include "errors.hpp"
 #include "esp_log.h"
 #include "util.hpp"
 
@@ -7,7 +8,7 @@ wifi_prov_mgr_config_t wifi_prov::cfg = {
     .scheme_event_handler = WIFI_PROV_SCHEME_BLE_EVENT_HANDLER_FREE_BTDM};
 
 WiFiProv::WiFiProv(wifi_prov_mgr_config_t *config) {
-    UTIL_CHECK(wifi_prov_mgr_init(*config), "Failed to init prov");
+    UTIL_THROW(wifi_prov_mgr_init(*config), InitError, "prov");
     ESP_LOGI("WiFiProv", "WiFiProv init");
 }
 

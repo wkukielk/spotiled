@@ -15,17 +15,19 @@ CredentialsWiFiManager::CredentialsWiFiManager(
       event_group{std::move(event_group)} {};
 
 int CredentialsWiFiManager::init() {
-    UTIL_CHECK(wifi().set_mode(WiFiMode::STA), "Failed to set STA mode");
+    UTIL_THROW(wifi().set_mode(WiFiMode::STA), InitError,
+               "Failed to set STA mode");
     auto cfg = wifi_config_t{};
     straux::strtoarr(cfg.sta.ssid, ssid, sizeof(cfg.sta.ssid));
     straux::strtoarr(cfg.sta.password, passwd, sizeof(cfg.sta.password));
-    UTIL_CHECK(wifi().set_config(WiFiIF::STA, &cfg), "WiFi config fail");
+    UTIL_THROW(wifi().set_config(WiFiIF::STA, &cfg), InitError,
+               "WiFi config fail");
     return ESP_OK;
 }
 
 int CredentialsWiFiManager::connect() {
     UTIL_LOGI("Connecting...");
-    UTIL_CHECK(wifi().start(), "Failed to start WiFi");
+    UTIL_THROW(wifi().start(), WiFiManagerError, "Failed to start WiFi");
     return wifi::await_connection(*event_group);
 }
 

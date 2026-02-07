@@ -19,7 +19,8 @@ WiFiManager::WiFiManager(std::unique_ptr<util::I_EventGroup> &&event_group,
 WiFiManager::~WiFiManager() { wifi().stop(); }
 
 int WiFiManager::init() {
-    UTIL_CHECK(wifi().set_mode(WiFiMode::STA), "Failed to set STA mode");
+    UTIL_THROW(wifi().set_mode(WiFiMode::STA), InitError,
+               "Failed to set STA mode");
     switch_to_prov();
     if (provisioning->is_provisioned()) {
         ESP_LOGI(TAG, "ESP is provisioned");
@@ -51,7 +52,7 @@ int WiFiManager::connect_with_prov() {
 
 int WiFiManager::connect_without_prov() {
     UTIL_LOGI("Connecting...");
-    UTIL_CHECK(wifi().start(), "Failed to start WiFi");
+    UTIL_THROW(wifi().start(), WiFiManagerError, "WiFi start");
     return wifi::await_connection(*event_group);
 }
 
