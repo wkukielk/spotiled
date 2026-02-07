@@ -1,4 +1,5 @@
 #include "HandlerAdapter.hpp"
+#include "errors.hpp"
 #include "util.hpp"
 #include <algorithm>
 
@@ -10,11 +11,11 @@ HandlerAdapter::HandlerAdapter(util::EventHandler &handler) {
     cbdata = std::vector<util::cbdata>{cbd.data(), cbd.data() + cbd.size()};
     for (auto &cbd : cbdata) {
         auto instance = register_handler(cbd);
-        UTIL_CHECK(instance == nullptr, "failed to register handler");
+        UTIL_THROW(!instance, InitError, "adapter register handler");
         cbd.instance = instance;
     }
     sem = xSemaphoreCreateBinary();
-    UTIL_CHECK(sem == NULL, "sem is NULL");
+    UTIL_THROW(!sem, InitError, "sem is NULL");
 }
 
 HandlerAdapter::~HandlerAdapter() noexcept {
@@ -39,10 +40,10 @@ void HandlerAdapter::post(void *data, size_t size, esp_event_base_t base,
             return true;
         return cbd.base == base && (cbd.id == ESP_EVENT_ANY_ID || cbd.id == id);
     });
-    UTIL_CHECK(cbd == cbdata.end(), "unregistered base or id");
+    UTIL_THROW(cbd == cbdata.end(), ValueError, "unregistered base or id");
     cbd->cnt = ++counter;
-    UTIL_CHECK(esp_event_post(base, id, data, size, portMAX_DELAY),
-               "failed to post");
+    UTIL_THROW(esp_event_post(base, id, data, size, portMAX_DELAY),
+               RuntimeError, "failed to post");
     xSemaphoreTake(sem, portMAX_DELAY);
 }
 
