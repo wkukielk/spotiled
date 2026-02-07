@@ -29,6 +29,12 @@ enum class WiFiReason {
     CONNECTION_FAIL = 205
 };
 
+enum class WiFiPSType {
+    NONE,
+    MIN_MODEM,
+    MAX_MODEM,
+};
+
 class I_WiFi {
   public:
     // init(const wifi_init_config_t *config);
@@ -37,6 +43,7 @@ class I_WiFi {
     virtual esp_err_t stop() = 0;
     virtual esp_err_t set_config(WiFiIF ifx, wifi_config_t *conf) = 0;
     virtual esp_err_t set_mode(WiFiMode mode) = 0;
+    virtual esp_err_t set_ps(WiFiPSType pstype) = 0;
     virtual esp_err_t connect() = 0;
     virtual esp_err_t get_mac(WiFiIF ifx, uint8_t mac[6]) = 0;
 
