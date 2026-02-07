@@ -10,8 +10,10 @@ extern "C" void app_main(void) {
         ESP_LOGE("MAIN", "%s", e.what());
         ESP_LOGE("MAIN", "App init failed.");
         return;
+    } catch (const std::exception &e) {
+        ESP_LOGE("MAIN", "%s", e.what());
     } catch (...) {
-        ESP_LOGI("MAIN", "fatal exception");
+        ESP_LOGE("MAIN", "unknown exception");
     }
     ESP_LOGI("MAIN", "main return");
 }

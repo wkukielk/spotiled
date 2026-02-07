@@ -7,7 +7,7 @@
 
 const char *TAG = "APP";
 
-App::App() : cfgnvs{std::make_unique<NVS>("cfg")} {
+App::App() : cfgnvs{mkuptr<NVS>("cfg")} {
     Global::get_global()->set_nvs(mkuptr<NVS>());
     Global::get_global()->set_time(mkuptr<Time>());
     Global::get_global()->set_wifi(mkuptr<WiFi>(&wifi::cfg));

@@ -10,7 +10,7 @@ IGNORE_UNUSED_PUSH
 #include "freertos/FreeRTOS.h"
 IGNORE_UNUSED_POP
 
-#ifdef ESP_PLATFORM
+#ifdef CONFIG_IDF_TARGET_LINUX
 #include "bt_mock.hpp"
 #else
 #include "esp_debug_helpers.h"
