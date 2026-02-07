@@ -5,7 +5,7 @@
 namespace util {
 Queue::Queue(uint8_t length, size_t item_size)
     : handle(xQueueCreate(length, item_size)) {
-    UTIL_THROW(handle == nullptr, InitError{"queue"});
+    UTIL_THROW(handle == nullptr, InitError, "queue");
 }
 
 Queue::~Queue() noexcept { vQueueDelete(handle); }
@@ -25,7 +25,7 @@ int Queue::send(void *data, TickType_t wait) {
 
 PriorityQueue::PriorityQueue(uint8_t length, size_t item_size,
                              uint8_t n_queues) {
-    UTIL_THROW(n_queues == 0, InitError{"n_queues is zero"});
+    UTIL_THROW(n_queues == 0, InitError, "n_queues is zero");
     queues.reserve(n_queues);
     for (int i = 0; i != n_queues; ++i)
         queues.emplace_back(length, item_size);

@@ -1,4 +1,5 @@
 #include "WiFi.hpp"
+#include "errors.hpp"
 #include "esp_log.h"
 #include "esp_wifi.h"
 #include "util.hpp"
@@ -7,8 +8,8 @@ wifi_init_config_t wifi::cfg = WIFI_INIT_CONFIG_DEFAULT();
 
 WiFi::WiFi(const wifi_init_config_t *config) {
     netif = esp_netif_create_default_wifi_sta();
-    UTIL_CHECK(netif == nullptr, "create wifi sta");
-    UTIL_CHECK(esp_wifi_init(config), "wifi init");
+    UTIL_THROW(netif == nullptr, InitError, "create wifi sta");
+    UTIL_THROW(esp_wifi_init(config), InitError, "wifi init");
     ESP_LOGI("WIFI", "WiFi init");
 }
 WiFi::~WiFi() noexcept {

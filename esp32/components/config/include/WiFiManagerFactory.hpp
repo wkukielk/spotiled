@@ -7,8 +7,9 @@
 #include "nvs.hpp"
 
 struct ConfigError : public BaseError {
-    ConfigError(const char *msg) : BaseError("ConfigError", msg){};
-    ConfigError() : BaseError("ConfigError", ""){};
+    ConfigError(int reason, const char *msg)
+        : BaseError("ConfigError", msg, reason) {};
+    ConfigError() : BaseError("ConfigError", "") {};
 };
 
 class WiFiManagerFactory {

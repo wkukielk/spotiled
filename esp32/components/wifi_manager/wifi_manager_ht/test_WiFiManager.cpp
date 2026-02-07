@@ -33,7 +33,7 @@ class WiFiManagerTest : public BaseTest {
         bool is_prov = provisioned == Provisioned::True;
         EXPECT_CALL(*this->provisioning, is_provisioned())
             .WillOnce(Return(is_prov));
-        UTIL_CHECK(manager->init(), "WifiManager init fail");
+        UTIL_THROW(manager->init(), InitError, "WifiManager init fail");
     }
 
     MockEventGroup *event_group{};

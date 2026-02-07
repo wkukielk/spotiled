@@ -1,4 +1,5 @@
 #include "WiFiEventHandler.hpp"
+#include "errors.hpp"
 #include "esp_log.h"
 #include "esp_wifi.h"
 #include "global.hpp"
@@ -15,13 +16,14 @@ const util::cbdata WiFiEventHandler::cbdata[2]{
 
 WiFiEventHandler::WiFiEventHandler(util::I_EventGroup &event_group,
                                    uint8_t retries, util::Register reg) {
-    UTIL_CHECK(WiFiEventHandler::event_group != nullptr, "two wifi handlers");
+    UTIL_THROW(WiFiEventHandler::event_group != nullptr, InitError,
+               "two handlers");
     this->event_group = &event_group;
     this->max_retries = retries;
     this->retries_left = retries;
     event_group.set(util::end_bit);
     if (reg == util::Register::YES)
-        UTIL_CHECK(register_self(), "failed to register WiFiEventHandler");
+        UTIL_THROW(register_self(), InitError, "handler register");
 }
 
 WiFiEventHandler::~WiFiEventHandler() {

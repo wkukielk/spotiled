@@ -1,6 +1,7 @@
 #include "ProvEventHandler.hpp"
 #include "I_WiFi.hpp"
 #include "I_WiFiProv.hpp"
+#include "errors.hpp"
 #include "esp_log.h"
 #include "esp_wifi.h"
 
@@ -21,12 +22,12 @@ ProvReason ProvEventHandler::reason = ProvReason::OK;
 ProvEventHandler::ProvEventHandler(util::I_EventGroup &event_group,
                                    uint8_t retries, util::Register reg) {
     this->retries = retries;
-    UTIL_CHECK(ProvEventHandler::event_group != nullptr,
-               "two wifi prov handlers");
+    UTIL_THROW(ProvEventHandler::event_group != nullptr, InitError,
+               "two prov handlers");
     ProvEventHandler::event_group = &event_group;
     event_group.set(util::end_bit);
     if (reg == util::Register::YES)
-        UTIL_CHECK(register_self(), "failed to register ProvEventHandler");
+        UTIL_THROW(register_self(), InitError, "ProvEventHandler register");
     ESP_LOGI("ProvEventHandler", "init");
 }
 
