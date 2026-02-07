@@ -26,8 +26,9 @@ int CredentialsWiFiManager::init() {
 }
 
 int CredentialsWiFiManager::connect() {
-    UTIL_LOGI("Connecting...");
+    UTIL_LOGI("Connecting to %s", ssid.c_str());
     UTIL_THROW(wifi().start(), WiFiManagerError, "Failed to start WiFi");
+    UTIL_THROW(wifi().set_ps(WiFiPSType::NONE), WiFiManagerError, "set ps");
     return wifi::await_connection(*event_group);
 }
 

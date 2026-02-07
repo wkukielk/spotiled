@@ -25,7 +25,12 @@ esp_err_t WiFi::set_config(WiFiIF ifx, wifi_config_t *conf) {
 esp_err_t WiFi::set_mode(WiFiMode mode) {
     return esp_wifi_set_mode((wifi_mode_t)mode);
 }
+esp_err_t WiFi::set_ps(WiFiPSType pstype) {
+    return esp_wifi_set_ps((wifi_ps_type_t)pstype);
+}
 esp_err_t WiFi::connect() { return esp_wifi_connect(); }
 esp_err_t WiFi::get_mac(WiFiIF ifx, uint8_t mac[6]) {
     return esp_wifi_get_mac((wifi_interface_t)ifx, mac);
 }
+
+esp_netif_t *WiFi::get_netif() { return netif; }

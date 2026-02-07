@@ -12,6 +12,7 @@ idf_component_register(
      PRIV_REQUIRES  esp_event
                     straux
                     global
+                    wifi_wrap
 )
 
 include("${CMAKE_CONFIG_DIR}/set_gccoptions.cmake")

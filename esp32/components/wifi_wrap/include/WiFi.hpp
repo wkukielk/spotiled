@@ -16,8 +16,11 @@ class WiFi : public I_WiFi {
     esp_err_t stop() override;
     esp_err_t set_config(WiFiIF ifx, wifi_config_t *conf) override;
     esp_err_t set_mode(WiFiMode mode) override;
+    esp_err_t set_ps(WiFiPSType pstype) override;
     esp_err_t connect() override;
     esp_err_t get_mac(WiFiIF ifx, uint8_t mac[6]) override;
+
+    esp_netif_t *get_netif();
 
   private:
     esp_netif_t *netif;
