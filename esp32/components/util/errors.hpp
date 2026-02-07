@@ -2,33 +2,48 @@
 #define UTIL_ERRORS_HPP
 
 #include <exception>
+#include <format>
 #include <string>
 
 class BaseError : public std::exception {
   public:
-    BaseError(const char *base, const char *msg) : msg{base} {
-        this->msg += ": ";
-        this->msg += msg;
+    BaseError(const char *base, const char *msg, int reason = 0) : msg{base} {
+        this->msg = std::format("{}: {}, reason: {}", base, msg, reason);
     }
     const char *what() const noexcept override { return msg.c_str(); };
 
   private:
-    std::string msg;
+    std::string msg{};
 };
 
 struct InitError : public BaseError {
-    InitError(const char *msg) : BaseError("InitError", msg) {};
-    InitError() : BaseError("InitError", "") {};
+    InitError(int reason, const char *msg)
+        : BaseError("InitError", msg, reason) {};
+    InitError(int reason = 0) : BaseError("InitError", "", reason) {};
 };
 
 struct NVSError : public BaseError {
-    NVSError(const char *msg) : BaseError("NVSError", msg) {};
-    NVSError() : BaseError("InitError", "") {};
+    NVSError(int reason, const char *msg)
+        : BaseError("NVSError", msg, reason) {};
+    NVSError(int reason = 0) : BaseError("InitError", "", reason) {};
 };
 
 struct NullError : public BaseError {
-    NullError(const char *msg) : BaseError("NullError", msg) {};
-    NullError() : BaseError("NullError", "") {};
+    NullError(int reason, const char *msg)
+        : BaseError("NullError", msg, reason) {};
+    NullError(int reason) : BaseError("NullError", "", reason) {};
+};
+
+struct ValueError : public BaseError {
+    ValueError(int reason, const char *msg)
+        : BaseError("ValueError", msg, reason) {};
+    ValueError(int reason) : BaseError("ValueError", "", reason) {};
+};
+
+struct RuntimeError : public BaseError {
+    RuntimeError(int reason, const char *msg)
+        : BaseError("RuntimeError", msg, reason) {};
+    RuntimeError(int reason) : BaseError("RuntimeError", "", reason) {};
 };
 
 #endif

@@ -10,21 +10,18 @@ IGNORE_UNUSED_PUSH
 #include "freertos/FreeRTOS.h"
 IGNORE_UNUSED_POP
 
+#ifdef ESP_PLATFORM
+#include "bt_mock.hpp"
+#else
+#include "esp_debug_helpers.h"
+#endif
+
 #include "esp_err.h"
 #include "esp_event.h"
 #include "esp_log.h"
 #include "freertos/event_groups.h"
 #include "straux.hpp"
 #include <span>
-
-#define UTIL_CHECK(ret, what)                                                  \
-    do {                                                                       \
-        auto err_rc_ = (ret);                                                  \
-        if (unlikely(err_rc_ != ESP_OK)) {                                     \
-            throw std::runtime_error{                                          \
-                straux::strprintf(what " (%s)", esp_err_to_name(err_rc_))};    \
-        }                                                                      \
-    } while (0)
 
 #define UTIL_RETURN(ret)                                                       \
     do {                                                                       \
@@ -33,11 +30,12 @@ IGNORE_UNUSED_POP
             return err_rc_;                                                    \
     } while (0)
 
-#define UTIL_THROW(ret, what)                                                  \
+#define UTIL_THROW(ret, extype, ...)                                           \
     do {                                                                       \
         auto err_rc_ = (ret);                                                  \
         if (unlikely(err_rc_ != ESP_OK)) {                                     \
-            throw what;                                                        \
+            esp_backtrace_print(5);                                            \
+            throw extype(err_rc_, ##__VA_ARGS__);                              \
         }                                                                      \
     } while (0)
 
@@ -76,7 +74,7 @@ const EventBits_t end_bit = 1 << 2;
 
 class EventHandler {
   public:
-    virtual ~EventHandler(){};
+    virtual ~EventHandler() {};
     virtual std::span<const util::cbdata> get_cbdata() const noexcept = 0;
 };
 
@@ -111,7 +109,7 @@ class EventGroup : public I_EventGroup {
 
 class Toggle {
   public:
-    virtual ~Toggle(){};
+    virtual ~Toggle() {};
     virtual esp_err_t on() = 0;
     virtual esp_err_t off() = 0;
     virtual bool is_on() const = 0;
