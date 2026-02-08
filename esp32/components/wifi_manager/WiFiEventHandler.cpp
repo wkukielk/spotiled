@@ -1,5 +1,4 @@
 #include "WiFiEventHandler.hpp"
-#include "WiFi.hpp"
 #include "errors.hpp"
 #include "esp_log.h"
 #include "esp_netif.h"
@@ -55,17 +54,6 @@ void WiFiEventHandler::handler(void *arg, esp_event_base_t event_base,
         retries_left = max_retries;
         wifi().connect();
         break;
-    case WIFI_EVENT_STA_CONNECTED: {
-        auto netif = ((WiFi &)wifi()).get_netif();
-        esp_netif_dhcpc_stop(netif);
-        esp_netif_ip_info_t ip_info{};
-        esp_netif_str_to_ip4("192.168.50.198", &ip_info.ip);
-        esp_netif_str_to_ip4("192.168.50.1", &ip_info.gw);
-        esp_netif_str_to_ip4("255.255.255.0", &ip_info.netmask);
-
-        esp_netif_set_ip_info(netif, &ip_info);
-        break;
-    }
     case WIFI_EVENT_STA_DISCONNECTED: {
         event_group->clear(util::success_bit);
         auto *data = (wifi_event_sta_disconnected_t *)event_data;
