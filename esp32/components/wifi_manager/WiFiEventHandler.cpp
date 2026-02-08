@@ -4,14 +4,15 @@
 #include "esp_netif.h"
 #include "esp_wifi.h"
 #include "global.hpp"
+#include <algorithm>
+#include <iterator>
 
 static const char *TAG = "WiFiEventHandler";
 util::I_EventGroup *WiFiEventHandler::event_group{};
 uint8_t WiFiEventHandler::max_retries{};
 int8_t WiFiEventHandler::retries_left{};
-esp_event_handler_instance_t WiFiEventHandler::handle{};
-esp_event_handler_instance_t WiFiEventHandler::ip_handle{};
-const util::cbdata WiFiEventHandler::cbdata[2]{
+
+std::vector<util::cbdata> WiFiEventHandler::cbdata{
     {.callback = handler, .base = WIFI_EVENT, .id = ESP_EVENT_ANY_ID},
     {.callback = ip_handler, .base = IP_EVENT, .id = IP_EVENT_STA_GOT_IP}};
 
@@ -29,21 +30,27 @@ WiFiEventHandler::WiFiEventHandler(util::I_EventGroup &event_group,
 
 WiFiEventHandler::~WiFiEventHandler() {
     esp_event_handler_instance_unregister(IP_EVENT, IP_EVENT_STA_GOT_IP,
-                                          ip_handle);
-    esp_event_handler_instance_unregister(WIFI_EVENT, ESP_EVENT_ANY_ID, handle);
+                                          cbdata[0].instance);
+    esp_event_handler_instance_unregister(WIFI_EVENT, ESP_EVENT_ANY_ID,
+                                          cbdata[1].instance);
     WiFiEventHandler::event_group = nullptr;
+    for (auto &cb : cbdata) {
+        cb.handler = nullptr;
+        cb.instance = nullptr;
+    };
 }
 
 esp_err_t WiFiEventHandler::register_self() {
     UTIL_RETURN(esp_event_handler_instance_register(
-        WIFI_EVENT, ESP_EVENT_ANY_ID, &handler, NULL, &handle));
+        WIFI_EVENT, ESP_EVENT_ANY_ID, &handler, NULL, &cbdata[0].instance));
     UTIL_RETURN(esp_event_handler_instance_register(
-        IP_EVENT, IP_EVENT_STA_GOT_IP, &ip_handler, NULL, &ip_handle));
+        IP_EVENT, IP_EVENT_STA_GOT_IP, &ip_handler, NULL, &cbdata[1].instance));
+    std::ranges::for_each(cbdata, [this](auto &cb) { cb.handler = this; });
     return ESP_OK;
 }
 
 std::span<const util::cbdata> WiFiEventHandler::get_cbdata() const noexcept {
-    return straux::to_span(cbdata, 2);
+    return cbdata;
 }
 
 void WiFiEventHandler::handler(void *arg, esp_event_base_t event_base,

@@ -25,9 +25,7 @@ class WiFiEventHandler : public util::EventHandler {
     static util::I_EventGroup *event_group;
     static uint8_t max_retries;
     static int8_t retries_left;
-    static esp_event_handler_instance_t handle;
-    static esp_event_handler_instance_t ip_handle;
-    static const util::cbdata cbdata[2];
+    static std::vector<util::cbdata> cbdata;
 };
 
 #endif
