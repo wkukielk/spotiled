@@ -37,8 +37,9 @@ u_ptr<I_WiFiManager> WiFiManagerFactory::get() const {
 
 u_ptr<WiFiManager> WiFiManagerFactory::get_wifi_manager() const {
     auto event_group = mkuptr<util::EventGroup>();
-    auto handler = mkuptr<WiFiEventHandler>(*event_group, 3);
-    auto toggle_handler = mkuptr<ToggleEventHandler>(std::move(handler));
+    auto egrp = event_group.get();
+    auto handler = [=]() { return mkuptr<WiFiEventHandler>(*egrp, 3); };
+    auto toggle_handler = mkuptr<ToggleEventHandler>(handler);
     auto provisioning = u_ptr<Provisioning>(get_provisioning(*event_group));
     return mkuptr<WiFiManager>(std::move(event_group),
                                std::move(toggle_handler),
