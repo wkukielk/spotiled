@@ -74,7 +74,7 @@ const EventBits_t end_bit = 1 << 2;
 
 class EventHandler {
   public:
-    virtual ~EventHandler() {};
+    virtual ~EventHandler(){};
     virtual std::span<const util::cbdata> get_cbdata() const noexcept = 0;
 };
 
@@ -109,7 +109,7 @@ class EventGroup : public I_EventGroup {
 
 class Toggle {
   public:
-    virtual ~Toggle() {};
+    virtual ~Toggle(){};
     virtual esp_err_t on() = 0;
     virtual esp_err_t off() = 0;
     virtual bool is_on() const = 0;

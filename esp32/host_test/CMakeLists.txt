@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.16)
 set(CMAKE_CONFIG_DIR "${CMAKE_CURRENT_LIST_DIR}/../cmake")
 
 set(COMPONENTS main)
-set(EXTRA_COMPONENT_DIRS "../components components")
+set(EXTRA_COMPONENT_DIRS "../components" "components")
 
 file(GLOB ht_dirs [RELATIVE <path>] LIST_DIRECTORIES true ../components/*/*_ht)
 message(STATUS "HOST_TEST_DIRS=${ht_dirs}")
