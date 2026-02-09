@@ -5,6 +5,7 @@ namespace key {
 extern const char *PROVISIONING;
 extern const char *WIFI_SSID;
 extern const char *WIFI_PASSWD;
+extern const char *PROV_NAME;
 } // namespace key
 
 namespace B {

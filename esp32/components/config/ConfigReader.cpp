@@ -20,7 +20,8 @@ WiFiManagerFactory::get_provisioning(util::EventGroup &event_group) const {
         .get_wifi_prov = []() { return new WiFiProv(&wifi_prov::cfg); },
         .get_handler =
             [](util::I_EventGroup &g) { return new ProvEventHandler{g, 5}; }};
-    return new Provisioning{essentials, event_group, "MAC_HERE"};
+    const auto name = cfgnvs->read(key::PROV_NAME, "spotiled_esp32");
+    return new Provisioning{essentials, event_group, name.data()};
 }
 
 WiFiManagerFactory::WiFiManagerFactory(I_NVS &cfgnvs) : cfgnvs{&cfgnvs} {}
