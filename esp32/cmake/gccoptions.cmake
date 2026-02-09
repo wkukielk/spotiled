@@ -12,6 +12,6 @@ set(COMPONENT_GCC_OPTIONS
 )
 
 set(HOST_TEST_GCC_OPTIONS
-    ${HOST_TEST_GCC_OPTIONS}
+    ${COMPONENT_GCC_OPTIONS}
     "-Wno-write-strings"
 )
