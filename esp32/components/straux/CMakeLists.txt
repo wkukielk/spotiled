@@ -1,5 +1,5 @@
 idf_component_register(
-     SRCS "straux.cpp"
+     SRCS "straux.cpp" "CharVector.cpp"
      INCLUDE_DIRS "include"
 )
 

@@ -1,5 +1,5 @@
 idf_component_register(
-    SRCS "test_str.cpp"
+    SRCS "test_CharVector.cpp" "test_str.cpp"
     REQUIRES straux
     WHOLE_ARCHIVE
 )
