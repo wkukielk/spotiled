@@ -24,29 +24,23 @@ esp_err_t HTTPHandler::callback(esp_http_client_event_t *evt) {
         if (h->header_state == HeaderState::first) {
             h->headers.clear();
             h->header_state = HeaderState::next;
+            h->buf.clear();
         }
         h->headers.insert({evt->header_key, evt->header_value});
         break;
     case HTTP_EVENT_ON_DATA: {
         if (h->client->is_chunked_response())
             return ESP_FAIL;
-        if (!h->pos)
-            h->setup_buffer(h->client->get_content_length() + 1);
-        auto copy_len =
-            std::min(evt->data_len, int(h->buffer.end() - h->pos.value()));
-        copy_len > 0 ? memcpy(&*h->pos.value(), evt->data, copy_len) : 0;
-        h->pos.value() += copy_len;
+        if (!h->buf.is_setup())
+            h->buf.setup(h->client->get_content_length() + 1);
+        h->buf.extend(evt->data, evt->data_len);
         break;
     }
     case HTTP_EVENT_ON_FINISH:
         h->header_state = HeaderState::first;
-        if (h->pos)
-            *h->pos.value() = '\0';
-        h->pos.reset();
         break;
     case HTTP_EVENT_ERROR:
         h->header_state = HeaderState::first;
-        h->pos.reset();
         break;
     default:
         return ESP_OK;
@@ -54,13 +48,7 @@ esp_err_t HTTPHandler::callback(esp_http_client_event_t *evt) {
     return ESP_OK;
 }
 
-int HTTPHandler::release(CharBuf &out) {
-    if (buffer.empty())
-        return http::code::ERR_NO_PAYLOAD;
-    out.swap(buffer);
-    pos.reset();
-    return ESP_OK;
-}
+void HTTPHandler::release(CharBuf &out) { buf.release(out); }
 
 std::map<std::string, std::string> HTTPHandler::get_headers() {
     auto empty = std::map<std::string, std::string>{};
@@ -76,16 +64,9 @@ http::code HTTPHandler::perform(CharBuf &payload) {
     auto err = client->perform();
     if (err != ESP_OK)
         return static_cast<http::code>(err);
-    err = release(payload);
+    release(payload);
     auto httpcode = client->get_status_code();
-    if (err == http::code::ERR_NO_PAYLOAD && httpcode != http::code::NO_CONTENT)
-        return http::code::ERR_NO_PAYLOAD;
     return static_cast<http::code>(httpcode);
-}
-
-void HTTPHandler::setup_buffer(size_t size) {
-    buffer.resize(size);
-    pos = buffer.begin();
 }
 
 namespace http {

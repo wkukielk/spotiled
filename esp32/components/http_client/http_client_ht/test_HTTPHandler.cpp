@@ -21,6 +21,10 @@ class HTTPHandlerTest : public BaseTest {
     std::unique_ptr<HTTPHandler> handler;
     std::unique_ptr<HTTPHandlerTestAux> aux;
     CharBuf buf{};
+
+    esp_http_client_event header_data{.event_id = HTTP_EVENT_ON_HEADER,
+                                      .header_key = "User-Agent",
+                                      .header_value = "ODRA"};
 };
 
 TEST_F(HTTPHandlerTest, HeadersEmpty) {
@@ -29,9 +33,6 @@ TEST_F(HTTPHandlerTest, HeadersEmpty) {
 }
 
 TEST_F(HTTPHandlerTest, ReceiveHeader) {
-    auto header_data = esp_http_client_event{.event_id = HTTP_EVENT_ON_HEADER,
-                                             .header_key = "User-Agent",
-                                             .header_value = "ODRA"};
     aux->post(header_data);
     auto finish_data = esp_http_client_event{.event_id = HTTP_EVENT_ON_FINISH};
     aux->post(finish_data);
@@ -41,9 +42,6 @@ TEST_F(HTTPHandlerTest, ReceiveHeader) {
 }
 
 TEST_F(HTTPHandlerTest, HeadersReset) {
-    auto header_data = esp_http_client_event{.event_id = HTTP_EVENT_ON_HEADER,
-                                             .header_key = "User-Agent",
-                                             .header_value = "ODRA"};
     aux->post(header_data);
     auto finish_data = esp_http_client_event{.event_id = HTTP_EVENT_ON_FINISH};
     aux->post(finish_data);
@@ -65,7 +63,7 @@ TEST_F(HTTPHandlerTest, ReceiveData) {
     aux->post(data);
     auto finish_data = esp_http_client_event{.event_id = HTTP_EVENT_ON_FINISH};
     aux->post(finish_data);
-    EXPECT_EQ(handler->release(buf), ESP_OK);
+    handler->release(buf);
     EXPECT_STREQ(buf.data(), "1234567");
     EXPECT_EQ(buf.size(), 8);
 }
@@ -73,11 +71,13 @@ TEST_F(HTTPHandlerTest, ReceiveData) {
 TEST_F(HTTPHandlerTest, DataResets) {
     auto data = esp_http_client_event{
         .event_id = HTTP_EVENT_ON_DATA, .data = (void *)"1234", .data_len = 4};
+    aux->post(header_data);
     EXPECT_CALL(*client, is_chunked_response()).WillRepeatedly(Return(false));
     EXPECT_CALL(*client, get_content_length()).WillOnce(Return(7));
     aux->post(data);
     auto finish_data = esp_http_client_event{.event_id = HTTP_EVENT_ON_FINISH};
     aux->post(finish_data);
+    aux->post(header_data);
     EXPECT_CALL(*client, get_content_length()).WillOnce(Return(4));
     aux->post(data);
     aux->post(finish_data);
@@ -93,7 +93,7 @@ TEST_F(HTTPHandlerTest, ChunkedResponse) {
 }
 
 TEST_F(HTTPHandlerTest, releaseNothing) {
-    EXPECT_EQ(handler->release(buf), http::code::ERR_NO_PAYLOAD);
+    handler->release(buf);
     EXPECT_TRUE(!buf.data());
     EXPECT_TRUE(buf.size() == 0);
 }
@@ -103,12 +103,6 @@ TEST_F(HTTPHandlerTest, performNoContent) {
     EXPECT_CALL(*client, get_status_code())
         .WillOnce(Return(http::code::NO_CONTENT));
     EXPECT_EQ(handler->perform(buf), http::code::NO_CONTENT);
-}
-
-TEST_F(HTTPHandlerTest, performSomeError) {
-    EXPECT_CALL(*client, perform()).WillOnce(Return(ESP_OK));
-    EXPECT_CALL(*client, get_status_code()).WillOnce(Return(http::code::OK));
-    EXPECT_EQ(handler->perform(buf), http::code::ERR_NO_PAYLOAD);
 }
 
 TEST_F(HTTPHandlerTest, performOK) {
