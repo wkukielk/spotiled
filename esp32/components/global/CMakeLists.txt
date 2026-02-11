@@ -4,6 +4,7 @@ idf_component_register(
     REQUIRES i_wifi
              time_aux
              nvs
+             i_mdns
     PRIV_REQUIRES esp_netif
                   esp_event
                   util

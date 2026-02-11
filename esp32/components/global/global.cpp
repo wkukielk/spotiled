@@ -34,6 +34,10 @@ void Global::set_time(std::unique_ptr<I_Time> &&time) {
     this->time = std::move(time);
 }
 
+void Global::set_mdns(std::unique_ptr<I_mDNS> &&mdns) {
+    this->mdns = std::move(mdns);
+}
+
 Global *Global::get_global() {
     if (!instance)
         instance = new Global{};

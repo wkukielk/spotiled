@@ -5,4 +5,5 @@ idf_component_register(
     REQUIRES nvs
              wifi_manager
              wifi_wrap
+             mdns_wrap
 )
