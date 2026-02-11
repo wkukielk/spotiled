@@ -8,6 +8,7 @@ idf_component_register(
     PRIV_REQUIRES time_aux     
                   nvs
                   wifi_wrap
+                  mdns_wrap
              
 )
 
