@@ -6,12 +6,12 @@
 #include <cstring>
 
 ConfigReader::ConfigReader(I_NVS &cfgnvs)
-    : cfgnvs{&cfgnvs}, wifi_mgr_factory{cfgnvs} {}
+    : cfgnvs{&cfgnvs}, wifi_mgr_factory{cfgnvs}, mdns_configurer{cfgnvs} {}
 
 void ConfigReader::preconfigure() const {}
 
 Config ConfigReader::get_config() const {
-    return {.wifi_mgr = wifi_mgr_factory.get()};
+    return {.wifi_mgr = wifi_mgr_factory.get(), .mdns = mdns_configurer.get()};
 }
 
 Provisioning *
