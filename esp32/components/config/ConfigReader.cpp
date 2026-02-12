@@ -20,7 +20,7 @@ WiFiManagerFactory::get_provisioning(util::EventGroup &event_group) const {
         .get_wifi_prov = []() { return new WiFiProv(&wifi_prov::cfg); },
         .get_handler =
             [](util::I_EventGroup &g) { return new ProvEventHandler{g, 5}; }};
-    const auto name = cfgnvs->read(key::PROV_NAME, "spotiled_esp32");
+    auto name = cfgnvs->read(key::PROV_NAME);
     return new Provisioning{essentials, event_group, name.data()};
 }
 
@@ -52,12 +52,10 @@ WiFiManagerFactory::get_credentials_wifi_manager() const {
     auto event_group = mkuptr<util::EventGroup>();
     auto handler = mkuptr<WiFiEventHandler>(*event_group, 3);
 
-    CharBuf ssid{}, passwd{};
-    UTIL_THROW(cfgnvs->read(key::WIFI_SSID, ssid), ConfigError, "no ssid");
-    UTIL_THROW(cfgnvs->read(key::WIFI_PASSWD, passwd), ConfigError,
-               "no passwd");
-    std::string_view ssid_v{ssid.data(), ssid.size()};
-    std::string_view passwd_v{passwd.data(), passwd.size()};
+    auto ssid = cfgnvs->read(key::WIFI_SSID);
+    auto passwd = cfgnvs->read(key::WIFI_PASSWD);
+    auto ssid_v = std::string_view{ssid.data(), ssid.size()};
+    auto passwd_v = std::string_view{passwd.data(), passwd.size()};
     return mkuptr<CredentialsWiFiManager>(ssid_v, passwd_v, std::move(handler),
                                           std::move(event_group));
 }
