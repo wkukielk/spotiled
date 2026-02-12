@@ -13,14 +13,17 @@ u_ptr<nvs::NVSHandle> open(const char *part, nvs_open_mode_t mode,
     return nvs::open_nvs_handle_from_partition(part, "storage", mode, err);
 }
 
+esp_err_t ignore_not_found(esp_err_t err) {
+    return err != ESP_OK && err != ESP_ERR_NVS_NOT_FOUND ? err : ESP_OK;
+}
+
 template <typename T> int read(const char *part, const char *key, T &value) {
     UTIL_THROW(!part || !key, NullError);
     esp_err_t err{};
     auto handle = open(part, NVS_READONLY, &err);
     UTIL_THROW(err, NVSError, "open handle");
     err = handle->get_item(key, value);
-    auto r = err != ESP_OK && err != ESP_ERR_NVS_NOT_FOUND ? err : ESP_OK;
-    UTIL_THROW(r, NVSError, "read error");
+    UTIL_THROW(ignore_not_found(err), NVSError, "read error");
     return err;
 }
 
@@ -52,32 +55,33 @@ NVS::NVS(std::string_view part) : part{part.data() ? part.data() : ""} {
 NVS::~NVS() { nvs_flash_deinit(); }
 
 esp_err_t NVS::erase() {
-    esp_err_t err{};
-    auto handle = open(NVS_READWRITE, &err);
+    auto handle = open(NVS_READWRITE);
     UTIL_RETURN(handle->erase_all());
     UTIL_RETURN(handle->commit());
     return ESP_OK;
 }
 
-int NVS::read(const char *key, CharBuf &buf) const {
+CharBuf NVS::read(K key) const {
     UTIL_THROW(!key, NullError);
-    esp_err_t err{};
-    auto handle = open(NVS_READONLY, &err);
-    UTIL_THROW(err, NVSError, "open");
-    size_t size{};
-    err = handle->get_item_size(nvs::ItemType::SZ, key, std::ref(size));
-    UTIL_RETURN(err == ESP_ERR_NVS_NOT_FOUND ? err : ESP_OK);
-    UTIL_THROW(err, NVSError, "check size");
-    buf.resize(size);
-    err = handle->get_string(key, buf.data(), buf.size());
-    auto r = err != ESP_OK && err != ESP_ERR_NVS_NOT_FOUND ? err : ESP_OK;
-    UTIL_THROW(r, NVSError, "read");
-    return err;
+    auto handle = open(NVS_READONLY);
+    auto size = size_t{};
+    auto err = get_string_size(*handle, key, std::ref(size));
+    if (err == ESP_ERR_NVS_NOT_FOUND)
+        return {};
+    auto buf = CharBuf(size);
+    err = get_string(*handle, key, buf.data(), buf.size());
+    return err == ESP_OK ? buf : CharBuf{};
+}
+
+CharBuf NVS::read_or_throw(K key) const {
+    auto buf = read(key);
+    UTIL_THROW(buf.empty(), MissingKeyError, "nvs", key);
+    return buf;
 }
 
 CharBuf NVS::read(K key, std::string_view dft) const {
-    CharBuf buf{};
-    if (read(key, buf) != ESP_OK) {
+    auto buf = read(key);
+    if (buf.empty()) {
         buf.resize(dft.size() + 1);
         memcpy(buf.data(), dft.data(), dft.size());
         buf.back() = '\0';
@@ -85,23 +89,36 @@ CharBuf NVS::read(K key, std::string_view dft) const {
     return buf;
 }
 
-void NVS::write(const char *key, const char *value) {
+void NVS::write(K key, const char *value) {
     UTIL_THROW(!key || !value, NullError);
-    esp_err_t err;
-    auto handle = open(NVS_READWRITE, &err);
-    UTIL_THROW(err, NVSError, "open");
+    auto handle = open(NVS_READWRITE);
     UTIL_THROW(handle->set_string(key, value), NVSError, "write");
     UTIL_THROW(handle->commit(), NVSError, "commit");
 }
 
-void NVS::write_time_t(const char *key, time_t value) {
+void NVS::write_time_t(K key, time_t value) {
     _NVS::write(part.data(), key, value);
 }
 
-int NVS::read_time_t(const char *key, time_t &value) const {
+int NVS::read_time_t(K key, time_t &value) const {
     return _NVS::read(part.data(), key, value);
 }
 
-u_ptr<nvs::NVSHandle> NVS::open(nvs_open_mode_t mode, esp_err_t *err) const {
-    return _NVS::open(part.data(), mode, err);
+u_ptr<nvs::NVSHandle> NVS::open(nvs_open_mode_t mode) const {
+    esp_err_t err{};
+    auto handle = _NVS::open(part.data(), mode, &err);
+    UTIL_THROW(err, NVSError, "open");
+    return handle;
+}
+
+esp_err_t NVS::get_string_size(NVSHandle &h, K key, size_t &size) const {
+    auto err = h.get_item_size(nvs::ItemType::SZ, key, std::ref(size));
+    UTIL_THROW(_NVS::ignore_not_found(err), NVSError, "get item size");
+    return err;
+}
+
+esp_err_t NVS::get_string(NVSHandle &h, K key, char *out, size_t len) const {
+    auto err = h.get_string(key, out, len);
+    UTIL_THROW(_NVS::ignore_not_found(err), NVSError, "get string");
+    return err;
 }
