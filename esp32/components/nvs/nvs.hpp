@@ -15,7 +15,8 @@ class I_NVS {
     using K = const char *;
     virtual ~I_NVS() noexcept {};
     virtual void write(K key, K value) = 0;
-    virtual int read(K key, CharBuf &buf) const = 0;
+    virtual CharBuf read(const char *key) const = 0;
+    virtual CharBuf read_or_throw(const char *key) const = 0;
     virtual CharBuf read(K key, std::string_view dft) const = 0;
     virtual void write_time_t(K key, time_t value) = 0;
     virtual int read_time_t(K key, time_t &value) const = 0;
@@ -28,14 +29,18 @@ class NVS : public I_NVS {
     ~NVS() noexcept override;
 
     esp_err_t erase();
-    void write(const char *key, const char *value) override;
-    int read(const char *key, CharBuf &buf) const override;
+    void write(K key, const char *value) override;
+    CharBuf read(K key) const override;
+    CharBuf read_or_throw(K key) const override;
     CharBuf read(K key, std::string_view dft) const override;
-    void write_time_t(const char *key, time_t value) override;
-    int read_time_t(const char *key, time_t &value) const override;
+    void write_time_t(K key, time_t value) override;
+    int read_time_t(K key, time_t &value) const override;
 
   private:
-    u_ptr<nvs::NVSHandle> open(nvs_open_mode_t mode, esp_err_t *err) const;
+    using NVSHandle = nvs::NVSHandle;
+    u_ptr<nvs::NVSHandle> open(nvs_open_mode_t mode) const;
+    esp_err_t get_string_size(NVSHandle &h, K key, size_t &size) const;
+    esp_err_t get_string(NVSHandle &h, K key, char *out, size_t len) const;
     std::string part{};
     static const char *ns;
 };
