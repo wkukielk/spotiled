@@ -57,15 +57,13 @@ TEST_P(NVSTest, erase) {
 
 TEST_P(NVSTest, str) {
     nvsstore->write("test", "VALUE");
-    auto read = straux::cvector<char>{};
-    ASSERT_EQ(nvsstore->read("test", std::ref(read)), 0);
+    auto read = nvsstore->read("test");
     ASSERT_STREQ(read.data(), "VALUE");
 }
 
 TEST_P(NVSTest, writeEmptyStr) {
     nvsstore->write("test", "");
-    auto read = straux::cvector<char>{};
-    ASSERT_EQ(nvsstore->read("test", std::ref(read)), 0);
+    auto read = nvsstore->read("test");
     ASSERT_STREQ(read.data(), "");
 }
 
@@ -78,8 +76,7 @@ TEST_P(NVSTest, writeNullKeyStr) {
 }
 
 TEST_P(NVSTest, readNullKeyStr) {
-    auto read = CharBuf{};
-    ASSERT_THROW(nvsstore->read(nullptr, std::ref(read)), NullError);
+    ASSERT_THROW(nvsstore->read(nullptr), NullError);
 }
 
 TEST(NVSTestTwoPartitions, write_read) {

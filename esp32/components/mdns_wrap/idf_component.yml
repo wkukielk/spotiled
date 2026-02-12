@@ -1,4 +1,7 @@
 dependencies:
   idf:
     version: '>=4.1.0'
-  espressif/mdns: '*'
+  espressif/mdns:
+    version: '*'
+    rules:
+      - if: target != "linux"
