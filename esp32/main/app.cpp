@@ -12,6 +12,7 @@ App::App() : cfgnvs{mkuptr<NVS>("cfg")} {
     Global::get_global()->set_time(mkuptr<Time>());
     Global::get_global()->set_wifi(mkuptr<WiFi>(&wifi::cfg));
     auto cfg_reader = ConfigReader{*cfgnvs};
+    cfg_reader.preconfigure();
     auto cfg = cfg_reader.get_config();
     Global::get_global()->set_mdns(std::move(cfg.mdns));
     runtime = mkuptr<Runtime>(std::move(cfg.wifi_mgr));

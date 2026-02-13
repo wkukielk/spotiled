@@ -1,3 +1,4 @@
+#include "LogConfig.hpp"
 #include "WiFiManager.hpp"
 #include "WiFiManagerFactory.hpp"
 #include "mDNSConfig.hpp"
@@ -18,4 +19,5 @@ class ConfigReader {
     I_NVS *cfgnvs;
     WiFiManagerFactory wifi_mgr_factory;
     mDNSConfig mdns_configurer;
+    LogConfig log_configurer;
 };
