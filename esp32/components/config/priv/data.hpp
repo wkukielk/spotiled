@@ -11,11 +11,21 @@ extern const char *MDNS_INSTANCE;
 extern const char *IS_BACKEND_LOCAL;
 extern const char *BACKEND_MDNS_NAME;
 extern const char *BACKEND_FQDN;
+extern const char *LOG_LEVEL;
 } // namespace key
 
 namespace B {
 extern const char *yes;
 extern const char *no;
 } // namespace B
+
+namespace LOG {
+extern const char *NONE;
+extern const char *ERROR;
+extern const char *WARN;
+extern const char *INFO;
+extern const char *DEBUG;
+extern const char *VERBOSE;
+} // namespace LOG
 
 #endif
