@@ -8,4 +8,6 @@ RUN uv sync --frozen --no-dev --no-install-project
 COPY . .
 RUN uv sync --frozen --no-dev
 
+EXPOSE 443
+
 CMD ["uv", "run", "fastapi", "run", "app/main.py"]
