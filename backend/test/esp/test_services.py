@@ -1,6 +1,6 @@
 from app.esp.services import (
-    validate_path_version,
-    validate_header_version,
+    validate_requested_version,
+    validate_owned_version,
     get_latest_firmware,
     get_firmware
 )
@@ -9,23 +9,23 @@ from app.esp.models import Chip, SpecificVersion
 from sqlmodel import Session
 
 
-def test_validate_header_version():
-    v = validate_header_version("1.1")
+def test_validate_owned_version():
+    v = validate_owned_version("1.1")
     assert v == SpecificVersion(1, 1)
 
 
-def test_validate_header_version_none():
-    v = validate_header_version()
+def test_validate_owned_version_none():
+    v = validate_owned_version()
     assert v is None
 
 
-def test_validate_path_version():
-    v = validate_path_version("1.1")
+def test_validate_requested_version():
+    v = validate_requested_version("1.1")
     assert v == SpecificVersion(1, 1)
 
 
-def test_validate_path_version_latest():
-    v = validate_path_version("latest")
+def test_validate_requested_version_latest():
+    v = validate_requested_version("latest")
     assert v == "latest"
 
 
