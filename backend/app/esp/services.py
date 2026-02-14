@@ -17,7 +17,7 @@ type PathVersion = Annotated[str, Path(pattern=r"^\d+\.\d+|latest$",
                                        examples=["1.11", "latest"])]
 
 
-def validate_path_version(version_str: PathVersion) -> Version:
+def validate_requested_version(version_str: PathVersion) -> Version:
     return _parse_version(version_str)
 
 
@@ -26,7 +26,7 @@ HeaderVersion = {"pattern": r"^\d+\.\d+$",
                  "examples": ["1.11"]}
 
 
-def validate_header_version(
+def validate_owned_version(
         version_hdr: Annotated[str | None, Header(**HeaderVersion)] = None) \
         -> Version | None:
     return None if version_hdr is None \
