@@ -3,7 +3,6 @@ from enum import Enum
 from typing import Annotated, NamedTuple, Literal, Self
 from pydantic import computed_field
 from functools import total_ordering
-from app.config import FIRMWARE_ROOT
 
 
 class SpecificVersion(NamedTuple):
@@ -35,8 +34,12 @@ class Firmware(SQLModel, table=True):
     chip: Chip
 
     @computed_field(return_type=str)
-    def version(self) -> str:
+    def version_str(self) -> str:
         return f"{self.major}.{self.minor}"
+
+    @computed_field(return_type=SpecificVersion)
+    def version(self) -> SpecificVersion:
+        return SpecificVersion(self.major, self.minor)
 
     def __lt__(a, b: Self):
         return a.minor < b.minor if a.major == b.major else a.major < b.major
