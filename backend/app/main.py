@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from .esp.endpoints import router as esp_router
 
-app = FastAPI()
+app = FastAPI(root_path="/api")
 app.include_router(esp_router, prefix="/esp")
 
 
