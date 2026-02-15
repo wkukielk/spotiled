@@ -4,7 +4,7 @@ idf_component_register(
         "HTTPHandlerTestAux.cpp"
         "test_HTTPRepeatingHandlerTest.cpp"
     INCLUDE_DIRS "include"
-    REQUIRES http_client htutils
+    REQUIRES http_client htutils i_ota
     WHOLE_ARCHIVE
 )
 include("${CMAKE_CONFIG_DIR}/set_ht_gccoptions.cmake")
