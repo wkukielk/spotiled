@@ -43,3 +43,7 @@ class Firmware(SQLModel, table=True):
 
     def __lt__(a, b: Self):
         return a.minor < b.minor if a.major == b.major else a.major < b.major
+
+
+class FirmwareRead(Firmware):
+    is_latest: bool = False

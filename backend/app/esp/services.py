@@ -1,9 +1,11 @@
 from typing import Annotated
 
-from fastapi import Path, Header
+from fastapi import Path, Header, Depends
 from sqlmodel import Session, select, desc
 
-from .models import Firmware, Chip, Version, SpecificVersion
+from app.database import get_session
+from app.utils import get_or_404
+from .models import Firmware, FirmwareRead, Chip, Version, SpecificVersion
 
 
 def _parse_version(version: str) -> Version:
@@ -17,8 +19,14 @@ type PathVersion = Annotated[str, Path(pattern=r"^\d+\.\d+|latest$",
                                        examples=["1.11", "latest"])]
 
 
-def validate_requested_version(version_str: PathVersion) -> Version:
-    return _parse_version(version_str)
+def validate_requested_firmware(
+        chip: Chip,
+        version_str: PathVersion,
+        session: Annotated[Session, Depends(get_session)]) -> FirmwareRead:
+    version = _parse_version(version_str)
+    firmware = get_or_404(get_firmware(session, chip, version))
+    update_is_latest = {"is_latest": version == "latest"}
+    return FirmwareRead.model_validate(firmware, update=update_is_latest)
 
 
 HeaderVersion = {"pattern": r"^\d+\.\d+$",
@@ -28,12 +36,19 @@ HeaderVersion = {"pattern": r"^\d+\.\d+$",
 
 def validate_owned_version(
         version_hdr: Annotated[str | None, Header(**HeaderVersion)] = None) \
-        -> Version | None:
+        -> SpecificVersion | None:
     return None if version_hdr is None \
         else _parse_version(version_hdr)
 
 
-def get_latest_firmware(session: Session, chip: Chip) -> Firmware | None:
+def get_firmware(session: Session, chip: Chip, version: Version):
+    if version == "latest":
+        return _get_latest_firmware(session, chip)
+    else:
+        return _get_firmware_by_version(session, chip, version)
+
+
+def _get_latest_firmware(session: Session, chip: Chip) -> Firmware | None:
     return session.exec(
         select(Firmware)
         .where(Firmware.chip == chip)
@@ -41,7 +56,8 @@ def get_latest_firmware(session: Session, chip: Chip) -> Firmware | None:
     ).first()
 
 
-def get_firmware(session: Session, chip: Chip, ve: Version) -> Firmware | None:
-    mj, mn = ve
+def _get_firmware_by_version(session: Session, chip: Chip,
+                             version: SpecificVersion) -> Firmware | None:
+    mj, mn = version
     clause = Firmware.chip == chip, Firmware.major == mj, Firmware.minor == mn
     return session.exec(select(Firmware).where(*clause)).first()

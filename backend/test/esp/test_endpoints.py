@@ -22,3 +22,20 @@ async def test_get_firmware_specific(aclient: AsyncClient, add_firmware):
     response = await aclient.get(str(FIRMWARE_URL / "2.2"))
     assert response.status_code == 200
     assert response.content == b"firmware 2.2"
+
+
+async def test_get_firmware_specific_owned(aclient: AsyncClient, add_firmware):
+    headers = {"X-Firmware-Version": "2.3"}
+    response = await aclient.get(str(FIRMWARE_URL / "2.2"), headers=headers)
+    assert response.status_code == 200
+    assert response.content == b"firmware 2.2"
+
+
+async def test_get_firmware_none(aclient: AsyncClient):
+    response = await aclient.get(str(FIRMWARE_URL / "9.9"))
+    assert response.status_code == 404
+
+
+async def test_get_firmware_none_latest(aclient: AsyncClient):
+    response = await aclient.get(str(FIRMWARE_URL / "latest"))
+    assert response.status_code == 404
