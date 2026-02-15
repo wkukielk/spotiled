@@ -61,25 +61,25 @@ esp_err_t NVS::erase() {
     return ESP_OK;
 }
 
-CharBuf NVS::read(K key) const {
+std::string NVS::read(K key) const {
     UTIL_THROW(!key, NullError);
     auto handle = open(NVS_READONLY);
     auto size = size_t{};
     auto err = get_string_size(*handle, key, std::ref(size));
     if (err == ESP_ERR_NVS_NOT_FOUND)
         return {};
-    auto buf = CharBuf(size);
-    err = get_string(*handle, key, buf.data(), buf.size());
-    return err == ESP_OK ? buf : CharBuf{};
+    auto buf = std::string(size - 1, '\0');
+    err = get_string(*handle, key, buf.data(), size);
+    return err == ESP_OK ? buf : std::string{};
 }
 
-CharBuf NVS::read_or_throw(K key) const {
+std::string NVS::read_or_throw(K key) const {
     auto buf = read(key);
     UTIL_THROW(buf.empty(), MissingKeyError, "nvs", key);
     return buf;
 }
 
-CharBuf NVS::read(K key, std::string_view dft) const {
+std::string NVS::read(K key, std::string_view dft) const {
     auto buf = read(key);
     if (buf.empty()) {
         buf.resize(dft.size() + 1);

@@ -15,9 +15,9 @@ class I_NVS {
     using K = const char *;
     virtual ~I_NVS() noexcept {};
     virtual void write(K key, K value) = 0;
-    virtual CharBuf read(const char *key) const = 0;
-    virtual CharBuf read_or_throw(const char *key) const = 0;
-    virtual CharBuf read(K key, std::string_view dft) const = 0;
+    virtual std::string read(const char *key) const = 0;
+    virtual std::string read_or_throw(const char *key) const = 0;
+    virtual std::string read(K key, std::string_view dft) const = 0;
     virtual void write_time_t(K key, time_t value) = 0;
     virtual int read_time_t(K key, time_t &value) const = 0;
 };
@@ -30,9 +30,9 @@ class NVS : public I_NVS {
 
     esp_err_t erase();
     void write(K key, const char *value) override;
-    CharBuf read(K key) const override;
-    CharBuf read_or_throw(K key) const override;
-    CharBuf read(K key, std::string_view dft) const override;
+    std::string read(K key) const override;
+    std::string read_or_throw(K key) const override;
+    std::string read(K key, std::string_view dft) const override;
     void write_time_t(K key, time_t value) override;
     int read_time_t(K key, time_t &value) const override;
 

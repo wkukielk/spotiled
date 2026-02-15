@@ -59,6 +59,7 @@ TEST_P(NVSTest, str) {
     nvsstore->write("test", "VALUE");
     auto read = nvsstore->read("test");
     ASSERT_STREQ(read.data(), "VALUE");
+    ASSERT_EQ(read.size(), 5);
 }
 
 TEST_P(NVSTest, writeEmptyStr) {
