@@ -1,5 +1,5 @@
 #include "app.hpp"
-#include "ConfigReader.hpp"
+#include "Configurer.hpp"
 #include "WiFi.hpp"
 #include "global.hpp"
 #include "time_aux.hpp"
@@ -11,7 +11,7 @@ App::App() : cfgnvs{mkuptr<NVS>("cfg")} {
     Global::get_global()->set_nvs(mkuptr<NVS>());
     Global::get_global()->set_time(mkuptr<Time>());
     Global::get_global()->set_wifi(mkuptr<WiFi>(&wifi::cfg));
-    auto cfg_reader = ConfigReader{*cfgnvs};
+    auto cfg_reader = Configurer{*cfgnvs};
     cfg_reader.preconfigure();
     auto cfg = cfg_reader.get_config();
     Global::get_global()->set_mdns(std::move(cfg.mdns));

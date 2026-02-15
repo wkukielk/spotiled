@@ -9,9 +9,9 @@ struct Config {
     u_ptr<I_mDNS> mdns;
 };
 
-class ConfigReader {
+class Configurer {
   public:
-    explicit ConfigReader(I_NVS &cfgnvs);
+    explicit Configurer(I_NVS &cfgnvs);
     void preconfigure() const;
     Config get_config() const;
 
