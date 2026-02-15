@@ -5,7 +5,8 @@ idf_component_register(
     REQUIRES global
              runtime
              config
-    PRIV_REQUIRES time_aux     
+             ota
+    PRIV_REQUIRES time_aux
                   nvs
                   wifi_wrap
                   mdns_wrap
