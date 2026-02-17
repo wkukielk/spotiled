@@ -1,8 +1,7 @@
 idf_component_register(
-    SRCS "OTA.cpp"
+    SRCS "OTAClient.cpp"
     INCLUDE_DIRS "include"
     REQUIRES i_ota
-             url
-    PRIV_REQUIRES esp_https_ota
-                  app_update
+             util
 )
+include("${CMAKE_CONFIG_DIR}/set_gccoptions.cmake")

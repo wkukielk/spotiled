@@ -18,10 +18,11 @@ class Partition : public I_Partition {
     const esp_partition_t *handle{};
 };
 
-class OTA : public I_OTA, public I_HTTPS_OTA {
+class OTA : public FullOTA {
   public:
     esp_err_t mark_app_valid(void) noexcept override;
-    std::unique_ptr<I_Partition> get_running_partition() noexcept override;
+    std::unique_ptr<I_Partition>
+    get_running_partition() const noexcept override;
 
     esp_err_t update(const ota::config *ota_config) noexcept override;
     esp_err_t begin(const ota::config *ota_config) noexcept override;
