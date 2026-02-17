@@ -8,7 +8,7 @@ esp_err_t Partition::get_state(esp_ota_img_states_t *ota_state) const noexcept {
     return esp_ota_get_state_partition(handle, ota_state);
 }
 
-std::unique_ptr<I_Partition> OTA::get_running_partition() noexcept {
+std::unique_ptr<I_Partition> OTA::get_running_partition() const noexcept {
     return std::make_unique<Partition>(esp_ota_get_running_partition());
 }
 

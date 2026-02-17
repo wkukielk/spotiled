@@ -11,3 +11,5 @@ idf_component_register(
              wifi_wrap
              mdns_wrap
 )
+
+include("${CMAKE_CONFIG_DIR}/set_gccoptions.cmake")

@@ -9,7 +9,7 @@ idf_component_register(
                   nvs
                   wifi_wrap
                   mdns_wrap
-                  ota
+                  ota_client
              
 )
 

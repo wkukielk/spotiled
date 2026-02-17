@@ -3,9 +3,14 @@ idf_component_register(SRCS "I_OTA.cpp"
                     REQUIRES esp_partition
                              esp_app_format
                              esp_http_client
+                             util
 )
+
+include("${CMAKE_CONFIG_DIR}/set_gccoptions.cmake")
 
 idf_component_get_property(complib i_ota COMPONENT_LIB)
 idf_build_get_property(idfpath IDF_PATH)
 target_include_directories(${complib} PUBLIC ${idfpath}/components/bootloader_support/include)
 target_include_directories(${complib} PUBLIC ${idfpath}/components/esp_https_ota/include)
+
+target_compile_options(${COMPONENT_LIB} PRIVATE "SHELL:-Wno-unused-parameter")
