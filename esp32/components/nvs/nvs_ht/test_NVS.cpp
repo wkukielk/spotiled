@@ -21,7 +21,7 @@ class NVSTest : public testing::TestWithParam<NVSPartitionLabel> {
 };
 
 const NVSPartitionLabel empty{};
-const NVSPartitionLabel ns{};
+const NVSPartitionLabel ns{"cfg"};
 INSTANTIATE_TEST_SUITE_P(NvsVariations, NVSTest, testing::Values(empty, ns));
 
 TEST_P(NVSTest, write_read) {
