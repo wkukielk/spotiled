@@ -4,7 +4,7 @@
 
 extern "C" void app_main(void) {
     try {
-        auto *app = new App{};
+        auto *app = App::create();
         app->run();
     } catch (const std::runtime_error &e) {
         ESP_LOGE("MAIN", "%s", e.what());

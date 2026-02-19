@@ -7,15 +7,24 @@
 
 const char *TAG = "APP";
 
-App::App() : cfgnvs{mkuptr<NVS>("cfg")} {
+u_ptr<Runtime> create_runtime(Config &&cfg) {
+    return Runtime::create(RuntimeConfig{.backend_cfg = cfg.backend_cfg,
+                                         .wifi_mgr = std::move(cfg.wifi_mgr),
+                                         .ota = std::move(cfg.ota)});
+}
+
+App::App(u_ptr<Runtime> &&runtime) : runtime{std::move(runtime)} {}
+
+App *App::create() {
+    auto cfgnvs = mkuptr<NVS>("cfg");
+    auto cfg_reader = Configurer{*cfgnvs};
+    cfg_reader.preconfigure();
     Global::get_global()->set_nvs(mkuptr<NVS>());
     Global::get_global()->set_time(mkuptr<Time>());
     Global::get_global()->set_wifi(mkuptr<WiFi>(&wifi::cfg));
-    auto cfg_reader = Configurer{*cfgnvs};
-    cfg_reader.preconfigure();
     auto cfg = cfg_reader.get_config();
     Global::get_global()->set_mdns(std::move(cfg.mdns));
-    runtime = mkuptr<Runtime>(std::move(cfg.wifi_mgr));
+    return new App{create_runtime(std::move(cfg))};
 }
 
 void App::run() {

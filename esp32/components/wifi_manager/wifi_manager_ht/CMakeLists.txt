@@ -1,8 +1,9 @@
 idf_component_register(
-    SRCS "test_Provisioning.cpp" "test_WiFiEventHandler.cpp"
+    SRCS "test_Provisioning.cpp"
+         "test_WiFiEventHandler.cpp"
          "test_ProvEventHandler.cpp"
-        
          "test_WiFiManager.cpp"
+    INCLUDE_DIRS "include"
     REQUIRES wifi_manager
              htutils
     WHOLE_ARCHIVE

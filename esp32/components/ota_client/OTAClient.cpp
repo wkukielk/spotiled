@@ -6,16 +6,24 @@ static OTAClient *client{};
 
 static esp_err_t attach_headers(esp_http_client_handle_t http) {
     (void)http;
-    (void)client;
+    auto version = client->get_app_version();
+    auto key = "X-Firmware-Version";
+    UTIL_RETURN(esp_http_client_set_header(http, key, version.c_str()));
     return ESP_OK;
 }
 
-OTAClient::OTAClient(std::unique_ptr<FullOTA> &&ota) noexcept
-    : ota{std::move(ota)} {}
+OTAClient::OTAClient(ota::ClientConfig &&cfg)
+    : ota{std::move(cfg.ota)}, httpcfg{std::move(cfg.httpcfg)} {
+    UTIL_THROW(client != nullptr, InitError, "multiple OTAClients");
+    client = this;
+}
+
+OTAClient::~OTAClient() noexcept { client = nullptr; }
 
 bool OTAClient::is_verify_pending() const {
     auto partition = ota->get_running_partition();
-    esp_ota_img_states_t state;
+    UTIL_THROW(partition == nullptr, NullError, "get partition");
+    esp_ota_img_states_t state{};
     auto err = partition->get_state(&state);
     UTIL_THROW(err, RuntimeError, "get partition state");
     return state == ESP_OTA_IMG_PENDING_VERIFY;
@@ -30,7 +38,11 @@ std::string OTAClient::get_app_version() const noexcept {
 }
 
 esp_err_t OTAClient::update() noexcept {
-    auto http_config = esp_http_client_config_t{};
+    auto http_config = esp_http_client_config_t{.url = httpcfg.url.c_str(),
+                                                .cert_pem = httpcfg.cert_pem,
+                                                .cert_len = httpcfg.cert_len,
+                                                .skip_cert_common_name_check =
+                                                    httpcfg.skip_cn_check};
     auto config = ota::config{.http_config = &http_config,
                               .http_client_init_cb = attach_headers};
     return ota->update(&config);

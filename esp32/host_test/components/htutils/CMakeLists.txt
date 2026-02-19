@@ -6,6 +6,7 @@ idf_component_register(
              nvs
              i_wifi
              global
+             i_mdns_ht
     WHOLE_ARCHIVE
 )
 include("${CMAKE_CONFIG_DIR}/set_ht_gccoptions.cmake")

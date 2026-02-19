@@ -12,6 +12,10 @@ std::unique_ptr<I_Partition> OTA::get_running_partition() const noexcept {
     return std::make_unique<Partition>(esp_ota_get_running_partition());
 }
 
+std::unique_ptr<I_Partition> OTA::get_other_partition() const noexcept {
+    return std::make_unique<Partition>(esp_ota_get_last_invalid_partition());
+}
+
 esp_err_t OTA::mark_app_valid(void) noexcept {
     return esp_ota_mark_app_valid_cancel_rollback();
 }
