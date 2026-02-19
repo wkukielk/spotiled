@@ -18,9 +18,11 @@ class I_Partition {
 class I_OTA {
   public:
     virtual ~I_OTA() noexcept {};
-    virtual esp_err_t mark_app_valid(void) noexcept = 0;
+    virtual esp_err_t mark_app_valid() noexcept = 0;
     virtual std::unique_ptr<I_Partition>
     get_running_partition() const noexcept = 0;
+    virtual std::unique_ptr<I_Partition>
+    get_other_partition() const noexcept = 0;
 };
 
 namespace ota {
@@ -41,6 +43,6 @@ class I_HTTPS_OTA {
     virtual esp_err_t finish() noexcept = 0;
 };
 
-class FullOTA : public I_HTTPS_OTA, public I_OTA {};
+class I_FullOTA : public I_HTTPS_OTA, public I_OTA {};
 
 #endif

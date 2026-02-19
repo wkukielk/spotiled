@@ -10,7 +10,6 @@ idf_component_register(
                   wifi_wrap
                   mdns_wrap
                   ota_client
-             
 )
 
 if(DEV)
