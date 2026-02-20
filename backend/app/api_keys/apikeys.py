@@ -22,7 +22,3 @@ async def get_api_key_svc(
 
 
 security = create_depends_api_key(get_api_key_svc)
-
-
-router = APIRouter(prefix="/api-keys", tags=["API Keys"])
-router_api_keys = create_api_keys_router(get_api_key_svc, router=router)
