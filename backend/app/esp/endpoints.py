@@ -8,7 +8,7 @@ from .services import (
     validate_owned_version as val_owned_ver
 )
 from .models import Version, FirmwareRead
-from app.apikeys import security
+from app.api_keys.apikeys import security
 
 from app.config import settings
 

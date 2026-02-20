@@ -4,7 +4,12 @@ from sqlalchemy.ext.asyncio import (
     async_sessionmaker,
     AsyncSession
 )
-from .esp.models import *   # noqa: F401, F403
+from .esp.models import *                                 # noqa: F401, F403
+from fastapi_api_key.repositories.sql import ApiKeyModel  # noqa: F401
+from .devices.models import *                             # noqa: F401, F403
+
+from fastapi_api_key.repositories.sql import Base as ApiKeyBase
+
 
 sqlite_file_name = "database.db"
 sqlite_url = f"sqlite+aiosqlite:///{sqlite_file_name}"
@@ -22,5 +27,8 @@ async def get_session():
         async with session.begin():
             yield session
 
+
+for table in ApiKeyBase.metadata.tables.values():
+    table.tometadata(SQLModel.metadata)
 
 target_metadata = SQLModel.metadata

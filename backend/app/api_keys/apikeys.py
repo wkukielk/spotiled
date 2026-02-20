@@ -1,4 +1,4 @@
-from .database import get_session, engine
+from ..database import get_session
 
 import os
 
@@ -18,10 +18,6 @@ hasher = Argon2ApiKeyHasher(pepper=pepper)
 async def get_api_key_svc(
         async_session: AsyncSession = Depends(get_session)) -> ApiKeyService:
     repo = SqlAlchemyApiKeyRepository(async_session)
-
-    # Necessary if you don't use your own DeclarativeBase
-    await repo.ensure_table(async_engine=engine)
-
     return ApiKeyService(repo=repo, hasher=hasher)
 
 

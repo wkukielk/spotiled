@@ -1,11 +1,11 @@
 import pytest
 
 from httpx import AsyncClient
-from fastapi import status, FastAPI
+from fastapi import status
 from yarl import URL
 
 from app.main import app
-from app.apikeys import security
+from app.api_keys.apikeys import security
 
 
 FIRMWARE_URL = URL("/esp/firmware/esp32s3/")

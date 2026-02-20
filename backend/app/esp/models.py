@@ -24,9 +24,6 @@ class Release(str, Enum):
 
 @total_ordering
 class Firmware(SQLModel, table=True):
-    __table_args__ = (
-        Index("ix_firmware_version_sort", "major", "minor"),
-    )
     id: Annotated[int | None, Field(default=None, primary_key=True)]
     relative_path: str
     major: int
@@ -43,6 +40,10 @@ class Firmware(SQLModel, table=True):
 
     def __lt__(a, b: Self):
         return a.minor < b.minor if a.major == b.major else a.major < b.major
+
+    __table_args__ = (
+        Index("ix_firmware_version_sort", "major", "minor"),
+    )
 
 
 class FirmwareRead(Firmware):
