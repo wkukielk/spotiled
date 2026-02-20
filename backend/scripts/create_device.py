@@ -25,7 +25,7 @@ async def main():
     async with AsyncSession(engine) as session:
         key, secret = await create_key(session)
         await create_device(session, key.id_)
-        session.commit()
+        await session.commit()
 
 
 if __name__ == "__main__":
