@@ -5,7 +5,7 @@ from fastapi import status
 from yarl import URL
 
 from app.main import app
-from app.api_keys.apikeys import security
+from app.api_keys.services import authorize
 
 
 FIRMWARE_URL = URL("/esp/firmware/esp32s3/")
@@ -13,10 +13,10 @@ FIRMWARE_URL = URL("/esp/firmware/esp32s3/")
 
 @pytest.fixture
 def mock_security():
-    async def get_mock_security():
+    async def get_mock_authorize():
         yield None
 
-    app.dependency_overrides[security] = get_mock_security
+    app.dependency_overrides[authorize] = get_mock_authorize
 
 
 @pytest.fixture
