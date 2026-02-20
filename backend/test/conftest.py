@@ -13,11 +13,8 @@ from sqlalchemy.ext.asyncio import (
 from sqlalchemy.pool import StaticPool
 from sqlmodel import SQLModel
 
-from fastapi.testclient import TestClient
 from httpx import AsyncClient, ASGITransport
 from fastapi import FastAPI
-
-from sqlmodel import select
 
 
 @pytest_asyncio.fixture(scope="session", loop_scope="session")
@@ -27,7 +24,6 @@ async def engine():
         connect_args={"check_same_thread": False},
         poolclass=StaticPool)
     async with engine.begin() as conn:
-        print(f"Tables found in metadata: {SQLModel.metadata.tables.keys()}")
         await conn.run_sync(SQLModel.metadata.create_all)
 
     yield engine
