@@ -25,14 +25,14 @@ def client(aclient: AsyncClient, mock_security):
 
 
 async def test_get_firmware(client: AsyncClient, add_firmware):
-    headers = {"X-Firmware-Version": "1.2"}
+    headers = {"Owned-Version": "1.2"}
     response = await client.get(str(FIRMWARE_URL / "latest"), headers=headers)
     assert response.status_code == 200
     assert response.content == b"firmware 2.3"
 
 
 async def test_get_firmware_uptodate(client: AsyncClient, add_firmware):
-    headers = {"X-Firmware-Version": "2.3"}
+    headers = {"Owned-Version": "2.3"}
     response = await client.get(str(FIRMWARE_URL / "latest"), headers=headers)
     assert response.status_code == status.HTTP_304_NOT_MODIFIED
 
@@ -44,7 +44,7 @@ async def test_get_firmware_specific(client: AsyncClient, add_firmware):
 
 
 async def test_get_firmware_specific_owned(client: AsyncClient, add_firmware):
-    headers = {"X-Firmware-Version": "2.3"}
+    headers = {"Owned-Version": "2.3"}
     response = await client.get(str(FIRMWARE_URL / "2.2"), headers=headers)
     assert response.status_code == 200
     assert response.content == b"firmware 2.2"
