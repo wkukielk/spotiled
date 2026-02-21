@@ -32,7 +32,7 @@ async def validate_requested_firmware(
 
 
 HeaderVersion = {"pattern": r"^\d+\.\d+$",
-                 "alias": "X-Firmware-Version",
+                 "alias": "Owned-Version",
                  "examples": ["1.11"]}
 
 
