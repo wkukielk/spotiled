@@ -16,7 +16,7 @@ from app.config import settings
 router = APIRouter()
 
 
-@router.get("/firmware/{chip}/{version_str}")
+@router.get("/firmware/{chip}/{version}")
 async def firmware(
         req_firmware: Annotated[FirmwareRead, Depends(val_req_fware)],
         owned_version: Annotated[Version | None, Depends(val_owned_ver)],
