@@ -1,7 +1,7 @@
 from typing import Annotated
 
-from fastapi import Path, Header, Depends
-from sqlmodel import Session, select, desc
+from fastapi import Path, Header, Depends, Query
+from sqlmodel import Session, select, desc, tuple_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_session
@@ -9,11 +9,15 @@ from app.utils import get_or_404
 from .models import Firmware, FirmwareRead, Chip, Version, SpecificVersion
 
 
+def _parse_specific_version(version: str) -> SpecificVersion:
+    major, minor = version.split('.')
+    return SpecificVersion(int(major), int(minor))
+
+
 def _parse_version(version: str) -> Version:
     if version == "latest":
         return "latest"
-    major, minor = version.split('.')
-    return SpecificVersion(int(major), int(minor))
+    return _parse_specific_version(version)
 
 
 type PathVersion = Annotated[str, Path(pattern=r"^\d+\.\d+|latest$",
@@ -22,39 +26,41 @@ type PathVersion = Annotated[str, Path(pattern=r"^\d+\.\d+|latest$",
 
 async def validate_requested_firmware(
         chip: Chip,
-        version_str: PathVersion,
-        session: Annotated[AsyncSession, Depends(get_session)]) \
+        version: PathVersion,
+        session: Annotated[AsyncSession, Depends(get_session)],
+        blacklist: Annotated[list[str], Query()] = []) \
             -> FirmwareRead:
-    version = _parse_version(version_str)
-    firmware = get_or_404(await get_firmware(session, chip, version))
-    update_is_latest = {"is_latest": version == "latest"}
+    version_v = _parse_version(version)
+    blacklist_v = [_parse_version(v) for v in blacklist]
+    firmware_opt = await get_firmware(session, chip, version_v, blacklist_v)
+    firmware = get_or_404(firmware_opt)
+    update_is_latest = {"is_latest": version_v == "latest"}
     return FirmwareRead.model_validate(firmware, update=update_is_latest)
 
 
-HeaderVersion = {"pattern": r"^\d+\.\d+$",
-                 "alias": "Owned-Version",
-                 "examples": ["1.11"]}
-
-
 async def validate_owned_version(
-            version_hdr: Annotated[str | None, Header(**HeaderVersion)] = None
+        Owned_Version: Annotated[str | None, Header(pattern=r"^\d+\.\d+$",
+                                                    examples=["1.11"])] = None
         ) -> SpecificVersion | None:
-    return None if version_hdr is None \
-        else _parse_version(version_hdr)
+    return None if Owned_Version is None \
+        else _parse_version(Owned_Version)
 
 
-async def get_firmware(session: Session, chip: Chip, version: Version):
+async def get_firmware(session: Session, chip: Chip, version: Version,
+                       blacklist: list[SpecificVersion] = []):
     if version == "latest":
-        return await _get_latest_firmware(session, chip)
+        return await _get_latest_firmware(session, chip, blacklist)
     else:
         return await _get_firmware_by_version(session, chip, version)
 
 
-async def _get_latest_firmware(session: AsyncSession, chip: Chip) \
+async def _get_latest_firmware(session: AsyncSession, chip: Chip,
+                               blacklist: list[SpecificVersion] = []) \
         -> Firmware | None:
     cursor = await session.execute(
         select(Firmware)
-        .where(Firmware.chip == chip)
+        .where(Firmware.chip == chip,
+               ~tuple_(Firmware.major, Firmware.minor).in_(blacklist))
         .order_by(desc(Firmware.major), desc(Firmware.minor))
         .limit(1)
     )

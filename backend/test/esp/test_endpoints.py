@@ -31,6 +31,12 @@ async def test_get_firmware(client: AsyncClient, add_firmware):
     assert response.content == b"firmware 2.3"
 
 
+async def test_get_firmware_422(client: AsyncClient, add_firmware):
+    headers = {"Owned-Version": "1.2a"}
+    response = await client.get(str(FIRMWARE_URL / "latest"), headers=headers)
+    assert response.status_code == 422
+
+
 async def test_get_firmware_uptodate(client: AsyncClient, add_firmware):
     headers = {"Owned-Version": "2.3"}
     response = await client.get(str(FIRMWARE_URL / "latest"), headers=headers)
