@@ -9,6 +9,7 @@ idf_component_register(
                esp_netif
                util
                time_aux
+               url
      PRIV_REQUIRES  esp_event
                     straux
                     global
