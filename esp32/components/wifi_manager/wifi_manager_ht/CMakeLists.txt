@@ -3,6 +3,7 @@ idf_component_register(
          "test_WiFiEventHandler.cpp"
          "test_ProvEventHandler.cpp"
          "test_WiFiManager.cpp"
+         "test_wifi_aux.cpp"
     INCLUDE_DIRS "include"
     REQUIRES wifi_manager
              htutils

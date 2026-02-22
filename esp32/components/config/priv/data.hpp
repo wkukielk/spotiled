@@ -8,7 +8,7 @@ extern const char *WIFI_PASSWD;
 extern const char *PROV_NAME;
 extern const char *MDNS_HOSTNAME;
 extern const char *MDNS_INSTANCE;
-extern const char *BACKEND_HOST;
+extern const char *BACKEND_URL;
 extern const char *SKIP_CN_CHECK;
 extern const char *LOG_LEVEL;
 } // namespace key

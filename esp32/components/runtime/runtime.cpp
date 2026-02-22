@@ -1,25 +1,26 @@
 #include "runtime.hpp"
 #include "global.hpp"
+#include "util.hpp"
+#include "wifi_aux.hpp"
 
-static const char *TAG = "Runtime";
+// static const char *TAG = "Runtime";
 
 std::string get_ota_url(const URL &ota_base_url) {
     auto hostname = ota_base_url.get_hostname();
     if (!hostname.ends_with(".local"))
         return ota_base_url.get();
 
-    esp_ip4_addr_t addr;
-    mdns().query_a(std::string{hostname}.c_str(), 1000, &addr);
-    hostname = straux::strprintf(IPSTR, IP2STR(&addr));
+    auto iphostname = mdns_resolve(std::string{hostname});
     auto ota_url = ota_base_url;
-    ota_url.substitute_hostname(hostname);
+    ota_url.substitute_hostname(iphostname);
     return ota_url.get();
 }
 
 std::unique_ptr<Runtime> Runtime::create(RuntimeConfig &&cfg) {
     UTIL_THROW(cfg.wifi_mgr->init(), InitError, "failed to init wifi mgr");
     UTIL_THROW(cfg.wifi_mgr->connect(), InitError, "Failed to connect to WiFi");
-    auto otaurl = get_ota_url(std::move(cfg.backend_cfg.base_url));
+
+    auto otaurl = get_ota_url(cfg.backend_cfg.base_url);
     auto otacfg = ota::ClientConfig{
         .httpcfg = {.url = std::move(otaurl),
                     .cert_pem = cfg.backend_cfg.cert_pem,
@@ -38,8 +39,4 @@ Runtime::Runtime(InnerRuntimeConfig &&cfg)
 
 void Runtime::run() { setup(); }
 
-void Runtime::setup() {
-    UTIL_THROW(wifi_mgr->init(), InitError, "failed to init wifi mgr");
-    UTIL_THROW(wifi_mgr->connect(), InitError, "Failed to connect to WiFi");
-    ESP_LOGI(TAG, "Connected to WiFi");
-}
+void Runtime::setup() {}
