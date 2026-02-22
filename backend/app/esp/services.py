@@ -23,15 +23,17 @@ def _parse_version(version: str) -> Version:
 type PathVersion = Annotated[str, Path(pattern=r"^\d+\.\d+|latest$",
                                        examples=["1.11", "latest"])]
 
+type Blacklist = Annotated[list[str], Query(examples=[["1.11", "1.12"]])]
+
 
 async def validate_requested_firmware(
         chip: Chip,
         version: PathVersion,
         session: Annotated[AsyncSession, Depends(get_session)],
-        blacklist: Annotated[list[str], Query()] = []) \
+        blacklist: Blacklist = []) \
             -> FirmwareRead:
     version_v = _parse_version(version)
-    blacklist_v = [_parse_version(v) for v in blacklist]
+    blacklist_v = [_parse_specific_version(v) for v in blacklist]
     firmware_opt = await get_firmware(session, chip, version_v, blacklist_v)
     firmware = get_or_404(firmware_opt)
     update_is_latest = {"is_latest": version_v == "latest"}

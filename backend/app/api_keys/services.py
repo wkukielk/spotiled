@@ -3,9 +3,7 @@ from app.database import get_session
 
 from fastapi_api_key import ApiKey
 from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi import Depends, HTTPException, status
-from sqlmodel import select
-from ..devices.models import Device
+from fastapi import Depends, HTTPException
 
 from typing import Annotated
 

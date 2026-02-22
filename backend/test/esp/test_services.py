@@ -1,3 +1,5 @@
+import pytest
+
 from app.esp.services import (
     validate_requested_firmware,
     validate_owned_version,
@@ -30,6 +32,22 @@ async def test_validate_req_fware_latest(session: AsyncSession, add_firmware):
     assert fw.chip == Chip.ESP32S3
     assert fw.version_str == "2.3"
     assert fw.is_latest is True
+
+
+async def test_val_req_fware_blacklist(session: AsyncSession, add_firmware):
+    blacklist = ["2.3"]
+    fw = await validate_requested_firmware(Chip.ESP32S3, "latest", session,
+                                           blacklist)
+    assert fw.chip == Chip.ESP32S3
+    assert fw.version_str == "2.2"
+    assert fw.is_latest is True
+
+
+async def test_val_rq_fw_blacklist_latest(session: AsyncSession, add_firmware):
+    blacklist = ["latest"]
+    with pytest.raises(ValueError):
+        await validate_requested_firmware(Chip.ESP32S3, "latest", session,
+                                          blacklist)
 
 
 async def test_get_firmware(session: AsyncSession, add_firmware):
