@@ -27,8 +27,9 @@ const std::string &URL::get() const noexcept { return url; }
 void URL::substitute_hostname(std::string_view new_hostname) noexcept {
     if (!(parser.field_set & (1 << UF_HOST)))
         return;
-    auto offset = parser.field_data[UF_HOST].off;
-    memcpy(url.data() + offset, new_hostname.data(), new_hostname.size());
+    auto host_beg = parser.field_data[UF_HOST].off;
+    auto host_len = parser.field_data[UF_HOST].len;
+    url.replace(host_beg, host_len, new_hostname);
 }
 
 void URL::parse() {

@@ -1,6 +1,7 @@
 #ifndef UTIL_ERRORS_HPP
 #define UTIL_ERRORS_HPP
 
+#include "esp_err.h"
 #include <exception>
 #include <format>
 #include <string>
@@ -8,7 +9,8 @@
 class BaseError : public std::exception {
   public:
     BaseError(const char *base, const char *msg, int reason = 0) : msg{base} {
-        this->msg = std::format("{}: {}, reason: {}", base, msg, reason);
+        this->msg = std::format("{}: {}, reason: {} - {}", base, msg, reason,
+                                esp_err_to_name(reason));
     }
     const char *what() const noexcept override { return msg.c_str(); };
 

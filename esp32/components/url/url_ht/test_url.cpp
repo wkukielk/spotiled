@@ -24,7 +24,7 @@ TEST_F(URLTest, getHostnameIP) {
 }
 
 TEST_F(URLTest, substituteHostname) {
-    auto url = URL{"https://myesp32.local/index.html"};
+    auto url = URL{"https://myesp.local/index.html"};
     url.substitute_hostname("192.168.43.21");
     ASSERT_EQ(url.get(), "https://192.168.43.21/index.html");
 }

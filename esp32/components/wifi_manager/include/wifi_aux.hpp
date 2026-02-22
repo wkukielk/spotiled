@@ -14,8 +14,10 @@ int await_connection(util::I_EventGroup &event_group);
 
 struct WiFiManagerError : public BaseError {
     WiFiManagerError(int reason, const char *msg)
-        : BaseError("WiFiManagerError", msg, reason) {};
-    WiFiManagerError(int reason) : BaseError("WiFiManagerError", "", reason) {};
+        : BaseError("WiFiManagerError", msg, reason){};
+    WiFiManagerError(int reason) : BaseError("WiFiManagerError", "", reason){};
 };
+
+std::string mdns_resolve(const std::string &hostname);
 
 #endif
