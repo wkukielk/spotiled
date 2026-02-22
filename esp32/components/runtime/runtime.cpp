@@ -5,24 +5,13 @@
 
 // static const char *TAG = "Runtime";
 
-std::string get_ota_url(const URL &ota_base_url) {
-    auto hostname = ota_base_url.get_hostname();
-    if (!hostname.ends_with(".local"))
-        return ota_base_url.get();
-
-    auto iphostname = mdns_resolve(std::string{hostname});
-    auto ota_url = ota_base_url;
-    ota_url.substitute_hostname(iphostname);
-    return ota_url.get();
-}
-
 std::unique_ptr<Runtime> Runtime::create(RuntimeConfig &&cfg) {
     UTIL_THROW(cfg.wifi_mgr->init(), InitError, "failed to init wifi mgr");
     UTIL_THROW(cfg.wifi_mgr->connect(), InitError, "Failed to connect to WiFi");
 
-    auto otaurl = get_ota_url(cfg.backend_cfg.base_url);
+    auto otaurl = resolve_url(cfg.backend_cfg.base_url);
     auto otacfg = ota::ClientConfig{
-        .httpcfg = {.url = std::move(otaurl),
+        .httpcfg = {.url = otaurl.get(),
                     .cert_pem = cfg.backend_cfg.cert_pem,
                     .cert_len = cfg.backend_cfg.cert_len,
                     .skip_cn_check = cfg.backend_cfg.skip_cn_check},
@@ -39,4 +28,4 @@ Runtime::Runtime(InnerRuntimeConfig &&cfg)
 
 void Runtime::run() { setup(); }
 
-void Runtime::setup() {}
+void Runtime::setup() { ota_client->update(); }

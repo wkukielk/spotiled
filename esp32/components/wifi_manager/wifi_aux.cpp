@@ -23,3 +23,14 @@ std::string mdns_resolve(const std::string &hostname) {
     UTIL_THROW(err, InitError, "failed to resolve ota hostname");
     return straux::strprintf(IPSTR, IP2STR(&addr));
 }
+
+URL resolve_url(const URL &url) {
+    auto hostname = url.get_hostname();
+    if (!hostname.ends_with(".local"))
+        return url;
+
+    auto ip_str = mdns_resolve(std::string{hostname});
+    auto url_out = url;
+    url_out.substitute_hostname(ip_str);
+    return url_out;
+}

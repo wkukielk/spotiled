@@ -2,6 +2,7 @@
 #define WIFI_AUX_HPP
 
 #include "I_WiFiProv.hpp"
+#include "URL.hpp"
 #include "errors.hpp"
 #include "util.hpp"
 #include <functional>
@@ -19,5 +20,7 @@ struct WiFiManagerError : public BaseError {
 };
 
 std::string mdns_resolve(const std::string &hostname);
+
+URL resolve_url(const URL &url);
 
 #endif
