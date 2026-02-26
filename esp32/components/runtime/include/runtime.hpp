@@ -18,10 +18,8 @@ struct RuntimeConfig {
     u_ptr<I_FullOTA> ota;
 };
 
-struct InnerRuntimeConfig {
-    u_ptr<OTAClient> ota_client;
-    u_ptr<I_WiFiManager> wifi_mgr;
-};
+
+struct InnerConfig;
 
 class Runtime {
   public:
@@ -29,7 +27,7 @@ class Runtime {
     void run();
 
   private:
-    Runtime(InnerRuntimeConfig &&cfg);
+    Runtime(InnerConfig &&cfg);
     void setup();
 
     u_ptr<I_WiFiManager> wifi_mgr{};

@@ -5,7 +5,14 @@
 
 // static const char *TAG = "Runtime";
 
-std::unique_ptr<Runtime> Runtime::create(RuntimeConfig &&cfg) {
+using namespace std;
+
+struct InnerConfig {
+    u_ptr<OTAClient> ota_client;
+    u_ptr<I_WiFiManager> wifi_mgr;
+};
+
+u_ptr<Runtime> Runtime::create(RuntimeConfig &&cfg) {
     UTIL_THROW(cfg.wifi_mgr->init(), InitError, "failed to init wifi mgr");
     UTIL_THROW(cfg.wifi_mgr->connect(), InitError, "Failed to connect to WiFi");
 
@@ -15,16 +22,14 @@ std::unique_ptr<Runtime> Runtime::create(RuntimeConfig &&cfg) {
                     .cert_pem = cfg.backend_cfg.cert_pem,
                     .cert_len = cfg.backend_cfg.cert_len,
                     .skip_cn_check = cfg.backend_cfg.skip_cn_check},
-        .ota = std::move(cfg.ota)};
-    auto icfg =
-        InnerRuntimeConfig{.ota_client = mkuptr<OTAClient>(std::move(otacfg)),
-                           .wifi_mgr = std::move(cfg.wifi_mgr)};
-    return u_ptr<Runtime>{new Runtime{std::move(icfg)}};
+        .ota = move(cfg.ota)};
+    auto icfg = InnerConfig{.ota_client = mkuptr<OTAClient>(move(otacfg)),
+                            .wifi_mgr = move(cfg.wifi_mgr)};
+    return u_ptr<Runtime>{new Runtime{move(icfg)}};
 }
 
-Runtime::Runtime(InnerRuntimeConfig &&cfg)
-    : wifi_mgr{std::move(cfg.wifi_mgr)}, ota_client{std::move(cfg.ota_client)} {
-}
+Runtime::Runtime(InnerConfig &&cfg)
+    : wifi_mgr{move(cfg.wifi_mgr)}, ota_client{move(cfg.ota_client)} {}
 
 void Runtime::run() { setup(); }
 
