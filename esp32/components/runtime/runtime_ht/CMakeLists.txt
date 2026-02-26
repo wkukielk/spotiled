@@ -1,6 +1,5 @@
 idf_component_register(
     SRCS "test_runtime.cpp"
-    INCLUDE_DIRS "include"
     REQUIRES runtime i_ota_ht wifi_manager_ht htutils
     WHOLE_ARCHIVE
 )
