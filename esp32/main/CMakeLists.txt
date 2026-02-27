@@ -18,4 +18,6 @@ else()
      nvs_create_partition_image(cfg "${PROJECT_DIR}/nvs/config.csv" FLASH_IN_PROJECT)
 endif()
 
+nvs_create_partition_image(encnvs "${PROJECT_DIR}/nvs/enc.csv" FLASH_IN_PROJECT)
+
 include("${PROJECT_DIR}/cmake/set_gccoptions.cmake")
