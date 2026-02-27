@@ -10,6 +10,7 @@ const char *MDNS_INSTANCE = "MDNS_INSTANCE";
 const char *BACKEND_URL = "BACKEND_URL";
 const char *SKIP_CN_CHECK = "SKIP_CN_CHECK";
 const char *LOG_LEVEL = "LOG_LEVEL";
+const char *API_KEY = "API_KEY";
 } // namespace key
 
 namespace B {

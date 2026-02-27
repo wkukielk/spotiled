@@ -7,6 +7,7 @@
 
 struct backend_config_t {
     URL base_url;
+    std::string auth_header;
     const char *cert_pem;
     size_t cert_len;
     bool skip_cn_check;
@@ -17,7 +18,6 @@ struct RuntimeConfig {
     u_ptr<I_WiFiManager> wifi_mgr;
     u_ptr<I_FullOTA> ota;
 };
-
 
 struct InnerConfig;
 

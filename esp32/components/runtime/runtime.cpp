@@ -16,9 +16,11 @@ u_ptr<Runtime> Runtime::create(RuntimeConfig &&cfg) {
     UTIL_THROW(cfg.wifi_mgr->init(), InitError, "failed to init wifi mgr");
     UTIL_THROW(cfg.wifi_mgr->connect(), InitError, "Failed to connect to WiFi");
 
-    auto otaurl = resolve_url(cfg.backend_cfg.base_url);
+    auto base = resolve_url(cfg.backend_cfg.base_url);
+    auto otaurl = base.get() + "/api/firmware/" + CONFIG_IDF_TARGET "/latest";
+
     auto otacfg = ota::ClientConfig{
-        .httpcfg = {.url = otaurl.get(),
+        .httpcfg = {.url = move(otaurl),
                     .cert_pem = cfg.backend_cfg.cert_pem,
                     .cert_len = cfg.backend_cfg.cert_len,
                     .skip_cn_check = cfg.backend_cfg.skip_cn_check},

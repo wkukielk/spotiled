@@ -6,6 +6,7 @@
 namespace ota {
 struct HTTPSConfig {
     std::string url;
+    std::string auth_header;
     const char *cert_pem;
     size_t cert_len;
     bool skip_cn_check;
@@ -27,6 +28,7 @@ class OTAClient {
     esp_err_t update() noexcept;
 
   private:
+    static esp_err_t attach_headers(esp_http_client_handle_t http);
     std::unique_ptr<I_FullOTA> ota{};
     ota::HTTPSConfig httpcfg{};
 };

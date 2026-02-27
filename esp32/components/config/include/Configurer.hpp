@@ -18,7 +18,7 @@ struct Config {
 
 class Configurer {
   public:
-    explicit Configurer(I_NVS &cfgnvs);
+    explicit Configurer(I_NVS &cfgnvs, I_NVS &encnvs);
     void preconfigure() const;
     Config get_config() const;
 
