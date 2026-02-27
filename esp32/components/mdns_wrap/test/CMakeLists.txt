@@ -1,5 +1,5 @@
 idf_component_register(
-    SRCS "test.cpp"
+    SRC_DIRS "."
     INCLUDE_DIRS "."
-    REQUIRES unity
+    REQUIRES unity mdns_wrap
 )
