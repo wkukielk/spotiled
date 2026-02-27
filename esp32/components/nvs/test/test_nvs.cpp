@@ -1,33 +1,37 @@
-#include "esp_log.h"
-#include "nvs.h"
+#include "memory_checks.h"
 #include "nvs.hpp"
 #include "unity.h"
 #include "unity_fixture_extras.h"
 
 namespace {
-std::unique_ptr<NVS> nvs;
-void setup() { nvs = std::make_unique<NVS>(); }
-void teardown() { nvs.reset(); }
+std::unique_ptr<NVS> handle;
+
+void setup(void) { handle = std::make_unique<NVS>(); }
+
+void teardown(void) { handle.reset(); }
+
 }; // namespace
 
-TEST_CASE("write read", "[nvs]") {
+TEST_CASE("setup", "[nvs]") {
+    test_utils_set_leak_level(100000, ESP_LEAK_TYPE_CRITICAL,
+                              ESP_COMP_LEAK_GENERAL);
     setup();
-    nvs->write("test", "42");
-    auto read = CharBuf{};
-    TEST_ASSERT_EQUAL(0, nvs->read("test", read));
-    TEST_ASSERT_EQUAL_STRING("42", read.data());
+}
+
+TEST_CASE("write read", "[nvs]") {
+    test_utils_set_leak_level(0, ESP_LEAK_TYPE_CRITICAL, ESP_COMP_LEAK_GENERAL);
+    handle->write("test", "42");
+    TEST_ASSERT_EQUAL_STRING(handle->read("test").c_str(), "42");
 }
 
 TEST_CASE("read nonexistent", "[nvs]") {
-    auto read = CharBuf{};
-    TEST_ASSERT_EQUAL(ESP_ERR_NVS_NOT_FOUND, nvs->read("nonex", read));
-    TEST_ASSERT(read.empty());
+    TEST_ASSERT_EQUAL_STRING(handle->read("nonex").c_str(), "");
 }
 
 TEST_CASE("erase", "[nvs]") {
-    nvs->write("test", "42");
-    TEST_ASSERT_EQUAL(ESP_OK, nvs->erase());
-    auto read = CharBuf{};
-    TEST_ASSERT_EQUAL(ESP_ERR_NVS_NOT_FOUND, nvs->read("test", read));
-    teardown();
+    handle->write("test", "42");
+    TEST_ASSERT_EQUAL(ESP_OK, handle->erase());
+    TEST_ASSERT_EQUAL_STRING(handle->read("test").c_str(), "");
 }
+
+TEST_CASE("teardown", "[nvs]") { teardown(); }
