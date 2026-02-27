@@ -77,4 +77,11 @@ bool IntWrap::operator==(const IntWrap &other) const noexcept {
 IntWrap::operator int() const noexcept { return id; }
 
 int IntWrap::get_id() const noexcept { return id; }
+
+esp_err_t retry(std::function<esp_err_t()> fun, unsigned retries) {
+    auto status = esp_err_t{ESP_FAIL};
+    while (retries-- && status != ESP_OK)
+        status = fun();
+    return status;
+}
 }; // namespace util

@@ -11,6 +11,7 @@ extern const char *MDNS_INSTANCE;
 extern const char *BACKEND_URL;
 extern const char *SKIP_CN_CHECK;
 extern const char *LOG_LEVEL;
+extern const char *API_KEY;
 } // namespace key
 
 namespace B {

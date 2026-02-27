@@ -5,7 +5,8 @@ bool I_WiFi::is_disconnect_recoverable(WiFiReason reason) {
     return reason == WiFiReason::AUTH_EXPIRE ||
            reason == WiFiReason::ASSOC_EXPIRE ||
            reason == WiFiReason::ASSOC_FAIL ||
-           reason == WiFiReason::CONNECTION_FAIL;
+           reason == WiFiReason::CONNECTION_FAIL ||
+           reason == WiFiReason::ASSOC_COMEBACK_TIME_TOO_LONG;
 }
 
 #ifdef CONFIG_IDF_TARGET_LINUX

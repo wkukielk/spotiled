@@ -4,11 +4,14 @@
 
 static OTAClient *client{};
 
-static esp_err_t attach_headers(esp_http_client_handle_t http) {
-    (void)http;
+esp_err_t OTAClient::attach_headers(esp_http_client_handle_t http) {
     auto version = client->get_app_version();
-    auto key = "X-Firmware-Version";
-    UTIL_RETURN(esp_http_client_set_header(http, key, version.c_str()));
+    auto version_key = "Owned-Version";
+    UTIL_RETURN(esp_http_client_set_header(http, version_key, version.c_str()));
+    auto auth_key = "Owned-Version";
+
+    auto auth_header = client->httpcfg.auth_header.c_str();
+    UTIL_RETURN(esp_http_client_set_header(http, auth_key, auth_header));
     return ESP_OK;
 }
 

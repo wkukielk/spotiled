@@ -26,7 +26,8 @@ enum class WiFiReason {
     AUTH_EXPIRE = 2,
     ASSOC_EXPIRE = 4,
     ASSOC_FAIL = 203,
-    CONNECTION_FAIL = 205
+    CONNECTION_FAIL = 205,
+    ASSOC_COMEBACK_TIME_TOO_LONG = 208
 };
 
 enum class WiFiPSType {

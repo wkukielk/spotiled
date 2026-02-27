@@ -21,6 +21,7 @@ IGNORE_UNUSED_POP
 #include "esp_log.h"
 #include "freertos/event_groups.h"
 #include "straux.hpp"
+#include <functional>
 #include <span>
 
 #define UTIL_RETURN(ret)                                                       \
@@ -74,7 +75,7 @@ const EventBits_t end_bit = 1 << 2;
 
 class EventHandler {
   public:
-    virtual ~EventHandler(){};
+    virtual ~EventHandler() {};
     virtual std::span<const util::cbdata> get_cbdata() const noexcept = 0;
 };
 
@@ -109,7 +110,7 @@ class EventGroup : public I_EventGroup {
 
 class Toggle {
   public:
-    virtual ~Toggle(){};
+    virtual ~Toggle() {};
     virtual esp_err_t on() = 0;
     virtual esp_err_t off() = 0;
     virtual bool is_on() const = 0;
@@ -167,6 +168,8 @@ class IntWrap {
         static const int i##d = id;                                            \
         name() : derivative{id} {}                                             \
     };
+
+esp_err_t retry(std::function<esp_err_t()> fun, unsigned retries);
 }; // namespace util
 
 template <typename T> using u_ptr = std::unique_ptr<T>;
