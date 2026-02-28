@@ -1,7 +1,7 @@
-#include "memory_checks.h"
+#include "global.hpp"
+#include "mytest_utils.hpp"
 #include "nvs.hpp"
 #include "unity.h"
-#include "unity_fixture_extras.h"
 
 namespace {
 std::unique_ptr<NVS> handle;
@@ -13,13 +13,12 @@ void teardown(void) { handle.reset(); }
 }; // namespace
 
 TEST_CASE("setup", "[nvs]") {
-    test_utils_set_leak_level(100000, ESP_LEAK_TYPE_CRITICAL,
-                              ESP_COMP_LEAK_GENERAL);
+    disable_leak_check();
     setup();
 }
 
 TEST_CASE("write read", "[nvs]") {
-    test_utils_set_leak_level(0, ESP_LEAK_TYPE_CRITICAL, ESP_COMP_LEAK_GENERAL);
+    enable_leak_check();
     handle->write("test", "42");
     TEST_ASSERT_EQUAL_STRING(handle->read("test").c_str(), "42");
 }
@@ -29,7 +28,7 @@ TEST_CASE("read nonexistent", "[nvs]") {
 }
 
 TEST_CASE("erase", "[nvs]") {
-    handle->write("test", "42");
+    handle->write("test", "43");
     TEST_ASSERT_EQUAL(ESP_OK, handle->erase());
     TEST_ASSERT_EQUAL_STRING(handle->read("test").c_str(), "");
 }

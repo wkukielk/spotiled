@@ -16,7 +16,10 @@ WiFiManager::WiFiManager(std::unique_ptr<util::I_EventGroup> &&event_group,
     : event_group{std::move(event_group)}, handler{std::move(handler)},
       provisioning{std::move(provisioning)} {}
 
-WiFiManager::~WiFiManager() { wifi().stop(); }
+WiFiManager::~WiFiManager() {
+    wifi().stop();
+    event_group->wait(end_bit);
+}
 
 int WiFiManager::init() {
     UTIL_THROW(wifi().set_mode(WiFiMode::STA), InitError,

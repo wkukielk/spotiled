@@ -6,6 +6,7 @@
 #include "errors.hpp"
 #include "util.hpp"
 #include <functional>
+#include <optional>
 
 namespace wifi {
 using HandlerGetter = std::function<util::EventHandler *(util::I_EventGroup &)>;
@@ -15,12 +16,14 @@ int await_connection(util::I_EventGroup &event_group);
 
 struct WiFiManagerError : public BaseError {
     WiFiManagerError(int reason, const char *msg)
-        : BaseError("WiFiManagerError", msg, reason){};
-    WiFiManagerError(int reason) : BaseError("WiFiManagerError", "", reason){};
+        : BaseError("WiFiManagerError", msg, reason) {};
+    WiFiManagerError(int reason) : BaseError("WiFiManagerError", "", reason) {};
 };
 
-std::string mdns_resolve(const std::string &hostname);
+esp_err_t mdns_resolve(const std::string &hostname, std::string &out,
+                       uint32_t timeout = 1000);
 
-URL resolve_url(const URL &url);
+std::optional<URL> resolve_url(const URL &url, esp_err_t &err,
+                               uint32_t timeout = 1000);
 
 #endif

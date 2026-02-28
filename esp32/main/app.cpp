@@ -16,9 +16,9 @@ u_ptr<Runtime> create_runtime(Config &&cfg) {
 App::App(u_ptr<Runtime> &&runtime) : runtime{std::move(runtime)} {}
 
 App *App::create() {
-    auto cfgnvs = mkuptr<NVS>("cfg");
-    auto encnvs = mkuptr<NVS>("encnvs");
-    auto cfg_reader = Configurer{*cfgnvs, *encnvs};
+    auto cfgnvs = NVS{"cfg"};
+    auto encnvs = NVS{"encnvs"};
+    auto cfg_reader = Configurer{cfgnvs, encnvs};
     cfg_reader.preconfigure();
     Global::get_global()->set_nvs(mkuptr<NVS>());
     Global::get_global()->set_time(mkuptr<Time>());

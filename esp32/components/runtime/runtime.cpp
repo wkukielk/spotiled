@@ -6,17 +6,31 @@
 // static const char *TAG = "Runtime";
 
 using namespace std;
+using namespace util;
 
 struct InnerConfig {
     u_ptr<OTAClient> ota_client;
     u_ptr<I_WiFiManager> wifi_mgr;
 };
 
+URL resolve_base(const URL &base_url) {
+    auto base = optional<URL>{};
+    retry(
+        [&]() {
+            auto err = esp_err_t{};
+            base = resolve_url(base_url, err);
+            return err;
+        },
+        5);
+    UTIL_THROW(!base.has_value(), InitError, "Failed to resolve backend");
+    return base.value();
+}
+
 u_ptr<Runtime> Runtime::create(RuntimeConfig &&cfg) {
     UTIL_THROW(cfg.wifi_mgr->init(), InitError, "failed to init wifi mgr");
     UTIL_THROW(cfg.wifi_mgr->connect(), InitError, "Failed to connect to WiFi");
 
-    auto base = resolve_url(cfg.backend_cfg.base_url);
+    auto base = resolve_base(cfg.backend_cfg.base_url);
     auto otaurl = base.get() + "/api/firmware/" + CONFIG_IDF_TARGET "/latest";
 
     auto otacfg = ota::ClientConfig{

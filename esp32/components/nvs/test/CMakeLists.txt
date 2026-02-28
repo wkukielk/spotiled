@@ -1,5 +1,7 @@
 idf_component_register(
     SRC_DIRS "."
     INCLUDE_DIRS "."
-    REQUIRES unity nvs test_utils
+    REQUIRES unity
+             nvs
+             mytest_utils
 )
