@@ -9,9 +9,9 @@
 
 class URL {
   public:
-    URL(std::string &&url);
-    URL(std::string_view url);
-    URL(const char *url);
+    explicit URL(std::string &&url);
+    explicit URL(std::string_view url);
+    explicit URL(const char *url);
     std::string_view get_hostname() const noexcept;
     const std::string &get() const noexcept;
     void substitute_hostname(std::string_view new_hostname) noexcept;
