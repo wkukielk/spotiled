@@ -37,6 +37,7 @@ void setup() {
 void teardown() {
     wifi_mgr.reset();
     Global::deinit();
+    host_url.reset();
 }
 
 }; // namespace

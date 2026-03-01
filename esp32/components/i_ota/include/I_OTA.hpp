@@ -13,6 +13,8 @@ class I_Partition {
     virtual ~I_Partition() noexcept {};
     virtual esp_err_t
     get_state(esp_ota_img_states_t *ota_state) const noexcept = 0;
+    virtual esp_err_t
+    get_description(esp_app_desc_t *app_desc) const noexcept = 0;
 };
 
 class I_OTA {
