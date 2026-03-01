@@ -31,10 +31,12 @@ u_ptr<Runtime> Runtime::create(RuntimeConfig &&cfg) {
     UTIL_THROW(cfg.wifi_mgr->connect(), InitError, "Failed to connect to WiFi");
 
     auto base = resolve_base(cfg.backend_cfg.base_url);
-    auto otaurl = base.get() + "/api/firmware/" + CONFIG_IDF_TARGET "/latest";
+    auto otaurl =
+        base.get() + "/api/esp/firmware/" + CONFIG_IDF_TARGET "/latest";
 
     auto otacfg = ota::ClientConfig{
         .httpcfg = {.url = move(otaurl),
+                    .auth_header = move(cfg.backend_cfg.auth_header),
                     .cert_pem = cfg.backend_cfg.cert_pem,
                     .cert_len = cfg.backend_cfg.cert_len,
                     .skip_cn_check = cfg.backend_cfg.skip_cn_check},
