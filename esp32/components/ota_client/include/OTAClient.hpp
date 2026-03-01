@@ -26,6 +26,7 @@ class OTAClient {
     esp_err_t mark_app_valid() noexcept;
     std::string get_app_version() const noexcept;
     esp_err_t update() noexcept;
+    I_FullOTA &get_ota() noexcept;
 
   private:
     static esp_err_t attach_headers(esp_http_client_handle_t http);

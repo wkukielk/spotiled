@@ -8,10 +8,9 @@ esp_err_t OTAClient::attach_headers(esp_http_client_handle_t http) {
     auto version = client->get_app_version();
     auto version_key = "Owned-Version";
     UTIL_RETURN(esp_http_client_set_header(http, version_key, version.c_str()));
-    auto auth_key = "Owned-Version";
 
     auto auth_header = client->httpcfg.auth_header.c_str();
-    UTIL_RETURN(esp_http_client_set_header(http, auth_key, auth_header));
+    UTIL_RETURN(esp_http_client_set_header(http, "Authorization", auth_header));
     return ESP_OK;
 }
 
@@ -35,9 +34,10 @@ bool OTAClient::is_verify_pending() const {
 esp_err_t OTAClient::mark_app_valid() noexcept { return ota->mark_app_valid(); }
 
 std::string OTAClient::get_app_version() const noexcept {
+    auto partition = ota->get_running_partition();
     esp_app_desc_t desc;
-    ota->get_img_desc(&desc);
-    return desc.version;
+    partition->get_description(&desc);
+    return (char *)desc.version;
 }
 
 esp_err_t OTAClient::update() noexcept {
@@ -50,3 +50,5 @@ esp_err_t OTAClient::update() noexcept {
                               .http_client_init_cb = attach_headers};
     return ota->update(&config);
 }
+
+I_FullOTA &OTAClient::get_ota() noexcept { return *ota; }
