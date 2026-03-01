@@ -12,7 +12,7 @@ idf_component_register(
                   ota_client
 )
 
-if(DEV)
+if(CONFIG_DEV)
      nvs_create_partition_image(cfg "${PROJECT_DIR}/nvs/devconfig.csv" FLASH_IN_PROJECT)
 else()
      nvs_create_partition_image(cfg "${PROJECT_DIR}/nvs/config.csv" FLASH_IN_PROJECT)

@@ -1,3 +1,10 @@
+if(CONFIG_DEV)
+    set(cert "nginx.crt")
+else()
+    set(cert "letsencrypt-org.pem")     
+endif()
+
+
 idf_component_register(
     SRCS "Configurer.cpp" "LogConfig.cpp"
          "mDNSConfig.cpp"
@@ -12,7 +19,7 @@ idf_component_register(
              mdns_wrap
              ota_wrap
              runtime
-    EMBED_TXTFILES "letsencrypt-org.pem"
+    EMBED_TXTFILES ${cert}
 )
 
 include("${CMAKE_CONFIG_DIR}/set_gccoptions.cmake")

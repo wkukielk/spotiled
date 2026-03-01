@@ -1,0 +1,7 @@
+menu "Project configuration"
+
+    config DEV
+        bool "Development build"
+        default n
+
+endmenu
