@@ -13,6 +13,7 @@ class Partition : public I_Partition {
     Partition(const esp_partition_t *handle) noexcept;
     esp_err_t
     get_state(esp_ota_img_states_t *ota_state) const noexcept override;
+    esp_err_t get_description(esp_app_desc_t *app_desc) const noexcept override;
 
   private:
     const esp_partition_t *handle{};
