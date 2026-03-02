@@ -1,10 +1,9 @@
 idf_component_register(
     SRCS "global.cpp"
     INCLUDE_DIRS "include"
-    REQUIRES i_wifi
+    REQUIRES i_nterfaces
              time_aux
              nvs
-             i_mdns
     PRIV_REQUIRES esp_netif
                   esp_event
                   util

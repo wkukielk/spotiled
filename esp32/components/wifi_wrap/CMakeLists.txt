@@ -4,7 +4,7 @@ idf_component_register(
           "WiFiProv.cpp"
      INCLUDE_DIRS "include"
      REQUIRES  
-          i_wifi
+          i_nterfaces
           util
           wifi_provisioning
           esp_wifi

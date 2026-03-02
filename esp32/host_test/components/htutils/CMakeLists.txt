@@ -4,9 +4,8 @@ idf_component_register(
     REQUIRES time_aux
              straux
              nvs
-             i_wifi
              global
-             i_mdns_ht
+             i_nterfaces_ht
     WHOLE_ARCHIVE
 )
 include("${CMAKE_CONFIG_DIR}/set_ht_gccoptions.cmake")

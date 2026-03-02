@@ -5,7 +5,7 @@ idf_component_register(
           "WiFiManager.cpp"
           "wifi_aux.cpp"
      INCLUDE_DIRS "include"
-     REQUIRES  i_wifi
+     REQUIRES  i_nterfaces
                esp_netif
                util
                time_aux
