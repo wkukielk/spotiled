@@ -122,6 +122,28 @@ class HandlerProxy {
                          int32_t event_id, void *event_data);
 };
 
+class Thread {
+  public:
+    Thread(TaskFunction_t fun, const char *name,
+           const configSTACK_DEPTH_TYPE stack_depth, void *parameters,
+           UBaseType_t priority);
+    Thread(TaskFunction_t fun, const char *name, void *parameters);
+
+  private:
+    TaskHandle_t handle;
+};
+
+class Mutex {
+  public:
+    Mutex();
+    ~Mutex();
+    void give();
+    void take();
+
+  private:
+    SemaphoreHandle_t s{};
+};
+
 class I_Task {
   public:
     virtual ~I_Task() noexcept {};
@@ -130,16 +152,12 @@ class I_Task {
 
 class Task : public I_Task {
   public:
-    Task(TaskFunction_t fun, const char *name,
-         const configSTACK_DEPTH_TYPE stack_depth, void *parameters,
-         UBaseType_t priority);
-    Task(TaskFunction_t fun, const char *name);
-    ~Task() override;
+    Task(Thread &&thread);
     void wakeup() override;
     void sleep();
 
-    TaskHandle_t handle;
-    SemaphoreHandle_t s;
+    Thread thread;
+    Mutex m;
 };
 
 template <class T> constexpr inline bool in_between(T x, T a, T b) {

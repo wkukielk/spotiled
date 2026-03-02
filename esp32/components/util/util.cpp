@@ -2,6 +2,8 @@
 #include "errors.hpp"
 
 namespace util {
+using namespace std;
+
 EventGroup::EventGroup() {
     handle = xEventGroupCreate();
     UTIL_THROW(handle == nullptr, InitError, "event group not created");
@@ -38,29 +40,34 @@ void HandlerProxy::callback(void *event_handler_arg,
     (*cbdata->callback)(cbdata, event_base, event_id, event_data);
 }
 
-Task::Task(TaskFunction_t fun, const char *name,
-           const configSTACK_DEPTH_TYPE stack_depth, void *parameters,
-           UBaseType_t priority)
-    : s{xSemaphoreCreateBinary()} {
-    UTIL_THROW(s == NULL, InitError, "sem");
+Thread::Thread(TaskFunction_t fun, const char *name,
+               const configSTACK_DEPTH_TYPE stack_depth, void *parameters,
+               UBaseType_t priority) {
     auto e = xTaskCreate(fun, name, stack_depth, parameters, priority, &handle);
     UTIL_THROW(e != pdPASS, InitError, "task");
 }
 
-Task::Task(TaskFunction_t fun, const char *name) : s{xSemaphoreCreateBinary()} {
-    UTIL_THROW(s == NULL, InitError, "sem");
-    auto e = xTaskCreate(fun, name, 4096, NULL, tskIDLE_PRIORITY, &handle);
+Thread::Thread(TaskFunction_t fun, const char *name, void *parameters) {
+    auto e =
+        xTaskCreate(fun, name, 4096, parameters, tskIDLE_PRIORITY, &handle);
     UTIL_THROW(e != pdPASS, InitError, "task");
 }
 
-Task::~Task() {
-    vTaskDelete(handle);
-    vSemaphoreDelete(s);
+Mutex::Mutex() : s{xSemaphoreCreateBinary()} {
+    UTIL_THROW(s == NULL, InitError, "sem");
 }
 
-void Task::sleep() { xSemaphoreTake(s, portMAX_DELAY); }
+Mutex::~Mutex() { vSemaphoreDelete(s); }
 
-void Task::wakeup() { xSemaphoreGive(s); }
+void Mutex::give() { xSemaphoreGive(s); }
+
+void Mutex::take() { xSemaphoreTake(s, portMAX_DELAY); }
+
+Task::Task(Thread &&thread) : thread{move(thread)}, m{Mutex{}} {}
+
+void Task::sleep() { m.take(); }
+
+void Task::wakeup() { m.give(); }
 
 IntWrap::IntWrap(int id) : id{id} {}
 

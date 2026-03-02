@@ -30,6 +30,8 @@ class Runtime {
     Runtime(InnerConfig &&cfg);
     void setup();
 
+    static void update_fun(void *runtime);
+
     u_ptr<I_WiFiManager> wifi_mgr{};
     u_ptr<OTAClient> ota_client{};
 };

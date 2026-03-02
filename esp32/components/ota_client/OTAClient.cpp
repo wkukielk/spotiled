@@ -48,7 +48,10 @@ esp_err_t OTAClient::update() noexcept {
                                                     httpcfg.skip_cn_check};
     auto config = ota::config{.http_config = &http_config,
                               .http_client_init_cb = attach_headers};
-    return ota->update(&config);
+    auto err = ota->update(&config);
+    if (err == ESP_OK)
+        err = ota->mark_app_valid();
+    return err;
 }
 
 I_FullOTA &OTAClient::get_ota() noexcept { return *ota; }

@@ -51,4 +51,10 @@ Runtime::Runtime(InnerConfig &&cfg)
 
 void Runtime::run() { setup(); }
 
-void Runtime::setup() { ota_client->update(); }
+void Runtime::setup() { util::Thread{update_fun, "ota", this}; }
+
+void Runtime::update_fun(void *runtimePtr) {
+    auto runtime = (Runtime *)runtimePtr;
+    runtime->ota_client->update();
+    vTaskDelete(NULL);
+}

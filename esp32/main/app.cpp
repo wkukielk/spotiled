@@ -28,8 +28,4 @@ App *App::create() {
     return new App{create_runtime(std::move(cfg))};
 }
 
-void App::run() {
-    UTIL_LOGI("hello");
-    runtime->run();
-    time().delay_ms(1e5);
-}
+void App::run() { runtime->run(); }
