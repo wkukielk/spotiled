@@ -1,5 +1,8 @@
 idf_component_register(
-    SRCS "test_priority_queue.cpp"
+    SRCS "test_str.cpp"
+         "test_CharVector.cpp"
+         "test_priority_queue.cpp"
+         "test_url.cpp"
     REQUIRES util
     WHOLE_ARCHIVE
 )

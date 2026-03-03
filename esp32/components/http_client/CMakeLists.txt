@@ -3,10 +3,8 @@ idf_component_register(
           "HTTPClient_WRAP.cpp"
           "HTTPRetryingHandler.cpp"
      INCLUDE_DIRS "include"
-     REQUIRES straux
-              esp_http_client
+     REQUIRES esp_http_client
               util
-     PRIV_REQUIRES time_aux
-                   global
+     PRIV_REQUIRES global
 )
 include("${CMAKE_CONFIG_DIR}/set_gccoptions.cmake")

@@ -1,7 +1,7 @@
 idf_component_register(
     SRCS "test_NVS.cpp"
     INCLUDE_DIRS "include"
-    REQUIRES nvs straux
+    REQUIRES nvs
     WHOLE_ARCHIVE
 )
 include("${CMAKE_CONFIG_DIR}/set_ht_gccoptions.cmake")

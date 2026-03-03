@@ -2,7 +2,7 @@ idf_component_register(
     SRCS "OTA.cpp"
     INCLUDE_DIRS "include"
     REQUIRES i_nterfaces
-             url
+             util
     PRIV_REQUIRES esp_https_ota
                   app_update
 )
