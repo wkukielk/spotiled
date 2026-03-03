@@ -52,7 +52,7 @@ NVS::NVS(std::string_view part) : part{part.data() ? part.data() : ""} {
     UTIL_THROW(ret, InitError, "NVS");
 }
 
-NVS::~NVS() { nvs_flash_deinit(); }
+NVS::~NVS() noexcept { nvs_flash_deinit(); }
 
 esp_err_t NVS::erase() {
     auto handle = open(NVS_READWRITE);

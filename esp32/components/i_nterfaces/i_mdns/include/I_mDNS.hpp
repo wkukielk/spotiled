@@ -15,6 +15,7 @@ class I_mDNS {
     using K = const char *;
 
   public:
+    virtual ~I_mDNS() noexcept {};
     virtual esp_err_t set_hostname(K hostname) = 0;
     virtual esp_err_t subtype_add(K instance, K service_type, K proto,
                                   K hostname, K subtype) = 0;

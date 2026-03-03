@@ -44,6 +44,7 @@ u_ptr<Runtime> Runtime::create(RuntimeConfig &&cfg) {
     auto icfg = InnerConfig{.ota_client = mkuptr<OTAClient>(move(otacfg)),
                             .wifi_mgr = move(cfg.wifi_mgr)};
     return u_ptr<Runtime>{new Runtime{move(icfg)}};
+    // NOLINTNEXTLINE(clang-analyzer-cplusplus.NewDeleteLeaks)
 }
 
 Runtime::Runtime(InnerConfig &&cfg)
