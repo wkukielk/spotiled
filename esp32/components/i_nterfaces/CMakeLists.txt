@@ -1,12 +1,15 @@
 idf_component_register(
      SRCS "i_wifi/I_WiFi.cpp"
           "i_ota/I_OTA.cpp"
+          "global.cpp"
      INCLUDE_DIRS "i_mdns/include"
                   "i_ota/include"
                   "i_wifi/include"
+                  "include"
      REQUIRES esp_event
               esp_netif
               esp_http_client
+              nvs
      PRIV_REQUIRES util
 )
 

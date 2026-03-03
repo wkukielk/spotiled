@@ -4,6 +4,5 @@ idf_component_register(
     REQUIRES wifi_manager
              util
              ota_client
-             global
 )
 include("${CMAKE_CONFIG_DIR}/set_gccoptions.cmake")

@@ -1,8 +1,7 @@
 idf_component_register(
     SRCS "HandlerAdapter.cpp"
     INCLUDE_DIRS "include"
-    REQUIRES global
-             i_nterfaces_ht
+    REQUIRES i_nterfaces_ht
     WHOLE_ARCHIVE
 )
 include("${CMAKE_CONFIG_DIR}/set_ht_gccoptions.cmake")
