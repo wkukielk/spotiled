@@ -8,7 +8,7 @@ set(COMPONENT_GCC_OPTIONS
     "-Wsign-compare"
     "-Wenum-conversion"
     "-Wno-missing-field-initializers"
-    "-Wno-error=missing-field-initializers"
+    "-Wno-unqualified-std-cast-call"
 )
 
 set(HOST_TEST_GCC_OPTIONS
