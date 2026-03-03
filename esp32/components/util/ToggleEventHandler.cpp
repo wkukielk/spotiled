@@ -5,7 +5,10 @@ ToggleEventHandler::ToggleEventHandler(
     std::function<std::unique_ptr<util::EventHandler>()> get_handler)
     : get_handler{get_handler} {}
 
-ToggleEventHandler::~ToggleEventHandler() noexcept { off(); }
+ToggleEventHandler::~ToggleEventHandler() noexcept {
+    ESP_LOGI("ToggleEventHandler", "off");
+    handler.reset();
+}
 
 esp_err_t ToggleEventHandler::on() {
     ESP_LOGI("ToggleEventHandler", "on");

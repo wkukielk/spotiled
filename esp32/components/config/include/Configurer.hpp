@@ -23,7 +23,6 @@ class Configurer {
     Config get_config() const;
 
   private:
-    I_NVS *cfgnvs{};
     WiFiManagerFactory wifi_mgr_factory;
     mDNSConfig mdns_configurer;
     LogConfig log_configurer;

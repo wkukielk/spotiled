@@ -19,11 +19,13 @@ bool operator==(const struct tm &tm1, const struct tm &tm2);
 
 class I_MiliTimer {
   public:
+    virtual ~I_MiliTimer() noexcept {};
     virtual int64_t stop() = 0;
 };
 
 class I_Time {
   public:
+    virtual ~I_Time() noexcept {};
     virtual std::unique_ptr<I_MiliTimer> get_timer() = 0;
     virtual void delay_ms(int64_t delay) = 0;
 };
