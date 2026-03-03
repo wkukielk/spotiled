@@ -3,7 +3,6 @@
 
 #include "esp_err.h"
 #include "nvs_handle.hpp"
-#include "straux.hpp"
 #include "util.hpp"
 #include <ctime>
 #include <vector>

@@ -1,4 +1,4 @@
-set(requires "esp_event straux")
+set(requires "esp_event http_parser")
 
 if(IDF_TARGET STREQUAL "linux")
     list(APPEND requires "mocks")
@@ -8,8 +8,15 @@ idf_component_register(
     SRCS "util.cpp"
          "queue.cpp"
          "ToggleEventHandler.cpp"
+         "std/straux.cpp"
+         "std/CharVector.cpp"
+         "URL.cpp"
+         "time/aux.cpp"
+         "time/core.c"
+    INCLUDE_DIRS "include"
+                 "std/include"
+                 "time/include"
     REQUIRES ${requires}
-    INCLUDE_DIRS "."
 )
 
 include("${CMAKE_CONFIG_DIR}/set_gccoptions.cmake")

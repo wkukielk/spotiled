@@ -1,10 +1,7 @@
 idf_component_register(
     SRCS "HandlerAdapter.cpp"
     INCLUDE_DIRS "include"
-    REQUIRES time_aux
-             straux
-             nvs
-             global
+    REQUIRES global
              i_nterfaces_ht
     WHOLE_ARCHIVE
 )
