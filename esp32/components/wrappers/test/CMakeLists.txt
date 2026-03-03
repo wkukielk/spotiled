@@ -3,5 +3,5 @@ idf_component_register(
     INCLUDE_DIRS "."
     REQUIRES unity
              mytest_utils
-             ota_wrap
+             wrapper
 )

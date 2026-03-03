@@ -5,6 +5,6 @@ dependencies:
     version: 5.5.3
 direct_dependencies:
 - idf
-manifest_hash: 1d98561f4fb677efb52791a1c3b02cb4bd3872a9c89d740f2b66f1332eda32ca
+manifest_hash: ddbab03c98f387377a62b2f3add6a48b2335a4c0baa0ae247ec887b6fc46de32
 target: linux
 version: 2.0.0

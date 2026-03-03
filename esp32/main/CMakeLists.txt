@@ -6,9 +6,6 @@ idf_component_register(
              runtime
              config
     PRIV_REQUIRES nvs
-                  wifi_wrap
-                  mdns_wrap
-                  ota_client
 )
 
 if(CONFIG_DEV)
