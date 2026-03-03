@@ -9,7 +9,6 @@ idf_component_register(
                esp_netif
                util
      PRIV_REQUIRES  esp_event
-                    global
 )
 
 include("${CMAKE_CONFIG_DIR}/set_gccoptions.cmake")

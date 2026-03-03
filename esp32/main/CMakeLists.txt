@@ -2,8 +2,7 @@ idf_component_register(
     SRCS "main.cpp"
          "app.cpp" 
     PRIV_INCLUDE_DIRS "include"
-    REQUIRES global
-             runtime
+    REQUIRES runtime
              config
     PRIV_REQUIRES nvs
 )
