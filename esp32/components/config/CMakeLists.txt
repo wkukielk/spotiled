@@ -6,7 +6,8 @@ endif()
 
 
 idf_component_register(
-    SRCS "Configurer.cpp" "LogConfig.cpp"
+    SRCS "Configurer.cpp"
+         "LogConfig.cpp"
          "mDNSConfig.cpp"
          "data.cpp"
          "BackendConfigurer.cpp"
@@ -15,9 +16,7 @@ idf_component_register(
     PRIV_INCLUDE_DIRS "priv"
     REQUIRES nvs
              wifi_manager
-             wifi_wrap
-             mdns_wrap
-             ota_wrap
+             wrappers
              runtime
     EMBED_TXTFILES ${cert}
 )

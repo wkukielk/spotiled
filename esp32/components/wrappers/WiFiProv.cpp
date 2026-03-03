@@ -5,7 +5,9 @@
 
 wifi_prov_mgr_config_t wifi_prov::cfg = {
     .scheme = wifi_prov_scheme_ble,
-    .scheme_event_handler = WIFI_PROV_SCHEME_BLE_EVENT_HANDLER_FREE_BTDM};
+    .scheme_event_handler = WIFI_PROV_SCHEME_BLE_EVENT_HANDLER_FREE_BTDM,
+    .app_event_handler = WIFI_PROV_EVENT_HANDLER_NONE,
+    .wifi_prov_conn_cfg{}};
 
 WiFiProv::WiFiProv(wifi_prov_mgr_config_t *config) {
     UTIL_THROW(wifi_prov_mgr_init(*config), InitError, "prov");
