@@ -4,6 +4,7 @@ idf_component_register(
     PRIV_INCLUDE_DIRS "include"
     REQUIRES runtime
              config
+             ledaux
     PRIV_REQUIRES nvs
 )
 
