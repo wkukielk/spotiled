@@ -14,9 +14,9 @@ class BaseTest : public testing::Test {
         global->set_wifi(std::make_unique<MockWiFi>());
         global->set_time(std::make_unique<MockTime>());
         global->set_mdns(std::make_unique<MockMDNS>());
-        wifi = static_cast<MockWiFi *>(&wifi());
-        time = static_cast<MockTime *>(&time());
-        mdns = static_cast<MockMDNS *>(&mdns());
+        wifi_m = static_cast<MockWiFi *>(&wifi_());
+        time_m = static_cast<MockTime *>(&time());
+        mdns_m = static_cast<MockMDNS *>(&mdns_());
     }
 
     ~BaseTest() noexcept {
@@ -26,9 +26,9 @@ class BaseTest : public testing::Test {
         global->set_wifi(nullptr);
     }
 
-    MockWiFi *wifi{};
-    MockTime *time{};
-    MockMDNS *mdns{};
+    MockWiFi *wifi_m{};
+    MockTime *time_m{};
+    MockMDNS *mdns_m{};
 };
 
 #endif

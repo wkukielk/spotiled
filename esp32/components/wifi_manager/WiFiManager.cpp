@@ -17,12 +17,12 @@ WiFiManager::WiFiManager(std::unique_ptr<util::I_EventGroup> &&event_group,
       provisioning{std::move(provisioning)} {}
 
 WiFiManager::~WiFiManager() {
-    wifi().stop();
+    wifi_().stop();
     event_group->wait(end_bit);
 }
 
 int WiFiManager::init() {
-    UTIL_THROW(wifi().set_mode(WiFiMode::STA), InitError,
+    UTIL_THROW(wifi_().set_mode(WiFiMode::STA), InitError,
                "Failed to set STA mode");
     switch_to_prov();
     if (provisioning->is_provisioned()) {
@@ -38,7 +38,7 @@ int WiFiManager::connect() {
 }
 
 int WiFiManager::disconnect() {
-    UTIL_RETURN(wifi().stop());
+    UTIL_RETURN(wifi_().stop());
     auto bits = event_group->wait(end_bit, pdFALSE, pdFALSE,
                                   10000 / portTICK_PERIOD_MS);
     return bits & end_bit ? ESP_OK : ESP_FAIL;
@@ -55,7 +55,7 @@ int WiFiManager::connect_with_prov() {
 
 int WiFiManager::connect_without_prov() {
     UTIL_LOGI("Connecting...");
-    UTIL_THROW(wifi().start(), WiFiManagerError, "WiFi start");
+    UTIL_THROW(wifi_().start(), WiFiManagerError, "WiFi start");
     return wifi::await_connection(*event_group);
 }
 

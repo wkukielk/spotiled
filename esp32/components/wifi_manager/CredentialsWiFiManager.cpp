@@ -15,25 +15,25 @@ CredentialsWiFiManager::CredentialsWiFiManager(
       event_group{std::move(event_group)} {};
 
 int CredentialsWiFiManager::init() {
-    UTIL_THROW(wifi().set_mode(WiFiMode::STA), InitError,
+    UTIL_THROW(wifi_().set_mode(WiFiMode::STA), InitError,
                "Failed to set STA mode");
     auto cfg = wifi_config_t{};
     straux::strtoarr(cfg.sta.ssid, ssid, sizeof(cfg.sta.ssid));
     straux::strtoarr(cfg.sta.password, passwd, sizeof(cfg.sta.password));
-    UTIL_THROW(wifi().set_config(WiFiIF::STA, &cfg), InitError,
+    UTIL_THROW(wifi_().set_config(WiFiIF::STA, &cfg), InitError,
                "WiFi config fail");
     return ESP_OK;
 }
 
 int CredentialsWiFiManager::connect() {
     UTIL_LOGI("Connecting to %s", ssid.c_str());
-    UTIL_THROW(wifi().start(), WiFiManagerError, "Failed to start WiFi");
-    UTIL_THROW(wifi().set_ps(WiFiPSType::NONE), WiFiManagerError, "set ps");
+    UTIL_THROW(wifi_().start(), WiFiManagerError, "Failed to start WiFi");
+    UTIL_THROW(wifi_().set_ps(WiFiPSType::NONE), WiFiManagerError, "set ps");
     return wifi::await_connection(*event_group);
 }
 
 int CredentialsWiFiManager::disconnect() {
-    UTIL_RETURN(wifi().stop());
+    UTIL_RETURN(wifi_().stop());
     auto bits = event_group->wait(end_bit, pdFALSE, pdFALSE,
                                   10000 / portTICK_PERIOD_MS);
     return bits & end_bit ? ESP_OK : ESP_FAIL;
