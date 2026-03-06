@@ -1,6 +1,7 @@
 #ifndef GLOBAL_HPP
 #define GLOBAL_HPP
 
+#include "I_LED.hpp"
 #include "I_WiFi.hpp"
 #include "I_mDNS.hpp"
 #include "nvs.hpp"
@@ -28,10 +29,12 @@ class Global {
     void set_nvs(std::unique_ptr<I_NVS> &&nvs);
     void set_wifi(std::unique_ptr<I_WiFi> &&wifi);
     void set_mdns(std::unique_ptr<I_mDNS> &&mdns);
+    void set_led(std::unique_ptr<I_LED> &&led);
     inline I_Time &get_time() { return *time; }
     inline I_NVS &get_nvs() { return *nvs; }
     inline I_WiFi &get_wifi() { return *wifi; }
     inline I_mDNS &get_mdns() { return *mdns; }
+    inline I_mDNS &get_led() { return *led; }
 
     static Global *get_global();
     static void deinit();
@@ -45,11 +48,13 @@ class Global {
     std::unique_ptr<I_NVS> nvs{};
     std::unique_ptr<I_WiFi> wifi{};
     std::unique_ptr<I_mDNS> mdns{};
+    std::unique_ptr<I_mDNS> led{};
 };
 
 #define time() Global::get_global()->get_time()
 #define nvs() Global::get_global()->get_nvs()
 #define wifi() Global::get_global()->get_wifi()
 #define mdns() Global::get_global()->get_mdns()
+#define led() Global::get_global()->get_led()
 
 #endif
