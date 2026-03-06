@@ -1,11 +1,7 @@
 idf_component_register(
-     SRCS "i_wifi/I_WiFi.cpp"
-          "i_ota/I_OTA.cpp"
+     SRCS "I_WiFi.cpp"
           "global.cpp"
-     INCLUDE_DIRS "i_mdns/include"
-                  "i_ota/include"
-                  "i_wifi/include"
-                  "include"
+     INCLUDE_DIRS "include"
      REQUIRES esp_event
               esp_netif
               esp_http_client
@@ -29,5 +25,8 @@ target_include_directories(${complib} PUBLIC ${idfpath}/components/esp_https_ota
 target_include_directories(${complib} PUBLIC ${idfpath}/components/esp_app_format/include)
 target_include_directories(${complib} PUBLIC ${idfpath}/components/esp_partition/include)
 
+# i_led
+target_include_directories(${complib} PUBLIC ${idfpath}/components/esp_driver_ledc/include/driver)
+target_include_directories(${complib} PUBLIC ${idfpath}/components/esp_driver_gpio/include)
 
 target_compile_options(${COMPONENT_LIB} PRIVATE "SHELL:-Wno-unused-parameter")
