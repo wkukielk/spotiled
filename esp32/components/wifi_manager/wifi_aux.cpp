@@ -18,7 +18,7 @@ esp_err_t mdns_resolve(const string &hostname, string &out, uint32_t timeout) {
                                   ? hostname.substr(0, hostname.size() - 6)
                                   : hostname;
     esp_ip4_addr_t addr{};
-    UTIL_RETURN(mdns().query_a(hostname_no_domain.c_str(), timeout, &addr));
+    UTIL_RETURN(mdns_().query_a(hostname_no_domain.c_str(), timeout, &addr));
 
     out = straux::strprintf(IPSTR, IP2STR(&addr));
     return ESP_OK;

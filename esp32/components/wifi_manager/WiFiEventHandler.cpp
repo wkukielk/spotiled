@@ -59,7 +59,7 @@ void WiFiEventHandler::handler(void *arg, esp_event_base_t event_base,
     case WIFI_EVENT_STA_START:
         event_group->clear(util::end_bit);
         retries_left = max_retries;
-        wifi().connect();
+        wifi_().connect();
         break;
     case WIFI_EVENT_STA_DISCONNECTED: {
         event_group->clear(util::success_bit);
@@ -68,7 +68,7 @@ void WiFiEventHandler::handler(void *arg, esp_event_base_t event_base,
         UTIL_LOGW("Failed, reason: %hhu", (int)reason);
         if (I_WiFi::is_disconnect_recoverable(reason) && --retries_left > 0) {
             UTIL_LOGW("Retrying...");
-            wifi().connect();
+            wifi_().connect();
         } else
             event_group->set(util::fail_bit);
         break;
