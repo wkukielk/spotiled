@@ -1,0 +1,44 @@
+name: jobs
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+
+jobs:
+  build:
+    runs-on: self-hosted
+    container:
+      image: espressif/idf:release-v5.4
+    steps:
+      - uses: actions/checkout@v4
+      - name: kieszlunek
+        uses: actions/cache@v4
+        with:
+          path: build/
+          key: gcc-${{ hashFiles('components/**/*') }}
+          restore-keys: gcc-
+      - run: . $IDF_PATH/export.sh
+          && idf.py build
+
+  clang-tidy:
+    runs-on: self-hosted
+    container:
+      image: espressif/idf:release-v5.4
+    steps:
+      - uses: actions/checkout@v4
+      - run: . $IDF_PATH/export.sh
+          && idf_tools.py install esp-clang
+          && . $IDF_PATH/export.sh
+          && IDF_TOOLCHAIN=clang idf.py reconfigure
+      - run: . $IDF_PATH/export.sh
+          && ./tidy.sh
+
+  clanf-format:
+    runs-on: self-hosted
+    container:
+      image: alpine:3.22
+    steps:
+      - uses: actions/checkout@v4
+      - run: apk add clang20-extra-tools
+      - run: ./format.sh
