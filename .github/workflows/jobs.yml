@@ -19,7 +19,7 @@ jobs:
           key: gcc-${{ hashFiles('components/**/*') }}
           restore-keys: gcc-
       - run: . $IDF_PATH/export.sh
-          && idf.py build
+          && idf.py build -DCI=on
         working-directory: ./esp32
 
   clang-tidy:
@@ -27,12 +27,12 @@ jobs:
     container:
       image: wkukielk/esp-idf-clang:v5.5
       credentials:
-        username: ${{ variables.DOCKERHUB_USERNAME }}
+        username: ${{ vars.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKERHUB_PASSWORD }}
     steps:
       - uses: actions/checkout@v4
       - run: . $IDF_PATH/export.sh
-          && IDF_TOOLCHAIN=clang idf.py reconfigure
+          && IDF_TOOLCHAIN=clang idf.py reconfigure -DCI=on
           && ./scripts/tidy.sh
         working-directory: ./esp32
 
