@@ -25,12 +25,13 @@ jobs:
   clang-tidy:
     runs-on: self-hosted
     container:
-      image: espressif/idf:release-v5.4
+      image: wkukielk/esp-idf-clang:v5.5
+      credentials:
+        username: ${{ variables.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_PASSWORD }}
     steps:
       - uses: actions/checkout@v4
       - run: . $IDF_PATH/export.sh
-          && idf_tools.py install esp-clang
-          && . $IDF_PATH/export.sh
           && IDF_TOOLCHAIN=clang idf.py reconfigure
           && ./scripts/tidy.sh
         working-directory: ./esp32
