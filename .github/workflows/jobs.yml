@@ -1,9 +1,9 @@
 name: jobs
 on:
-  workflow_dispatch:
   push:
     branches:
       - master
+  workflow_dispatch:
 
 jobs:
   build:
@@ -20,6 +20,7 @@ jobs:
           restore-keys: gcc-
       - run: . $IDF_PATH/export.sh
           && idf.py build
+        working-directory: ./esp32
 
   clang-tidy:
     runs-on: self-hosted
@@ -31,8 +32,8 @@ jobs:
           && idf_tools.py install esp-clang
           && . $IDF_PATH/export.sh
           && IDF_TOOLCHAIN=clang idf.py reconfigure
-      - run: . $IDF_PATH/export.sh
           && ./tidy.sh
+        working-directory: ./esp32
 
   clanf-format:
     runs-on: self-hosted
@@ -41,4 +42,5 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: apk add clang20-extra-tools
-      - run: ./format.sh
+          && ./format.sh
+        working-directory: ./esp32
