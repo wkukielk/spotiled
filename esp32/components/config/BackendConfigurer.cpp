@@ -4,12 +4,15 @@
 #include "sdkconfig.h"
 
 #if CONFIG_DEV
-extern const uint8_t cert_pem_start[] asm("_binary_nginx_crt_start");
-extern const uint8_t cert_pem_end[] asm("_binary_nginx_crt_end");
+#define BINARY_CERT "nginx_crt"
+#elif CONFIG_RELEASE
+#define BINARY_CERT "letsencrypt_org_pem"
 #else
-extern const uint8_t cert_pem_start[] asm("_binary_letsencrypt_org_pem_start");
-extern const uint8_t cert_pem_end[] asm("_binary_letsencrypt_org_pem_end");
+#define BINARY_CERT "cert_stub_crt"
 #endif
+
+extern const uint8_t cert_pem_start[] asm("_binary_" BINARY_CERT "_start");
+extern const uint8_t cert_pem_end[] asm("_binary_" BINARY_CERT "_end");
 
 BackendConfigurer::BackendConfigurer(I_NVS &cfgnvs, I_NVS &eccnvs) noexcept
     : cfgnvs{&cfgnvs}, encnvs{&eccnvs} {}

@@ -1,7 +1,17 @@
 menu "Project configuration"
 
-    config DEV
-        bool "Development build"
-        default n
+    choice BUILD_TYPE
+        prompt "Build type"
+        default RELEASE
+
+        config DEV
+            bool "Development build"
+
+        config RELEASE
+            bool "Release build"
+
+        config CI
+            bool "CI build"
+    endchoice
 
 endmenu
