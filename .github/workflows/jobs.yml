@@ -15,9 +15,9 @@ jobs:
       - name: kieszlunek
         uses: actions/cache@v4
         with:
-          path: build/
-          key: gcc-${{ hashFiles('components/**/*') }}
-          restore-keys: gcc-
+          path: esp32/build/
+          key: gcc-${{github.ref_name}}-${{hashFiles('esp32/components/**/*')}}
+          restore-keys: gcc-${{github.ref_name}}
       - run: . $IDF_PATH/export.sh
           && idf.py build -DCI=on
         working-directory: ./esp32
@@ -39,7 +39,7 @@ jobs:
   clanf-format:
     runs-on: self-hosted
     container:
-      image: alpine:3.22
+      image: alpine:3.23
     steps:
       - uses: actions/checkout@v4
       - run: apk add clang20-extra-tools
