@@ -1,4 +1,7 @@
 import pytest_asyncio
+import os
+
+os.environ["API_KEYS_PEPPER"] = "test"
 
 from app.main import app
 from app.database import get_session

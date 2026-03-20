@@ -30,8 +30,7 @@ async def validate_requested_firmware(
         chip: Chip,
         version: PathVersion,
         session: Annotated[AsyncSession, Depends(get_session)],
-        blacklist: Blacklist = []) \
-            -> FirmwareRead:
+        blacklist: Blacklist = []) -> FirmwareRead:
     version_v = _parse_version(version)
     blacklist_v = [_parse_specific_version(v) for v in blacklist]
     firmware_opt = await get_firmware(session, chip, version_v, blacklist_v)
@@ -43,9 +42,8 @@ async def validate_requested_firmware(
 async def validate_owned_version(
         Owned_Version: Annotated[str | None, Header(pattern=r"^\d+\.\d+$",
                                                     examples=["1.11"])] = None
-        ) -> SpecificVersion | None:
-    return None if Owned_Version is None \
-        else _parse_version(Owned_Version)
+) -> SpecificVersion | None:
+    return None if Owned_Version is None else _parse_version(Owned_Version)
 
 
 async def get_firmware(session: Session, chip: Chip, version: Version,
@@ -71,7 +69,7 @@ async def _get_latest_firmware(session: AsyncSession, chip: Chip,
 
 async def _get_firmware_by_version(
         session: AsyncSession, chip: Chip, version: SpecificVersion) \
-            -> Firmware | None:
+        -> Firmware | None:
     mj, mn = version
     clause = Firmware.chip == chip, Firmware.major == mj, Firmware.minor == mn
     cursor = await session.execute(select(Firmware).where(*clause).limit(1))

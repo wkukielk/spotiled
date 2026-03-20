@@ -1,3 +1,5 @@
+import os
+
 from .apikeys import get_api_key_svc, security
 from app.database import get_session
 
@@ -6,7 +8,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import Depends, HTTPException
 
 from typing import Annotated
-
 
 async def create_key(session: Annotated[AsyncSession, Depends(get_session)]) \
         -> tuple[ApiKey, str]:
