@@ -11,6 +11,7 @@ import os
 dev = os.getenv("DEV", "OFF")
 cfg_file = "devconfig.yaml" if dev == "ON" else "config.yaml"
 
+
 class Settings(BaseSettings):
     firmware_root_folder: Path
 

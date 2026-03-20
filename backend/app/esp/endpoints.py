@@ -17,6 +17,7 @@ router = APIRouter()
 
 responses = {304: {"description": "You own the latest stable version"}}
 
+
 @router.get("/firmware/{chip}/{version}", responses=responses)
 async def firmware(
         req_firmware: Annotated[FirmwareRead, Depends(val_req_fware)],
