@@ -10,10 +10,11 @@ jobs:
     runs-on: self-hosted
     container:
       image: espressif/idf:release-v5.4
+    needs: clang-format
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: kieszlunek
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: esp32/build/
           key: gcc-${{github.ref_name}}-${{hashFiles('esp32/components/**/*')}}
@@ -29,19 +30,32 @@ jobs:
       credentials:
         username: ${{ vars.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKERHUB_PASSWORD }}
+    needs: build
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - run: . $IDF_PATH/export.sh
           && IDF_TOOLCHAIN=clang idf.py reconfigure -DCI=on
           && ./scripts/tidy.sh
         working-directory: ./esp32
 
-  clanf-format:
+  clang-format:
     runs-on: self-hosted
     container:
       image: alpine:3.23
     steps:
-      - uses: actions/checkout@v4
-      - run: apk add clang20-extra-tools
+      - uses: actions/checkout@v6
+      - run: apk add clang-extra-tools
           && ./scripts/format.sh
         working-directory: ./esp32
+
+  test-backend:
+    runs-on: self-hosted
+    container:
+      image: python:3.12-slim
+    steps:
+      - uses: actions/checkout@v6
+      - run: pip install uv
+          && uv sync --frozen --all-groups
+          && python3 -m flake8 --ignore='' app/
+          && python3 -m pytest
+        working-directory: ./backend
