@@ -1,9 +1,9 @@
 idf_component_register(
-    SRCS "test_str.cpp"
+    SRCS "test_util.cpp" "test_str.cpp"
          "test_CharVector.cpp"
          "test_priority_queue.cpp"
          "test_url.cpp"
-    REQUIRES util
+    REQUIRES util htutils
     WHOLE_ARCHIVE
 )
 include("${CMAKE_CONFIG_DIR}/set_ht_gccoptions.cmake")

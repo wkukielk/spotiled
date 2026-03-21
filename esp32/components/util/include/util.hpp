@@ -122,15 +122,28 @@ class HandlerProxy {
                          int32_t event_id, void *event_data);
 };
 
+struct thread_params {
+    TaskFunction_t fun{};
+    const char *name;
+    configSTACK_DEPTH_TYPE stack_depth;
+    void *fun_parameters{};
+    UBaseType_t priority;
+    I_EventGroup *join_group{};
+    EventBits_t join_bit;
+};
+
 class Thread {
   public:
-    Thread(TaskFunction_t fun, const char *name,
-           const configSTACK_DEPTH_TYPE stack_depth, void *parameters,
-           UBaseType_t priority);
-    Thread(TaskFunction_t fun, const char *name, void *parameters);
+    Thread(thread_params &&params);
+    void join() const noexcept;
+    static void wrapfun(void *params);
 
   private:
-    TaskHandle_t handle;
+    TaskHandle_t handle{};
+    TaskFunction_t fun{};
+    void *fun_parameters{};
+    I_EventGroup &join_group;
+    EventBits_t join_bit{};
 };
 
 class Mutex {

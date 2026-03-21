@@ -40,17 +40,23 @@ void HandlerProxy::callback(void *event_handler_arg,
     (*cbdata->callback)(cbdata, event_base, event_id, event_data);
 }
 
-Thread::Thread(TaskFunction_t fun, const char *name,
-               const configSTACK_DEPTH_TYPE stack_depth, void *parameters,
-               UBaseType_t priority) {
-    auto e = xTaskCreate(fun, name, stack_depth, parameters, priority, &handle);
+Thread::Thread(thread_params &&params)
+    : fun{move(params.fun)}, fun_parameters{move(params.fun_parameters)},
+      join_group{*params.join_group}, join_bit{move(params.join_bit)} {
+    auto name = move(params.name);
+    auto stack_depth = params.stack_depth ? move(params.stack_depth) : 4096;
+    auto priority = params.priority ? move(params.priority) : tskIDLE_PRIORITY;
+    auto e = xTaskCreate(wrapfun, name, stack_depth, this, priority, &handle);
     UTIL_THROW(e != pdPASS, InitError, "task");
 }
 
-Thread::Thread(TaskFunction_t fun, const char *name, void *parameters) {
-    auto e =
-        xTaskCreate(fun, name, 4096, parameters, tskIDLE_PRIORITY, &handle);
-    UTIL_THROW(e != pdPASS, InitError, "task");
+void Thread::join() const noexcept { join_group.wait(join_bit); }
+
+void Thread::wrapfun(void *params) {
+    auto &thread = *(Thread *)params;
+    (*thread.fun)(thread.fun_parameters);
+    thread.join_group.set(thread.join_bit);
+    vTaskDelete(NULL);
 }
 
 Mutex::Mutex() : s{xSemaphoreCreateBinary()} {

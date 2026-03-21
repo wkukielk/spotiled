@@ -10,7 +10,8 @@ const char *TAG = "APP";
 u_ptr<Runtime> create_runtime(Config &&cfg) {
     return Runtime::create(RuntimeConfig{.backend_cfg = cfg.backend_cfg,
                                          .wifi_mgr = std::move(cfg.wifi_mgr),
-                                         .ota = std::move(cfg.ota)});
+                                         .ota = std::move(cfg.ota)},
+                           mkuptr<util::EventGroup>());
 }
 
 App::App(u_ptr<Runtime> &&runtime) : runtime{std::move(runtime)} {}

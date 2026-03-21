@@ -1,8 +1,11 @@
 #include "BaseTest.hpp"
+#include "MockEventGroup.hpp"
 #include "MockOTA.hpp"
 #include "MockWiFiManager.hpp"
 #include "runtime.hpp"
 #include <gtest/gtest.h>
+
+using namespace std;
 
 class RuntimeTest : public BaseTest {
   protected:
@@ -15,11 +18,14 @@ class RuntimeTest : public BaseTest {
             .wifi_mgr = mkuptr<MockWiFiManager>(),
             .ota = mkuptr<MockOTA>(),
         };
-        runtime = Runtime::create(std::move(cfg));
+        auto egroup = mkuptr<MockEventGroup>();
+        this->egroup = egroup.get();
+        runtime = Runtime::create(std::move(cfg), move(egroup));
     }
     ~RuntimeTest() {}
 
     u_ptr<Runtime> runtime{};
+    MockEventGroup *egroup{};
 };
 
 TEST_F(RuntimeTest, init) {}

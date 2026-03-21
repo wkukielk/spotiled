@@ -23,17 +23,20 @@ struct InnerConfig;
 
 class Runtime {
   public:
-    static std::unique_ptr<Runtime> create(RuntimeConfig &&cfg);
+    static std::unique_ptr<Runtime> create(RuntimeConfig &&cfg,
+                                           u_ptr<util::I_EventGroup> &&egroup);
     void run();
 
   private:
-    Runtime(InnerConfig &&cfg);
+    Runtime(InnerConfig &&cfg, u_ptr<util::I_EventGroup> &&egroup);
     void setup();
 
     static void update_fun(void *runtime);
 
     u_ptr<I_WiFiManager> wifi_mgr{};
     u_ptr<OTAClient> ota_client{};
+    u_ptr<util::I_EventGroup> egroup{};
+    u_ptr<util::Thread> ota_thread{};
 };
 
 #endif
