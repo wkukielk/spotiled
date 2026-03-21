@@ -4,6 +4,8 @@ services:
     env_file: backend/backend.env
     ports:
       - "8000:8000"
+    volumes:
+      - ./backend/db:/app/db
 
   proxy:
     build: proxy/

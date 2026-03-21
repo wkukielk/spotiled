@@ -9,7 +9,7 @@ from .devices.models import *                               # noqa: F401, F403
 from .api_keys.models import *                              # noqa: F401, F403
 
 
-sqlite_file_name = "database.db"
+sqlite_file_name = "db/database.db"
 sqlite_url = f"sqlite+aiosqlite:///{sqlite_file_name}"
 
 engine = create_async_engine(sqlite_url, future=True)

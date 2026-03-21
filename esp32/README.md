@@ -10,9 +10,9 @@ then select *Project Configuration* and pick desired build type.
 
 #### Configuration files
 
-They use different configuration files that get flashed to 'cfg' partition.
+They use different configuration files that get flashed to 'cfg' nvs partition.
 
-Create `nvs/devconfig.csv` and `nvs/config.csv` files.
+Create `firmware/nvs/devconfig.csv` and `firmware/nvs/config.csv` files.
 See the format these files should have:
 https://docs.espressif.com/projects/esp-idf/en/stable/esp32/api-reference/storage/nvs_partition_gen.html
 
@@ -25,3 +25,11 @@ in Dev it's self-signed locally generated cert, the same which 'proxy' uses.
 
 Create that cert (refer to proxy's README) and create a symbolic link to it in `components/config` directory.
 There should be letsencrypt's cert and your local cert sitting next to each other in that directory.
+
+#### Encrypted nvs
+
+For now, there is no flash enryption in Dev nor Release build, but "encnvs" partition is ultimately
+supposed to be encrypted because it contains e.g. and api key (see `firmware/partitions.csv`).
+
+Similarly to "cfg" partition, "encnvs" is populated based on `firmware/nvs/encnvs.csv`. This file can
+be generated automatically, refer to backend's README.

@@ -10,10 +10,10 @@ from app.devices.services import create_device
 
 async def main():
     async with AsyncSession(engine) as session:
-        key, secret = await create_key(session)
-        print(f"id: {key}\nkey: {secret}")
+        key, secret = await create_key(session, "dev")
         await create_device(session, key.id_)
         await session.commit()
+    print(secret)
 
 
 if __name__ == "__main__":
