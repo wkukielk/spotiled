@@ -4,4 +4,5 @@ idf_component_register(
     REQUIRES unity
              nvs
              mytest_utils
+             i_nterfaces
 )

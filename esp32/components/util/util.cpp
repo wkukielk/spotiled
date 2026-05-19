@@ -75,22 +75,6 @@ void Task::sleep() { m.take(); }
 
 void Task::wakeup() { m.give(); }
 
-IntWrap::IntWrap(int id) : id{id} {}
-
-IntWrap::IntWrap(const IntWrap &other) noexcept : id{other.id} {}
-IntWrap &IntWrap::operator=(const IntWrap &other) noexcept {
-    id = other.id;
-    return *this;
-}
-
-bool IntWrap::operator==(const IntWrap &other) const noexcept {
-    return get_id() == other.get_id();
-}
-
-IntWrap::operator int() const noexcept { return id; }
-
-int IntWrap::get_id() const noexcept { return id; }
-
 esp_err_t retry(std::function<esp_err_t()> fun, unsigned retries) {
     auto status = esp_err_t{ESP_FAIL};
     while (retries-- && status != ESP_OK)

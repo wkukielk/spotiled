@@ -13,22 +13,52 @@ Queue<T>::Queue(uint8_t length) : handle(xQueueCreate(length, sizeof(T))) {
 
 template <typename T> Queue<T>::~Queue() noexcept { vQueueDelete(handle); }
 
-template <typename T> int Queue<T>::receive(void *const data) {
-    return receive(data, portMAX_DELAY);
+template <typename T> void Queue<T>::receive(T *data) {
+    receive(data, portMAX_DELAY);
 }
-template <typename T> int Queue<T>::receive_nowait(void *const data) {
+template <typename T> int Queue<T>::receive_nowait(T *data) {
     return receive(data, 0);
 }
 
-template <typename T> int Queue<T>::receive(void *const data, TickType_t wait) {
+template <typename T> int Queue<T>::receive(T *data, TickType_t wait) {
     return xQueueReceive(handle, data, wait) == pdTRUE ? ESP_OK : ESP_FAIL;
 }
 
-template <typename T> int Queue<T>::send(void *data) {
+template <typename T> int Queue<T>::send(T *data) {
     return send(data, portMAX_DELAY);
 }
 
-template <typename T> int Queue<T>::send(void *data, TickType_t wait) {
+template <typename T> int Queue<T>::send(T *data, TickType_t wait) {
     return xQueueSend(handle, data, wait) == pdTRUE ? ESP_OK : ESP_FAIL;
+}
+
+template <typename T>
+PointerQueue<T>::PointerQueue(uint8_t length) : queue{length} {}
+
+template <typename T> std::unique_ptr<T> PointerQueue<T>::receive() {
+    return receive(portMAX_DELAY);
+}
+
+template <typename T>
+std::unique_ptr<T> PointerQueue<T>::receive(TickType_t wait) {
+    T *out{};
+    queue.receive(&out, wait);
+    return std::unique_ptr<T>{out};
+}
+
+template <typename T> std::unique_ptr<T> PointerQueue<T>::receive_nowait() {
+    return receive(0);
+}
+
+template <typename T>
+SendStatus PointerQueue<T>::send(std::unique_ptr<T> &&data) {
+    return send(std::move(data), portMAX_DELAY);
+}
+
+template <typename T>
+SendStatus PointerQueue<T>::send(std::unique_ptr<T> &&data, TickType_t wait) {
+    auto p = data.release();
+    auto ret = queue.send(&p, wait) == 0;
+    return ret ? SendStatus::success : SendStatus::full;
 }
 } // namespace util

@@ -173,32 +173,14 @@ class Task : public I_Task {
     Mutex m;
 };
 
+template <typename Data> class Notifiable {
+  public:
+    virtual void notify(std::unique_ptr<Data> &&data) = 0;
+};
+
 template <class T> constexpr inline bool in_between(T x, T a, T b) {
     return a <= x && x < b;
 }
-
-class IntWrap {
-  public:
-    IntWrap() = default;
-    IntWrap(const IntWrap &) noexcept;
-    IntWrap &operator=(const IntWrap &) noexcept;
-    bool operator==(const IntWrap &other) const noexcept;
-    operator int() const noexcept;
-
-  protected:
-    IntWrap(int id);
-    int get_id() const noexcept;
-
-  private:
-    int id;
-};
-
-#define DECLARE_INT_WRAP_DERIVATIVE(derivative, name, id)                      \
-    class name : public derivative {                                           \
-      public:                                                                  \
-        static const int i##d = id;                                            \
-        name() : derivative{id} {}                                             \
-    };
 
 esp_err_t retry(std::function<esp_err_t()> fun, unsigned retries);
 }; // namespace util
@@ -208,5 +190,9 @@ template <typename T> using u_ptr = std::unique_ptr<T>;
 template <typename T, typename... Args> u_ptr<T> mkuptr(Args &&...args) {
     return std::make_unique<T>(std::forward<Args>(args)...);
 }
+
+template <class... Ts> struct overloaded : Ts... {
+    using Ts::operator()...;
+};
 
 #endif
