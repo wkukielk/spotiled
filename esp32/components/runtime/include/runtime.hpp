@@ -30,6 +30,7 @@ class Runtime {
   private:
     Runtime(InnerConfig &&cfg, u_ptr<util::I_EventGroup> &&egroup);
     void setup();
+    void cleanup();
 
     static void update_fun(void *runtime);
 

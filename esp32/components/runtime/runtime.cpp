@@ -8,6 +8,8 @@
 using namespace std;
 using namespace util;
 
+static const EventBits_t OTA_JOIN_BIT = 1 << 0;
+
 struct InnerConfig {
     u_ptr<OTAClient> ota_client;
     u_ptr<I_WiFiManager> wifi_mgr;
@@ -54,17 +56,19 @@ Runtime::Runtime(InnerConfig &&cfg, u_ptr<util::I_EventGroup> &&egroup)
 
 void Runtime::run() {
     setup();
-    ota_thread->join();
+    cleanup();
 }
 
 void Runtime::setup() {
-    auto t_params = util::thread_params{.fun = update_fun,
-                                        .name = "ota",
-                                        .fun_parameters = this,
-                                        .join_group = egroup.get(),
-                                        .join_bit = 1 << 0};
-    ota_thread = mkuptr<util::Thread>(move(t_params));
+    auto ota_thread_params = util::thread_params{.fun = update_fun,
+                                                 .name = "ota",
+                                                 .fun_parameters = this,
+                                                 .join_group = egroup.get(),
+                                                 .join_bit = OTA_JOIN_BIT};
+    ota_thread = mkuptr<util::Thread>(move(ota_thread_params));
 }
+
+void Runtime::cleanup() { ota_thread->join(); }
 
 void Runtime::update_fun(void *runtimePtr) {
     auto runtime = (Runtime *)runtimePtr;

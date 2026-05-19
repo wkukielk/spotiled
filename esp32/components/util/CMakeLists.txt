@@ -5,8 +5,7 @@ if(IDF_TARGET STREQUAL "linux")
 endif()
 
 idf_component_register(
-    SRCS "util.cpp"
-         "queue.cpp"
+    SRCS "util.cpp"        
          "ToggleEventHandler.cpp"
          "std/straux.cpp"
          "std/CharVector.cpp"

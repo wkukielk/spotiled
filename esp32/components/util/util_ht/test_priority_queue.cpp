@@ -1,13 +1,13 @@
 #include "queue.hpp"
 #include <gtest/gtest.h>
 
-class PriorityQueueTest : public testing::Test {
+class QueueTest : public testing::Test {
   protected:
-    PriorityQueueTest() {}
+    QueueTest() {}
 };
 
-TEST_F(PriorityQueueTest, decodeSuccess) {
-    util::PriorityQueue q{4, sizeof(int *), 3};
+TEST_F(QueueTest, decodeSuccess) {
+    util::Queue<int *> q{4};
     int i = 42;
     int *pi = &i;
     q.send(&pi, 0);
