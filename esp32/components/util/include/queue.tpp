@@ -24,12 +24,20 @@ template <typename T> int Queue<T>::receive(T *data, TickType_t wait) {
     return xQueueReceive(handle, data, wait) == pdTRUE ? ESP_OK : ESP_FAIL;
 }
 
-template <typename T> int Queue<T>::send(T *data) {
-    return send(data, portMAX_DELAY);
+template <typename T> void Queue<T>::send(T *data) {
+    send(data, portMAX_DELAY);
 }
 
 template <typename T> int Queue<T>::send(T *data, TickType_t wait) {
-    return xQueueSend(handle, data, wait) == pdTRUE ? ESP_OK : ESP_FAIL;
+    return xQueueSendToBack(handle, data, wait) == pdTRUE ? ESP_OK : ESP_FAIL;
+}
+
+template <typename T> int Queue<T>::send_front(T *data) {
+    return send_front(data, portMAX_DELAY);
+}
+
+template <typename T> int Queue<T>::send_front(T *data, TickType_t wait) {
+    return xQueueSendToFront(handle, data, wait) == pdTRUE ? ESP_OK : ESP_FAIL;
 }
 
 template <typename T>

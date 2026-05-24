@@ -16,8 +16,10 @@ template <typename T> class Queue {
     void receive(T *data);
     int receive(T *data, TickType_t wait);
     int receive_nowait(T *data);
-    int send(T *data);
+    void send(T *data);
     int send(T *data, TickType_t wait);
+    int send_front(T *data);
+    int send_front(T *data, TickType_t wait);
 
   private:
     QueueHandle_t handle;
