@@ -1,0 +1,7 @@
+menu "Test configuration"
+
+    config GTEST_FILTER
+        string "Test filter regex"
+        default "$(GTEST_FILTER)" if "$(GTEST_FILTER)" != ""
+
+endmenu

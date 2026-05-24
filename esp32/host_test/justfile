@@ -1,0 +1,4 @@
+fullclean:
+	idf.py fullclean
+	rm sdkconfig
+
