@@ -27,22 +27,22 @@ class Runnable {
     virtual void run() = 0;
 };
 
-namespace runtime {
+namespace master {
 class StateFactory {
-    using State = sm::State<runtime::StateData, runtime::Data>;
+    using State = sm::State<StateData, Data>;
 
   public:
-    StateFactory(runtime_t &runtime);
-    std::unique_ptr<State> get(runtime::StateData &&data) const;
+    StateFactory(I_WiFiManager &wifi_mgr) noexcept;
+    std::unique_ptr<State> get(StateData &&data) const;
 
   private:
-    std::reference_wrapper<runtime_t> runtime;
+    std::reference_wrapper<I_WiFiManager> wifi_mgr;
 };
-} // namespace runtime
+} // namespace master
 
-class Runtime : public Runnable, public util::Notifiable<runtime::Data> {
-    using Data = runtime::Data;
-    using StateData = runtime::StateData;
+class Runtime : public Runnable, public util::Notifiable<master::Data> {
+    using Data = master::Data;
+    using StateData = master::StateData;
 
   public:
     static std::unique_ptr<Runtime> create(RuntimeConfig &&cfg,
@@ -65,9 +65,9 @@ class Runtime : public Runnable, public util::Notifiable<runtime::Data> {
     u_ptr<OTAClient> ota_client{};
     u_ptr<util::I_EventGroup> egroup{};
     u_ptr<util::Thread> ota_thread{};
-    util::PointerQueue<Data> queue;
+    util::PointerQueue<master::Data> queue;
     std::unique_ptr<sm::State<StateData, Data>> state{};
-    std::optional<runtime::StateFactory> state_factory{};
+    std::optional<master::StateFactory> state_factory{};
 };
 
 #endif

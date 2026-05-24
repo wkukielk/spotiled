@@ -32,12 +32,20 @@ template <typename T> int Queue<T>::send(T *data, TickType_t wait) {
     return xQueueSendToBack(handle, data, wait) == pdTRUE ? ESP_OK : ESP_FAIL;
 }
 
+template <typename T> int Queue<T>::send_nowait(T *data) {
+    return send(data, 0);
+}
+
 template <typename T> int Queue<T>::send_front(T *data) {
     return send_front(data, portMAX_DELAY);
 }
 
 template <typename T> int Queue<T>::send_front(T *data, TickType_t wait) {
     return xQueueSendToFront(handle, data, wait) == pdTRUE ? ESP_OK : ESP_FAIL;
+}
+
+template <typename T> int Queue<T>::send_front_nowait(T *data) {
+    return send_front(data, 0);
 }
 
 template <typename T>

@@ -7,7 +7,7 @@ static const char *TAG = "Runtime";
 
 using namespace std;
 using namespace util;
-using namespace runtime;
+using namespace master;
 
 static const EventBits_t OTA_JOIN_BIT = 1 << 0;
 
@@ -29,20 +29,22 @@ URL resolve_base(const URL &base_url) {
     return base.value();
 }
 
-StateFactory::StateFactory(runtime_t &runtime) : runtime{runtime} {}
+namespace master {
+
+StateFactory::StateFactory(I_WiFiManager &wifi_mgr) noexcept
+    : wifi_mgr{wifi_mgr} {}
 
 std::unique_ptr<sm::State<StateData, Data>>
-StateFactory::get(runtime::StateData &&data) const {
+StateFactory::get(StateData &&data) const {
     auto state = std::visit(
-        overloaded{[&](IdleStateData &&) { return mkuptr<IdleState>(runtime); },
-                   [&](ReconnectStateData &&) {
-                       return mkuptr<IdleState>(runtime);
-                   }, // TODO
-                   [](std::monostate &&) { return u_ptr<IdleState>{nullptr}; }},
+        overloaded{
+            [&](IdleStateData &&) { return mkuptr<IdleState>(wifi_mgr); },
+            [](std::monostate &&) { return u_ptr<IdleState>{nullptr}; }},
         std::move(data));
     UTIL_THROW(!state, NullError, "state factory got monostate");
     return state;
 }
+} // namespace master
 
 u_ptr<Runtime> Runtime::create(RuntimeConfig &&cfg,
                                u_ptr<I_EventGroup> &&egroup) {
@@ -69,8 +71,8 @@ u_ptr<Runtime> Runtime::create(RuntimeConfig &&cfg,
 Runtime::Runtime(InnerConfig &&cfg, u_ptr<I_EventGroup> &&egroup)
     : wifi_mgr{move(cfg.wifi_mgr)}, ota_client{move(cfg.ota_client)},
       egroup{move(egroup)}, queue{4}, state{nullptr} {
-    state = make_unique<IdleState>(*this);
-    state_factory.emplace(*this);
+    state = make_unique<IdleState>(*wifi_mgr);
+    state_factory.emplace(*wifi_mgr);
 }
 
 void Runtime::run() {

@@ -3,7 +3,7 @@
 
 using namespace std;
 
-namespace runtime {
+namespace master {
 const char *
 DataPrinter::operator()(const ConnectionErrorData &) const noexcept {
     return "connection error";
@@ -21,25 +21,21 @@ StateDataPrinter::operator()(const std::monostate &) const noexcept {
 const char *StateDataPrinter::operator()(const IdleStateData &) const noexcept {
     return "idle state";
 }
-const char *
-StateDataPrinter::operator()(const ReconnectStateData &) const noexcept {
-    return "reconnect state";
-}
 
-BaseState::BaseState(runtime_t &runtime) noexcept
-    : runtime{runtime}, next_state_data{monostate{}} {}
+BaseState::BaseState() noexcept : next_state_data{monostate{}} {}
 
 StateData BaseState::get_next_state_data() const noexcept {
     return next_state_data;
 }
 
-IdleState::IdleState(util::Notifiable<runtime::Data> &runtime) noexcept
-    : BaseState{runtime} {}
+IdleState::IdleState(I_WiFiManager &wifi_manager) noexcept
+    : wifi_manager{wifi_manager} {}
 
 int IdleState::perform(Data &data) {
     auto ret = ESP_OK;
     std::visit(overloaded{[&](ConnectionErrorData &&) {
-                              next_state_data = ReconnectStateData{};
+                              if (!wifi_manager.get().is_connected())
+                                  ret = wifi_manager.get().connect();
                           },
                           [&](ErrorData &&) { ret = -1; },
                           [&](const auto &&) { ret = -2; }},
@@ -47,17 +43,4 @@ int IdleState::perform(Data &data) {
     return ret;
 }
 
-ReconnectState::ReconnectState(runtime_t &runtime) noexcept
-    : BaseState{runtime} {}
-
-int ReconnectState::perform(Data &data) {
-    auto ret = ESP_OK;
-    std::visit(overloaded{[&](ConnectionErrorData &&) {
-                              next_state_data = IdleStateData{};
-                          },
-                          [&](const auto &&) { ret = -1; }},
-               std::move(data));
-    return ret;
-}
-
-} // namespace runtime
+} // namespace master

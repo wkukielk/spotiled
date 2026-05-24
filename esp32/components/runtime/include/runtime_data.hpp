@@ -5,18 +5,30 @@
 
 namespace runtime {
 
-enum class DataType { COLOR_DATA, CONNECTION_ERROR, ERROR };
+enum class TaskID { MASTER, WS_SERVER };
 
-struct ColorData : public sm::Data<DataType> {
-    ColorData() : sm::Data<DataType>{DataType::ERROR} {}
-};
-struct ConnectionErrorData : public sm::Data<DataType> {
-    ConnectionErrorData() : sm::Data<DataType>{DataType::CONNECTION_ERROR} {}
-};
-struct ErrorData : public sm::Data<DataType> {
-    ErrorData() : sm::Data<DataType>{DataType::ERROR} {}
+template <typename DataType> struct Data : public sm::Data<DataType> {
+    Data(DataType data_type, TaskID sender_id);
+    TaskID get_sender_id() const noexcept;
+
+  protected:
+    TaskID sender_id;
 };
 
 } // namespace runtime
+namespace master {
+
+enum class DataType { CONNECTION_ERROR, ERROR };
+
+struct ConnectionErrorData : public runtime::Data<DataType> {
+    ConnectionErrorData(runtime::TaskID task_id);
+};
+struct ErrorData : public runtime::Data<DataType> {
+    ErrorData(runtime::TaskID task_id);
+};
+
+} // namespace master
+
+#include "runtime_data.tpp"
 
 #endif
