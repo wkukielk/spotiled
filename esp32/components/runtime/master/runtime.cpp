@@ -29,15 +29,16 @@ URL resolve_base(const URL &base_url) {
     return base.value();
 }
 
-StateFactory::StateFactory() {}
+StateFactory::StateFactory(runtime_t &runtime) : runtime{runtime} {}
 
 std::unique_ptr<sm::State<StateData, Data>>
 StateFactory::get(runtime::StateData &&data) const {
     auto state = std::visit(
-        overloaded{
-            [](IdleStateData &&) { return mkuptr<IdleState>(); },
-            [](ReconnectStateData &&) { return mkuptr<IdleState>(); }, // TODO
-            [](std::monostate &&) { return u_ptr<IdleState>{nullptr}; }},
+        overloaded{[&](IdleStateData &&) { return mkuptr<IdleState>(runtime); },
+                   [&](ReconnectStateData &&) {
+                       return mkuptr<IdleState>(runtime);
+                   }, // TODO
+                   [](std::monostate &&) { return u_ptr<IdleState>{nullptr}; }},
         std::move(data));
     UTIL_THROW(!state, NullError, "state factory got monostate");
     return state;
@@ -67,8 +68,10 @@ u_ptr<Runtime> Runtime::create(RuntimeConfig &&cfg,
 
 Runtime::Runtime(InnerConfig &&cfg, u_ptr<I_EventGroup> &&egroup)
     : wifi_mgr{move(cfg.wifi_mgr)}, ota_client{move(cfg.ota_client)},
-      egroup{move(egroup)}, queue{4}, state{make_unique<IdleState>()},
-      state_factory{StateFactory{}} {}
+      egroup{move(egroup)}, queue{4}, state{nullptr} {
+    state = make_unique<IdleState>(*this);
+    state_factory.emplace(*this);
+}
 
 void Runtime::run() {
     setup();
@@ -116,7 +119,7 @@ std::unique_ptr<Data> Runtime::pop_queue() {
 void Runtime::change_state(StateData &&next_state_data) {
     UTIL_LOGI("New state: %s\n",
               std::visit(StateDataPrinter{}, next_state_data));
-    state = state_factory.get(std::move(next_state_data));
+    state = state_factory->get(std::move(next_state_data));
 }
 
 void Runtime::update_fun(void *runtimePtr) {

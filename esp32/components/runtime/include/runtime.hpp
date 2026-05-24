@@ -4,8 +4,8 @@
 #include "OTAClient.hpp"
 #include "URL.hpp"
 #include "WiFiManager.hpp"
+#include "master/states.hpp"
 #include "queue.hpp"
-#include "states.hpp"
 
 struct backend_config_t {
     URL base_url;
@@ -32,12 +32,15 @@ class StateFactory {
     using State = sm::State<runtime::StateData, runtime::Data>;
 
   public:
-    StateFactory();
+    StateFactory(runtime_t &runtime);
     std::unique_ptr<State> get(runtime::StateData &&data) const;
+
+  private:
+    std::reference_wrapper<runtime_t> runtime;
 };
 } // namespace runtime
 
-class Runtime : public Runnable, util::Notifiable<runtime::Data> {
+class Runtime : public Runnable, public util::Notifiable<runtime::Data> {
     using Data = runtime::Data;
     using StateData = runtime::StateData;
 
@@ -64,7 +67,7 @@ class Runtime : public Runnable, util::Notifiable<runtime::Data> {
     u_ptr<util::Thread> ota_thread{};
     util::PointerQueue<Data> queue;
     std::unique_ptr<sm::State<StateData, Data>> state{};
-    runtime::StateFactory state_factory;
+    std::optional<runtime::StateFactory> state_factory{};
 };
 
 #endif
