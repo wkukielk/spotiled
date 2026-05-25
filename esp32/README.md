@@ -16,7 +16,7 @@ Create `firmware/nvs/devconfig.csv` and `firmware/nvs/config.csv` files.
 See the format these files should have:
 https://docs.espressif.com/projects/esp-idf/en/stable/esp32/api-reference/storage/nvs_partition_gen.html
 
-For options needed, refer to `config` module's source code.
+For options needed, refer to `firmware/nvs/example_config.csv` or `config` module's source code.
 
 #### SSL cert
 

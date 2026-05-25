@@ -1,0 +1,13 @@
+key,type,encoding,value
+storage,namespace,,
+# either:
+# PROVISIONING,data,string,no
+# WIFI_SSID,data,string,my_wifi
+# WIFI_PASSWORD,data,string,my_passwd
+# or:
+# PROVISIONING,data,string,yes
+MDNS_HOSTNAME,data,string,spotiled-esp32
+MDNS_INSTANCE,data,string,spotiled-ledcontrol
+BACKEND_URL,data,string,https://localhost:7777
+SKIP_CN_CHECK,data,string,yes
+LOG_LEVEL,data,string,INFO
