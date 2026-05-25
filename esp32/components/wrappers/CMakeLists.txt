@@ -6,7 +6,6 @@ idf_component_register(
     INCLUDE_DIRS "include"
     REQUIRES i_nterfaces
              util
-             wifi_provisioning
              esp_wifi
     PRIV_REQUIRES esp_https_ota
                   app_update
