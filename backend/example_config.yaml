@@ -1,0 +1,2 @@
+firmware_root_folder: "/app/data/firmware/"   # where you keep esp firmware files
+api_keys_pepper: "mypepper"                   # pepper for hasher

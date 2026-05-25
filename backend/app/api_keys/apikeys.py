@@ -1,4 +1,5 @@
 from ..database import get_session
+from app.config import settings
 
 import os
 
@@ -11,8 +12,7 @@ from fastapi_api_key.repositories.sql import SqlAlchemyApiKeyRepository
 from fastapi_api_key.api import create_depends_api_key
 
 
-pepper = os.getenv("API_KEYS_PEPPER")
-hasher = Argon2ApiKeyHasher(pepper=pepper)
+hasher = Argon2ApiKeyHasher(pepper=settings.api_keys_pepper)
 
 
 async def get_api_key_svc(

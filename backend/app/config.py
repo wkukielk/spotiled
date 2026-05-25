@@ -14,6 +14,7 @@ cfg_file = "devconfig.yaml" if dev == "ON" else "config.yaml"
 
 class Settings(BaseSettings):
     firmware_root_folder: Path
+    api_keys_pepper: str
 
     model_config = SettingsConfigDict(yaml_file=cfg_file)
 

@@ -1,0 +1,4 @@
+PRAGMA foreign_keys=OFF;
+BEGIN TRANSACTION;
+INSERT INTO firmware VALUES(1,'1_0.bin',1,0,'ESP32S3');
+COMMIT;

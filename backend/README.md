@@ -1,9 +1,5 @@
 #### env variables
 App requires some secrets to function, e.g. API keys' library hasher's pepper.
-Docker compose requires `backend.env` file, create it.
-It must contain the following keys, which, for the sake of development, may be set to arbitrary values:
-
-- API_KEYS_PEPPER
 
 Now, each time you start working, before running the program or executing any script, you should
 export these variables to your shell:
@@ -12,6 +8,12 @@ export these variables to your shell:
     . ./export.sh
 ```
 
+You can control the configuration of the app by modifying `DEV = ON | OFF` variable.
+
+#### config file
+Depending on the value of `DEV` env variable, app uses either `config.yaml` or `devconfig.yaml`.
+See `example_config.yaml`.
+
 #### Database
 
 To prefill the database:
@@ -19,3 +21,4 @@ To prefill the database:
 ```console
     ./scripts/setupdb.sh
 ```
+It'll write the api key to $root/esp32/firmware/nvs/enc.csv, which idf.py flashes to the device.
