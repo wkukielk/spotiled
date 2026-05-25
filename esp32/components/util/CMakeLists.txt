@@ -10,7 +10,7 @@ idf_component_register(
          "std/straux.cpp"
          "std/CharVector.cpp"
          "URL.cpp"
-         "time/aux.cpp"
+         "time/time_aux.cpp"
          "time/core.c"
     INCLUDE_DIRS "include"
                  "std/include"
