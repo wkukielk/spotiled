@@ -2,3 +2,5 @@ build/
 managed_components/
 *.crt
 firmware/nvs/
+sdkconfig.old
+*.pem
