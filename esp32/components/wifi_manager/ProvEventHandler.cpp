@@ -13,7 +13,7 @@ esp_event_handler_instance_t ProvEventHandler::disconnect_handle{};
 esp_event_handler_instance_t ProvEventHandler::ip_handle{};
 esp_event_handler_instance_t ProvEventHandler::handle{};
 const util::cbdata ProvEventHandler::cbdata[2]{
-    {.callback = handler, .base = WIFI_PROV_EVENT, .id = ESP_EVENT_ANY_ID},
+    {.callback = handler, .base = NETWORK_PROV_EVENT, .id = ESP_EVENT_ANY_ID},
     {.callback = disconnect_handler,
      .base = WIFI_EVENT,
      .id = WIFI_EVENT_STA_DISCONNECTED}};
@@ -34,7 +34,7 @@ ProvEventHandler::ProvEventHandler(util::I_EventGroup &event_group,
 ProvEventHandler::~ProvEventHandler() {
     esp_event_handler_instance_unregister(
         WIFI_EVENT, WIFI_EVENT_STA_DISCONNECTED, disconnect_handle);
-    esp_event_handler_instance_unregister(WIFI_PROV_EVENT, ESP_EVENT_ANY_ID,
+    esp_event_handler_instance_unregister(NETWORK_PROV_EVENT, ESP_EVENT_ANY_ID,
                                           handle);
     ProvEventHandler::event_group = nullptr;
     ESP_LOGI("ProvEventHandler", "deinit");
@@ -42,7 +42,7 @@ ProvEventHandler::~ProvEventHandler() {
 
 esp_err_t ProvEventHandler::register_self() {
     UTIL_RETURN(esp_event_handler_instance_register(
-        WIFI_PROV_EVENT, ESP_EVENT_ANY_ID, &handler, NULL, &handle));
+        NETWORK_PROV_EVENT, ESP_EVENT_ANY_ID, &handler, NULL, &handle));
     UTIL_RETURN(esp_event_handler_instance_register(
         WIFI_EVENT, WIFI_EVENT_STA_DISCONNECTED, &disconnect_handler, NULL,
         &ip_handle));

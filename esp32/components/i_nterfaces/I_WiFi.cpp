@@ -11,7 +11,7 @@ bool I_WiFi::is_disconnect_recoverable(WiFiReason reason) {
 
 #ifdef CONFIG_IDF_TARGET_LINUX
 extern "C" {
-ESP_EVENT_DEFINE_BASE(WIFI_PROV_EVENT);
+ESP_EVENT_DEFINE_BASE(NETWORK_PROV_EVENT);
 ESP_EVENT_DEFINE_BASE(WIFI_EVENT);
 }
 #endif

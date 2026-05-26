@@ -7,6 +7,7 @@ idf_component_register(
     REQUIRES i_nterfaces
              util
              esp_wifi
+    	     espressif__network_provisioning
     PRIV_REQUIRES esp_https_ota
                   app_update
 )

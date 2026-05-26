@@ -2,7 +2,8 @@
 #define I_LED_HPP
 
 #include "esp_err.h"
-#include "ledc.h"
+#include "driver/ledc.h"
+#include "driver/gpio.h"
 
 class I_LED {
   public:
