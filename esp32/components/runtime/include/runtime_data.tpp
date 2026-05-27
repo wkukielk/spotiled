@@ -1,7 +1,3 @@
-#if !defined(RUNTIME_SHARED_DATA_HPP)
-#include "runtime_data.hpp"
-#endif
-
 namespace runtime {
 template <typename DataType>
 Data<DataType>::Data(DataType data_type, TaskID sender_id)

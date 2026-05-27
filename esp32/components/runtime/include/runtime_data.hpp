@@ -2,6 +2,7 @@
 #define RUNTIME_SHARED_DATA_HPP
 
 #include "state_machine.hpp"
+#include <variant>
 
 namespace runtime {
 
@@ -16,6 +17,7 @@ template <typename DataType> struct Data : public sm::Data<DataType> {
 };
 
 } // namespace runtime
+
 namespace master {
 
 enum class DataType { CONNECTION_ERROR, ERROR };
@@ -27,7 +29,33 @@ struct ErrorData : public runtime::Data<DataType> {
     ErrorData(runtime::TaskID task_id);
 };
 
+using Data = std::variant<ConnectionErrorData, ErrorData>;
+
 } // namespace master
+
+namespace server {
+
+enum class DataType { COMMAND, STOP, ACK, NACK };
+
+struct Command : public runtime::Data<DataType> {
+    Command(runtime::TaskID task_id);
+};
+
+struct Stop : public runtime::Data<DataType> {
+    Stop(runtime::TaskID task_id);
+};
+
+struct ACK : public runtime::Data<DataType> {
+    ACK(runtime::TaskID task_id);
+};
+
+struct NACK : public runtime::Data<DataType> {
+    NACK(runtime::TaskID task_id);
+};
+
+using Data = std::variant<Command, Stop, ACK, NACK>;
+
+} // namespace server
 
 #include "runtime_data.tpp"
 

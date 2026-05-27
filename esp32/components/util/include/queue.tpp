@@ -56,9 +56,9 @@ template <typename T> std::unique_ptr<T> PointerQueue<T>::receive() {
 }
 
 template <typename T>
-std::unique_ptr<T> PointerQueue<T>::receive(TickType_t wait) {
+std::unique_ptr<T> PointerQueue<T>::receive(uint32_t wait) {
     T *out{};
-    queue.receive(&out, wait);
+    queue.receive(&out, pdMS_TO_TICKS(wait));
     return std::unique_ptr<T>{out};
 }
 
@@ -72,9 +72,9 @@ SendStatus PointerQueue<T>::send(std::unique_ptr<T> &&data) {
 }
 
 template <typename T>
-SendStatus PointerQueue<T>::send(std::unique_ptr<T> &&data, TickType_t wait) {
+SendStatus PointerQueue<T>::send(std::unique_ptr<T> &&data, uint32_t wait) {
     auto p = data.release();
-    auto ret = queue.send(&p, wait) == 0;
+    auto ret = queue.send(&p, pdMS_TO_TICKS(wait)) == 0;
     return ret ? SendStatus::success : SendStatus::full;
 }
 } // namespace util

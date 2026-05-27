@@ -4,8 +4,8 @@
 #include "OTAClient.hpp"
 #include "URL.hpp"
 #include "WiFiManager.hpp"
-#include "master/states.hpp"
 #include "queue.hpp"
+#include "runtime_data.hpp"
 
 struct backend_config_t {
     URL base_url;
@@ -27,37 +27,20 @@ class Runnable {
     virtual void run() = 0;
 };
 
-namespace master {
-class StateFactory {
-    using State = sm::State<StateData, Data>;
-
-  public:
-    StateFactory(I_WiFiManager &wifi_mgr) noexcept;
-    std::unique_ptr<State> get(StateData &&data) const;
-
-  private:
-    std::reference_wrapper<I_WiFiManager> wifi_mgr;
-};
-} // namespace master
-
 class Runtime : public Runnable, public util::Notifiable<master::Data> {
-    using Data = master::Data;
-    using StateData = master::StateData;
-
   public:
     static std::unique_ptr<Runtime> create(RuntimeConfig &&cfg,
                                            u_ptr<util::I_EventGroup> &&egroup);
     void run();
-    void notify(u_ptr<Data> &&data) override;
+    void notify(u_ptr<master::Data> &&data) override;
 
   private:
     Runtime(InnerConfig &&cfg, u_ptr<util::I_EventGroup> &&egroup);
     void setup();
     int loop();
     void cleanup();
-
-    std::unique_ptr<Data> pop_queue();
-    void change_state(StateData &&next_state_data);
+    std::unique_ptr<master::Data> pop_queue();
+    esp_err_t perform(master::Data &data);
 
     static void update_fun(void *runtime);
 
@@ -66,8 +49,6 @@ class Runtime : public Runnable, public util::Notifiable<master::Data> {
     u_ptr<util::I_EventGroup> egroup{};
     u_ptr<util::Thread> ota_thread{};
     util::PointerQueue<master::Data> queue;
-    std::unique_ptr<sm::State<StateData, Data>> state{};
-    std::optional<master::StateFactory> state_factory{};
 };
 
 #endif

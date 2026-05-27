@@ -1,21 +1,11 @@
 #ifndef RUNTIME_STATE_HPP
 #define RUNTIME_STATE_HPP
 
-#include "WiFiManager.hpp"
 #include "runtime_data.hpp"
 #include "util.hpp"
 #include <variant>
 
-namespace master {
-
-using Data = std::variant<ConnectionErrorData, ErrorData>;
-
-class DataPrinter {
-  public:
-    const char *operator()(const ConnectionErrorData &) const noexcept;
-    const char *operator()(const ErrorData &) const noexcept;
-};
-
+namespace server {
 class IdleStateData {};
 
 class StateDataPrinter {
@@ -25,7 +15,6 @@ class StateDataPrinter {
 };
 
 using StateData = std::variant<std::monostate, IdleStateData>;
-using master_t = util::Notifiable<master::Data>;
 
 class BaseState : public sm::State<StateData, Data> {
   public:
@@ -38,13 +27,16 @@ class BaseState : public sm::State<StateData, Data> {
 
 class IdleState : public BaseState {
   public:
-    IdleState(I_WiFiManager &wifi_manager) noexcept;
+    IdleState() noexcept;
     int perform(Data &data) override;
-
-  private:
-    std::reference_wrapper<I_WiFiManager> wifi_manager;
 };
 
-} // namespace master
+class StateFactory {
+    using State = sm::State<StateData, Data>;
 
+  public:
+    StateFactory() noexcept;
+    std::unique_ptr<State> get(StateData &&data) const;
+};
+} // namespace server
 #endif

@@ -16,6 +16,14 @@ struct InnerConfig {
     u_ptr<I_WiFiManager> wifi_mgr;
 };
 
+class DataPrinter {
+  public:
+    const char *operator()(const ConnectionErrorData &) const noexcept {
+        return "connection error";
+    }
+    const char *operator()(const ErrorData &) const noexcept { return "error"; }
+};
+
 URL resolve_base(const URL &base_url) {
     auto base = optional<URL>{};
     retry(
@@ -28,23 +36,6 @@ URL resolve_base(const URL &base_url) {
     UTIL_THROW(!base.has_value(), InitError, "Failed to resolve backend");
     return base.value();
 }
-
-namespace master {
-
-StateFactory::StateFactory(I_WiFiManager &wifi_mgr) noexcept
-    : wifi_mgr{wifi_mgr} {}
-
-std::unique_ptr<sm::State<StateData, Data>>
-StateFactory::get(StateData &&data) const {
-    auto state = std::visit(
-        overloaded{
-            [&](IdleStateData &&) { return mkuptr<IdleState>(wifi_mgr); },
-            [](std::monostate &&) { return u_ptr<IdleState>{nullptr}; }},
-        std::move(data));
-    UTIL_THROW(!state, NullError, "state factory got monostate");
-    return state;
-}
-} // namespace master
 
 u_ptr<Runtime> Runtime::create(RuntimeConfig &&cfg,
                                u_ptr<I_EventGroup> &&egroup) {
@@ -70,10 +61,7 @@ u_ptr<Runtime> Runtime::create(RuntimeConfig &&cfg,
 
 Runtime::Runtime(InnerConfig &&cfg, u_ptr<I_EventGroup> &&egroup)
     : wifi_mgr{move(cfg.wifi_mgr)}, ota_client{move(cfg.ota_client)},
-      egroup{move(egroup)}, queue{4}, state{nullptr} {
-    state = make_unique<IdleState>(*wifi_mgr);
-    state_factory.emplace(*wifi_mgr);
-}
+      egroup{move(egroup)}, queue{4} {}
 
 void Runtime::run() {
     setup();
@@ -102,29 +90,26 @@ void Runtime::setup() {
 
 int Runtime::loop() {
     auto data = pop_queue();
-    int ret = data ? state->perform(*data) : ESP_OK;
-    auto next_state_data = state->get_next_state_data();
-    if (!holds_alternative<monostate>(next_state_data))
-        change_state(move(next_state_data));
+    int ret = data ? perform(*data) : ESP_OK;
     return ret;
 }
 
 void Runtime::cleanup() { ota_thread->join(); }
 
 std::unique_ptr<Data> Runtime::pop_queue() {
-    auto data = queue.receive_nowait();
+    const auto delay_ms = 5000;
+    auto data = queue.receive(delay_ms);
     if (data.get())
         UTIL_LOGI("Queue: %s\n", std::visit(DataPrinter{}, *data));
     return data;
 }
 
-void Runtime::change_state(StateData &&next_state_data) {
-    UTIL_LOGI("New state: %s\n",
-              std::visit(StateDataPrinter{}, next_state_data));
-    state = state_factory->get(std::move(next_state_data));
+esp_err_t Runtime::perform(master::Data &data) {
+    (void)data;
+    return ESP_OK;
 }
 
 void Runtime::update_fun(void *runtimePtr) {
     auto runtime = (Runtime *)runtimePtr;
-    runtime->ota_client->update(); // TODO: reboot after unsuccessfull update
+    runtime->ota_client->update(); // TODO: reboot after successfull update
 }

@@ -1,9 +1,8 @@
-#include "master/states.hpp"
+#include "server/states.hpp"
 #include "util.hpp"
 
 using namespace std;
 
-namespace master {
 const char *
 DataPrinter::operator()(const ConnectionErrorData &) const noexcept {
     return "connection error";
@@ -28,8 +27,7 @@ StateData BaseState::get_next_state_data() const noexcept {
     return next_state_data;
 }
 
-IdleState::IdleState(I_WiFiManager &wifi_manager) noexcept
-    : wifi_manager{wifi_manager} {}
+IdleState::IdleState() noexcept {}
 
 int IdleState::perform(Data &data) {
     auto ret = ESP_OK;
@@ -43,4 +41,15 @@ int IdleState::perform(Data &data) {
     return ret;
 }
 
-} // namespace master
+StateFactory::StateFactory() noexcept {}
+
+std::unique_ptr<sm::State<StateData, Data>>
+StateFactory::get(StateData &&data) const {
+    auto state = std::visit(
+        overloaded{
+            [&](IdleStateData &&) { return mkuptr<IdleState>(wifi_mgr); },
+            [](std::monostate &&) { return u_ptr<IdleState>{nullptr}; }},
+        std::move(data));
+    UTIL_THROW(!state, NullError, "state factory got monostate");
+    return state;
+}
