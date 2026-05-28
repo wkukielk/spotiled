@@ -22,6 +22,7 @@ class OTAClient {
   public:
     OTAClient(ota::ClientConfig &&cfg);
     ~OTAClient() noexcept;
+    OTAClient(OTAClient &&) noexcept = default;
     bool is_verify_pending() const;
     esp_err_t mark_app_valid() noexcept;
     std::string get_app_version() const noexcept;

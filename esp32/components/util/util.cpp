@@ -42,17 +42,15 @@ void HandlerProxy::callback(void *event_handler_arg,
 
 Thread::Thread(thread_params &&params)
     : fun{move(params.fun)}, fun_parameters{move(params.fun_parameters)},
-      join_group{*params.join_group}, join_bit{move(params.join_bit)} {
+      join_group{params.join_group.get()}, join_bit{move(params.join_bit)} {
     auto name = move(params.name);
     auto stack_depth = params.stack_depth ? move(params.stack_depth) : 4096;
-    auto priority = params.priority ? move(params.priority) : tskIDLE_PRIORITY;
-    auto e = xTaskCreate(wrapfun, name, stack_depth, this, priority, &handle);
+    auto prio = params.priority ? move(params.priority) : tskIDLE_PRIORITY;
+    auto e = xTaskCreate(wrapfn, name.data(), stack_depth, this, prio, &handle);
     UTIL_THROW(e != pdPASS, InitError, "task");
 }
 
-void Thread::join() const noexcept { join_group.wait(join_bit); }
-
-void Thread::wrapfun(void *params) {
+void Thread::wrapfn(void *params) {
     auto &thread = *(Thread *)params;
     (*thread.fun)(thread.fun_parameters);
     thread.join_group.set(thread.join_bit);

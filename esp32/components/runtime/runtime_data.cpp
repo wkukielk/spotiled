@@ -12,9 +12,6 @@ namespace server {
 Command::Command(runtime::TaskID task_id)
     : runtime::Data<DataType>{DataType::COMMAND, task_id} {}
 
-Stop::Stop(runtime::TaskID task_id)
-    : runtime::Data<DataType>{DataType::STOP, task_id} {}
-
 ACK::ACK(runtime::TaskID task_id)
     : runtime::Data<DataType>{DataType::ACK, task_id} {}
 

@@ -5,16 +5,14 @@
 #include "time_aux.hpp"
 #include <memory>
 
-const char *TAG = "APP";
+using runtime_t = Runtime<util::EventGroup>;
 
-u_ptr<Runtime> create_runtime(Config &&cfg) {
-    return Runtime::create(RuntimeConfig{.backend_cfg = cfg.backend_cfg,
-                                         .wifi_mgr = std::move(cfg.wifi_mgr),
-                                         .ota = std::move(cfg.ota)},
-                           mkuptr<util::EventGroup>());
+u_ptr<Runnable> create_runtime(Config &&cfg) {
+    return runtime_t::create<OTA>(RuntimeConfig{
+        .backend_cfg = cfg.backend_cfg, .wifi_mgr = std::move(cfg.wifi_mgr)});
 }
 
-App::App(u_ptr<Runtime> &&runtime) : runtime{std::move(runtime)} {}
+App::App(u_ptr<Runnable> &&runtime) : runtime{std::move(runtime)} {}
 
 App *App::create() {
     auto cfgnvs = NVS{"cfg"};

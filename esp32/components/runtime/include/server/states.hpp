@@ -35,8 +35,8 @@ class StateFactory {
     using State = sm::State<StateData, Data>;
 
   public:
-    StateFactory() noexcept;
     std::unique_ptr<State> get(StateData &&data) const;
 };
 } // namespace server
+
 #endif

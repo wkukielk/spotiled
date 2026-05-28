@@ -68,11 +68,11 @@ template <typename T> std::unique_ptr<T> PointerQueue<T>::receive_nowait() {
 
 template <typename T>
 SendStatus PointerQueue<T>::send(std::unique_ptr<T> &&data) {
-    return send(std::move(data), portMAX_DELAY);
+    return send(std::move(data), pdTICKS_TO_MS(portMAX_DELAY));
 }
 
 template <typename T>
-SendStatus PointerQueue<T>::send(std::unique_ptr<T> &&data, uint32_t wait) {
+SendStatus PointerQueue<T>::send(std::unique_ptr<T> &&data, uint64_t wait) {
     auto p = data.release();
     auto ret = queue.send(&p, pdMS_TO_TICKS(wait)) == 0;
     return ret ? SendStatus::success : SendStatus::full;

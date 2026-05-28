@@ -11,7 +11,7 @@ message(STATUS "COMPONENT_NAMES=${component_names}")
 idf_component_register(
     SRCS "test.cpp"
     INCLUDE_DIRS "."
-    REQUIRES cmock json ${component_names}
+    REQUIRES cmock espressif__cjson ${component_names}
     WHOLE_ARCHIVE
 )
 

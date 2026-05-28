@@ -11,9 +11,10 @@ using namespace std;
 class ThreadTest : public BaseTest {
   protected:
     ThreadTest()
-        : egroup{mkuptr<MockEventGroup>()}, real{mkuptr<EventGroup>()} {
-        params = thread_params{.name = "test", .join_bit = join_bit};
-    }
+        : egroup{mkuptr<MockEventGroup>()}, real{mkuptr<EventGroup>()},
+          params{.name = "test",
+                 .join_group{*this->egroup},
+                 .join_bit = join_bit} {}
     ~ThreadTest() {}
 
     EventBits_t join_bit = 1 << 0;
@@ -34,7 +35,7 @@ void ThreadTest::stub(void *params) {
 TEST_F(ThreadTest, join_real) {
     params.fun = ThreadTest::stub;
     params.fun_parameters = this;
-    params.join_group = real.get();
+    params.join_group = *real;
     EXPECT_CALL(timer, delay_ms(1000));
     auto thread = mkuptr<Thread>(move(params));
     thread->join();
@@ -44,7 +45,7 @@ TEST_F(ThreadTest, join_real) {
 TEST_F(ThreadTest, join) {
     params.fun = ThreadTest::stub;
     params.fun_parameters = this;
-    params.join_group = egroup.get();
+    params.join_group = *egroup;
     EXPECT_CALL(timer, delay_ms(1000));
     EXPECT_CALL(*egroup, set(join_bit));
     auto thread = mkuptr<Thread>(move(params));

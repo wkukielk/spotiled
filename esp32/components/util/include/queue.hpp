@@ -36,7 +36,7 @@ template <typename T> class PointerQueue {
     std::unique_ptr<T> receive(uint32_t wait);
     std::unique_ptr<T> receive_nowait();
     SendStatus send(std::unique_ptr<T> &&data);
-    SendStatus send(std::unique_ptr<T> &&data, uint32_t wait);
+    SendStatus send(std::unique_ptr<T> &&data, uint64_t wait);
 
   private:
     Queue<T *> queue;

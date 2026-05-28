@@ -2,6 +2,7 @@
 #define MOCK_PARTITION_HPP
 
 #include "I_OTA.hpp"
+#include <gmock/gmock.h>
 
 class MockPartition : public I_Partition {
   public:

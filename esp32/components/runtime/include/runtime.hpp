@@ -6,6 +6,7 @@
 #include "WiFiManager.hpp"
 #include "queue.hpp"
 #include "runtime_data.hpp"
+#include "runtime_helpers.hpp"
 
 struct backend_config_t {
     URL base_url;
@@ -18,37 +19,40 @@ struct backend_config_t {
 struct RuntimeConfig {
     backend_config_t backend_cfg;
     u_ptr<I_WiFiManager> wifi_mgr;
-    u_ptr<I_FullOTA> ota;
 };
 
-struct InnerConfig;
+struct InnerConfig {
+    OTAClient ota_client;
+    u_ptr<I_WiFiManager> wifi_mgr;
+};
 
 class Runnable {
+  public:
     virtual void run() = 0;
 };
 
+template <typename EGroup>
 class Runtime : public Runnable, public util::Notifiable<master::Data> {
   public:
-    static std::unique_ptr<Runtime> create(RuntimeConfig &&cfg,
-                                           u_ptr<util::I_EventGroup> &&egroup);
-    void run();
+    template <typename T_FullOTA>
+    static std::unique_ptr<Runnable> create(RuntimeConfig &&cfg);
+    void run() override;
     void notify(u_ptr<master::Data> &&data) override;
 
-  private:
-    Runtime(InnerConfig &&cfg, u_ptr<util::I_EventGroup> &&egroup);
+  protected:
+    Runtime(InnerConfig &&cfg);
     void setup();
     int loop();
     void cleanup();
     std::unique_ptr<master::Data> pop_queue();
     esp_err_t perform(master::Data &data);
 
-    static void update_fun(void *runtime);
-
     u_ptr<I_WiFiManager> wifi_mgr{};
-    u_ptr<OTAClient> ota_client{};
-    u_ptr<util::I_EventGroup> egroup{};
-    u_ptr<util::Thread> ota_thread{};
+    EGroup egroup{};
+    OTAThread ota_thread;
     util::PointerQueue<master::Data> queue;
 };
+
+#include "runtime.tpp"
 
 #endif

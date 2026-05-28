@@ -3,6 +3,7 @@ idf_component_register(
          "OTA.cpp"
          "WiFi.cpp"
          "WiFiProv.cpp"
+         "HTTPD.cpp"
     INCLUDE_DIRS "include"
     REQUIRES i_nterfaces
              util
@@ -10,6 +11,7 @@ idf_component_register(
     	     espressif__network_provisioning
     PRIV_REQUIRES esp_https_ota
                   app_update
+                  esp_http_server
 )
 
 target_compile_options(${COMPONENT_LIB} PRIVATE "SHELL:-Wno-unused-parameter")

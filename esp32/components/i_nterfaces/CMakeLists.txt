@@ -6,6 +6,7 @@ idf_component_register(
               esp_netif
               esp_http_client
               nvs
+              esp_hal_gpio
      PRIV_REQUIRES util
 )
 
@@ -30,5 +31,9 @@ target_include_directories(${complib} PUBLIC ${idfpath}/components/esp_partition
 target_include_directories(${complib} PUBLIC ${idfpath}/components/esp_driver_ledc/include)
 target_include_directories(${complib} PUBLIC ${idfpath}/components/esp_driver_gpio/include)
 target_include_directories(${complib} PUBLIC ${idfpath}/components/esp_hal_ledc/include)
+target_include_directories(${complib} PUBLIC ${idfpath}/components/esp_hal_gpio/include)
+
+#i_httpd
+target_include_directories(${complib} PUBLIC ${idfpath}/components/esp_http_server/include)
 
 target_compile_options(${COMPONENT_LIB} PRIVATE "SHELL:-Wno-unused-parameter")

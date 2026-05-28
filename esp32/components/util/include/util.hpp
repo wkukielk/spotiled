@@ -124,19 +124,19 @@ class HandlerProxy {
 
 struct thread_params {
     TaskFunction_t fun{};
-    const char *name;
+    std::string_view name;
     configSTACK_DEPTH_TYPE stack_depth;
     void *fun_parameters{};
     UBaseType_t priority;
-    I_EventGroup *join_group{};
+    std::reference_wrapper<I_EventGroup> join_group;
     EventBits_t join_bit;
 };
 
 class Thread {
   public:
     Thread(thread_params &&params);
-    void join() const noexcept;
-    static void wrapfun(void *params);
+    void join() const noexcept { join_group.wait(join_bit); };
+    static void wrapfn(void *params);
 
   private:
     TaskHandle_t handle{};

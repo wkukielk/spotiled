@@ -12,9 +12,9 @@ class App {
     static App *create();
 
   private:
-    App(u_ptr<Runtime> &&runtime);
+    App(u_ptr<Runnable> &&runtime);
 
-    u_ptr<Runtime> runtime{};
+    u_ptr<Runnable> runtime;
 };
 
 #endif
