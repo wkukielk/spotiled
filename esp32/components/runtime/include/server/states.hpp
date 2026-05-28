@@ -25,18 +25,30 @@ class BaseState : public sm::State<StateData, Data> {
     StateData next_state_data;
 };
 
+template <typename I_WSServer, typename I_Queue>
 class IdleState : public BaseState {
   public:
-    IdleState() noexcept;
-    int perform(Data &data) override;
+    IdleState(I_WSServer &ws_server, I_Queue &queue) noexcept;
+    int perform() override;
+
+  private:
+    std::reference_wrapper<I_WSServer> ws_server;
+    std::reference_wrapper<I_Queue> queue;
 };
 
-class StateFactory {
+template <typename I_WSServer, typename I_Queue> class StateFactory {
     using State = sm::State<StateData, Data>;
 
   public:
+    StateFactory(I_WSServer &ws_server, I_Queue &queue);
     std::unique_ptr<State> get(StateData &&data) const;
+
+  private:
+    std::reference_wrapper<I_WSServer> ws_server;
+    std::reference_wrapper<I_Queue> queue;
 };
 } // namespace server
+
+#include "server/states.tpp"
 
 #endif

@@ -17,7 +17,7 @@ template <typename DataType> class Data {
 template <typename StateData, typename Data> class State {
   public:
     virtual ~State() noexcept {};
-    virtual int perform(Data &data) = 0;
+    virtual int perform() = 0;
     virtual StateData get_next_state_data() const noexcept = 0;
 };
 } // namespace sm

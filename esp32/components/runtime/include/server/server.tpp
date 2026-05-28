@@ -19,7 +19,8 @@ template <typename I_WSServer, typename I_Queue>
 ServerThread<I_WSServer, I_Queue>::ServerThread(
     const util::JoinEventGroup &join_group)
     : util::PostponedThread{join_group}, ws_server{}, queue{4},
-      state{mkuptr<server::IdleState>()}, state_factory{} {}
+      state{mkuptr<server::IdleState<I_WSServer, I_Queue>>(ws_server, queue)},
+      state_factory{ws_server, queue} {}
 
 template <typename I_WSServer, typename I_Queue>
 void ServerThread<I_WSServer, I_Queue>::change_state(
@@ -45,8 +46,7 @@ esp_err_t ServerThread<I_WSServer, I_Queue>::close() noexcept {
 
 template <typename I_WSServer, typename I_Queue>
 int ServerThread<I_WSServer, I_Queue>::perform() {
-    auto data = pop_queue();
-    int ret = data ? state->perform(*data) : ESP_OK;
+    int ret = state->perform();
     auto next_state_data = state->get_next_state_data();
     if (!holds_alternative<monostate>(next_state_data))
         change_state(move(next_state_data));

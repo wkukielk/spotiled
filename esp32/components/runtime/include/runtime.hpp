@@ -46,7 +46,7 @@ class Runtime : public Runnable, public util::Notifiable<master::Data> {
 
   protected:
     Runtime(InnerConfig<T_OTAClient> &&cfg);
-    void setup();
+    esp_err_t setup();
     int perform();
     void cleanup();
     std::unique_ptr<master::Data> pop_queue();

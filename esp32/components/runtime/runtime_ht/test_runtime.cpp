@@ -8,24 +8,21 @@
 using namespace std;
 
 class RuntimeTest : public BaseTest {
-  protected:
-    RuntimeTest() {
-        auto cfg = RuntimeConfig{
-            .backend_cfg = {.base_url = URL{"https://backend.local:8000"},
-                            .cert_pem = "cert",
-                            .cert_len = 4,
-                            .skip_cn_check = false},
-            .wifi_mgr = mkuptr<MockWiFiManager>(),
-            .ota = mkuptr<MockOTA>(),
-        };
-        auto egroup = mkuptr<MockEventGroup>();
-        this->egroup = egroup.get();
-        runtime = Runtime::create(std::move(cfg), move(egroup));
-    }
-    ~RuntimeTest() {}
+    //   protected:
+    //     RuntimeTest() : runtime{Runtime::create(std::move(cfg))}, {}
+    //     ~RuntimeTest() {}
 
-    u_ptr<Runtime> runtime{};
-    MockEventGroup *egroup{};
+    //     static RuntimeConfig get_cfg() {
+    //         return RuntimeConfig{
+    //             .backend_cfg = {.base_url =
+    //             URL{"https://backend.local:8000"},
+    //                             .cert_pem = "cert",
+    //                             .cert_len = 4,
+    //                             .skip_cn_check = false},
+    //             .wifi_mgr = mkuptr<MockWiFiManager>()};
+    //     }
+
+    //     u_ptr<Runtime> runtime{};
 };
 
 TEST_F(RuntimeTest, init) {}

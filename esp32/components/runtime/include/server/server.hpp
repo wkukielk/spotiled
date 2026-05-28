@@ -24,7 +24,7 @@ class ServerThread : public util::PostponedThread,
     I_WSServer ws_server;
     I_Queue queue;
     u_ptr<server::BaseState> state{};
-    server::StateFactory state_factory;
+    server::StateFactory<I_WSServer, I_Queue> state_factory;
 };
 
 namespace server {

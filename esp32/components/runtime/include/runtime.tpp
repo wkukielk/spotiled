@@ -40,24 +40,29 @@ util::JoinEventGroup get_server_join_group(EGroup &egroup) {
 template <typename T>
 Runtime<T>::Runtime(InnerConfig<T_OTAClient> &&cfg)
     : wifi_mgr{move(cfg.wifi_mgr)}, egroup{},
-      ota_thread{move(cfg.ota_client), get_server_join_group(egroup)},
+      ota_thread{move(cfg.ota_client), get_ota_join_group(egroup)},
       server_thread{get_server_join_group(egroup)}, queue{4} {}
 
 template <typename T> void Runtime<T>::run() {
-    setup();
-    int ret{};
-    try {
-        while ((ret = perform()) == ESP_OK)
-            ;
-    } catch (const std::exception &e) {
-        ESP_LOGE(runtime_tag, "Exception: %s", e.what());
+    int ret = setup();
+    if (ret == ESP_OK) {
+        ESP_LOGI(runtime_tag, "%s", "Setup ok");
+        try {
+            while ((ret = perform()) == ESP_OK)
+                ;
+        } catch (const std::exception &e) {
+            ESP_LOGE(runtime_tag, "Exception: %s", e.what());
+        }
     }
     ESP_LOGE(runtime_tag, "Return: %d", ret);
     cleanup();
     ESP_LOGE(runtime_tag, "Runtime finished");
 }
 
-template <typename T> void Runtime<T>::setup() { ota_thread.start(); }
+template <typename T> esp_err_t Runtime<T>::setup() {
+    ota_thread.start();
+    return server_thread.start();
+}
 
 template <typename T> int Runtime<T>::perform() {
     auto data = pop_queue();
@@ -65,7 +70,10 @@ template <typename T> int Runtime<T>::perform() {
     return ret;
 }
 
-template <typename T> void Runtime<T>::cleanup() { ota_thread.join(); }
+template <typename T> void Runtime<T>::cleanup() {
+    ota_thread.join();
+    server_thread.join();
+}
 
 template <typename T> std::unique_ptr<master::Data> Runtime<T>::pop_queue() {
     const auto delay_ms = 5000;
