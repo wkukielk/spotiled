@@ -1,25 +1,29 @@
-#include "runtime_helpers.hpp"
+#include "master/runtime_helpers.hpp"
 #include "wifi_aux.hpp"
 
 using namespace std;
 
 const char *runtime_tag = "Runtime";
+const char *server_tag = "Server";
 const EventBits_t OTA_BIT = 1 << 0;
 
-static void update_fun(void *ota_client_ptr);
+PostponedThread::PostponedThread(const JoinEventGroup &join_group)
+    : join_group{join_group} {}
 
-OTAThread::OTAThread(OTAClient &&ota_client, const OTAEventBits &event_bits)
-    : ota_client{move(ota_client)}, event_bits{event_bits} {}
+static void ota_thread_fun(void *ota_client_ptr);
+
+OTAThread::OTAThread(OTAClient &&ota_client, const JoinEventGroup &join_group)
+    : PostponedThread{join_group}, ota_client{move(ota_client)} {}
 
 void OTAThread::start() {
-    thread.emplace(util::thread_params{.fun = update_fun,
+    thread.emplace(util::thread_params{.fun = ota_thread_fun,
                                        .name = "ota",
                                        .fun_parameters = &ota_client,
-                                       .join_group = event_bits.egroup,
-                                       .join_bit = event_bits.join_bit});
+                                       .join_group = join_group.egroup,
+                                       .join_bit = join_group.join_bit});
 }
 
-static void update_fun(void *ota_client_ptr) {
+static void ota_thread_fun(void *ota_client_ptr) {
     auto ota_client = (OTAClient *)ota_client_ptr;
     ota_client->update(); // TODO: reboot after successfull update
 }

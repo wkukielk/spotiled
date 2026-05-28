@@ -4,9 +4,9 @@
 #include "OTAClient.hpp"
 #include "URL.hpp"
 #include "WiFiManager.hpp"
+#include "master/runtime_helpers.hpp"
 #include "queue.hpp"
 #include "runtime_data.hpp"
-#include "runtime_helpers.hpp"
 
 struct backend_config_t {
     URL base_url;
@@ -28,6 +28,7 @@ struct InnerConfig {
 
 class Runnable {
   public:
+    virtual ~Runnable() noexcept {};
     virtual void run() = 0;
 };
 
@@ -42,10 +43,10 @@ class Runtime : public Runnable, public util::Notifiable<master::Data> {
   protected:
     Runtime(InnerConfig &&cfg);
     void setup();
-    int loop();
+    int perform();
     void cleanup();
     std::unique_ptr<master::Data> pop_queue();
-    esp_err_t perform(master::Data &data);
+    esp_err_t process(master::Data &data);
 
     u_ptr<I_WiFiManager> wifi_mgr{};
     EGroup egroup{};

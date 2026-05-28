@@ -22,6 +22,15 @@ template <typename HTTPD> class Server {
     server::StateFactory state_factory;
 };
 
+namespace server {
+class DataPrinter {
+  public:
+    const char *operator()(const Command &) const noexcept { return "command"; }
+    const char *operator()(const ACK &) const noexcept { return "ack"; }
+    const char *operator()(const NACK &) const noexcept { return "nack"; }
+};
+} // namespace server
+
 #include "server.tpp"
 
 #endif

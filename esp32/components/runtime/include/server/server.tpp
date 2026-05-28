@@ -2,26 +2,15 @@
 #include "server/server.hpp"
 #endif
 
-const char *TAG = "Server";
-
-using namespace std;
-using namespace server;
-
-class DataPrinter {
-  public:
-    const char *operator()(const Command &) const noexcept { return "command"; }
-    const char *operator()(const ACK &) const noexcept { return "ack"; }
-    const char *operator()(const NACK &) const noexcept { return "nack"; }
-};
-
 template <typename HTTPD>
 Server<HTTPD>::Server()
-    : ws_server{}, queue{4}, state{mkuptr<IdleState>()}, state_factory{} {}
+    : ws_server{}, queue{4}, state{mkuptr<server::IdleState>()},
+      state_factory{} {}
 
 template <typename HTTPD>
 void Server<HTTPD>::change_state(server::StateData &&next_state_data) {
-    UTIL_LOGI("New state: %s\n",
-              std::visit(StateDataPrinter{}, next_state_data));
+    ESP_LOGI("Server", "New state: %s\n",
+             std::visit(server::StateDataPrinter{}, next_state_data));
 }
 
 template <typename HTTPD> esp_err_t Server<HTTPD>::init() noexcept {
@@ -46,6 +35,7 @@ std::unique_ptr<server::Data> Server<HTTPD>::pop_queue() {
     const auto delay_ms = 5000;
     auto data = queue.receive(delay_ms);
     if (data.get())
-        UTIL_LOGI("Queue: %s\n", std::visit(DataPrinter{}, *data));
+        ESP_LOGI("Server", "Queue: %s\n",
+                 std::visit(server::DataPrinter{}, *data));
     return data;
 }

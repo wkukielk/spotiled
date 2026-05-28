@@ -4,10 +4,6 @@
 #include "global.hpp"
 #include "util.hpp"
 
-using namespace std;
-using namespace util;
-using namespace master;
-
 template <typename EGroup>
 template <typename T_FullOTA>
 u_ptr<Runnable> Runtime<EGroup>::create(RuntimeConfig &&cfg) {
@@ -27,7 +23,7 @@ u_ptr<Runnable> Runtime<EGroup>::create(RuntimeConfig &&cfg) {
         .ota = make_unique<T_FullOTA>()};
     auto icfg = InnerConfig{.ota_client = OTAClient{move(otacfg)},
                             .wifi_mgr = move(cfg.wifi_mgr)};
-    return u_ptr<Runtime>{new Runtime{move(icfg)}};
+    return u_ptr<Runnable>{new Runtime{move(icfg)}};
     // NOLINTNEXTLINE(clang-analyzer-cplusplus.NewDeleteLeaks)
 }
 
@@ -35,14 +31,14 @@ template <typename EGroup>
 Runtime<EGroup>::Runtime(InnerConfig &&cfg)
     : wifi_mgr{move(cfg.wifi_mgr)}, egroup{},
       ota_thread{move(cfg.ota_client),
-                 OTAEventBits{.egroup = this->egroup, .join_bit = OTA_BIT}},
+                 JoinEventGroup{.egroup = this->egroup, .join_bit = OTA_BIT}},
       queue{4} {}
 
 template <typename EGroup> void Runtime<EGroup>::run() {
     setup();
     int ret{};
     try {
-        while ((ret = loop()) == ESP_OK)
+        while ((ret = perform()) == ESP_OK)
             ;
     } catch (const std::exception &e) {
         ESP_LOGE(runtime_tag, "Exception: %s", e.what());
@@ -52,15 +48,16 @@ template <typename EGroup> void Runtime<EGroup>::run() {
     ESP_LOGE(runtime_tag, "Runtime finished");
 }
 
-template <typename EGroup> void Runtime<EGroup>::notify(u_ptr<Data> &&data) {
+template <typename EGroup>
+void Runtime<EGroup>::notify(u_ptr<master::Data> &&data) {
     queue.send(move(data));
 }
 
 template <typename EGroup> void Runtime<EGroup>::setup() { ota_thread.start(); }
 
-template <typename EGroup> int Runtime<EGroup>::loop() {
+template <typename EGroup> int Runtime<EGroup>::perform() {
     auto data = pop_queue();
-    int ret = data ? perform(*data) : ESP_OK;
+    int ret = data ? process(*data) : ESP_OK;
     return ret;
 }
 
@@ -68,16 +65,18 @@ template <typename EGroup> void Runtime<EGroup>::cleanup() {
     ota_thread.join();
 }
 
-template <typename EGroup> std::unique_ptr<Data> Runtime<EGroup>::pop_queue() {
+template <typename EGroup>
+std::unique_ptr<master::Data> Runtime<EGroup>::pop_queue() {
     const auto delay_ms = 5000;
     auto data = queue.receive(delay_ms);
     if (data.get())
-        ESP_LOGE(runtime_tag, "Queue: %s\n", std::visit(DataPrinter{}, *data));
+        ESP_LOGE(runtime_tag, "Queue: %s\n",
+                 std::visit(master::DataPrinter{}, *data));
     return data;
 }
 
 template <typename EGroup>
-esp_err_t Runtime<EGroup>::perform(master::Data &data) {
+esp_err_t Runtime<EGroup>::process(master::Data &data) {
     (void)data;
     return ESP_OK;
 }
