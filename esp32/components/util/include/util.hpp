@@ -189,6 +189,23 @@ class Task : public I_Task {
     Mutex m;
 };
 
+template <typename T> class SingletonRef {
+  public:
+    T get() noexcept { return ref.load(); }
+    void store(T x) noexcept {
+        ++client_cnt;
+        ref.store(x);
+    }
+    void drop() noexcept {
+        if (--client_cnt == 0)
+            ref.store(T{});
+    }
+
+  private:
+    std::atomic<T> ref{};
+    uint8_t client_cnt = 0;
+};
+
 template <typename Data> class Notifiable {
   public:
     virtual void notify(std::unique_ptr<Data> &&data) = 0;

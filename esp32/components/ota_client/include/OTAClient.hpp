@@ -2,6 +2,7 @@
 #define OTA_CLIENT_HPP
 
 #include "I_OTA.hpp"
+#include <atomic>
 
 namespace ota {
 struct HTTPSConfig {
@@ -11,28 +12,26 @@ struct HTTPSConfig {
     size_t cert_len;
     bool skip_cn_check;
 };
-
-struct ClientConfig {
-    HTTPSConfig httpcfg;
-    std::unique_ptr<I_FullOTA> ota;
-};
 } // namespace ota
 
-class OTAClient {
+template <typename T_OTA> class OTAClient {
   public:
-    OTAClient(ota::ClientConfig &&cfg);
+    OTAClient(ota::HTTPSConfig &&cfg);
     ~OTAClient() noexcept;
-    OTAClient(OTAClient &&) noexcept = default;
+    OTAClient(OTAClient &&) noexcept;
     bool is_verify_pending() const;
     esp_err_t mark_app_valid() noexcept;
     std::string get_app_version() const noexcept;
     esp_err_t update() noexcept;
-    I_FullOTA &get_ota() noexcept;
 
-  private:
+  protected:
     static esp_err_t attach_headers(esp_http_client_handle_t http);
-    std::unique_ptr<I_FullOTA> ota{};
+    inline static util::SingletonRef<OTAClient<T_OTA> *> _client_ref{};
+
+    T_OTA ota;
     ota::HTTPSConfig httpcfg{};
 };
+
+#include "OTAClient.tpp"
 
 #endif

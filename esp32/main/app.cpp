@@ -1,14 +1,23 @@
 #include "app.hpp"
 #include "Configurer.hpp"
+#include "HTTPD.hpp"
 #include "WiFi.hpp"
 #include "global.hpp"
+#include "server/server.hpp"
 #include "time_aux.hpp"
 #include <memory>
 
-using runtime_t = Runtime<util::EventGroup>;
+struct RuntimeTypes {
+    using EGroup = util::EventGroup;
+    using T_OTAThread = OTAThread<OTAClient<OTA>>;
+    using T_ServerThread =
+        ServerThread<WSServer<HTTPD>, util::PointerQueue<server::Data>>;
+};
+
+using runtime_t = Runtime<RuntimeTypes>;
 
 u_ptr<Runnable> create_runtime(Config &&cfg) {
-    return runtime_t::create<OTA>(RuntimeConfig{
+    return runtime_t::create(RuntimeConfig{
         .backend_cfg = cfg.backend_cfg, .wifi_mgr = std::move(cfg.wifi_mgr)});
 }
 

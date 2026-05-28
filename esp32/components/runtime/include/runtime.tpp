@@ -4,9 +4,9 @@
 #include "global.hpp"
 #include "util.hpp"
 
-template <typename EGroup>
-template <typename T_FullOTA>
-u_ptr<Runnable> Runtime<EGroup>::create(RuntimeConfig &&cfg) {
+template <typename T> u_ptr<Runnable> Runtime<T>::create(RuntimeConfig &&cfg) {
+    using T_OTAClient = typename T_OTAThread::Client;
+
     UTIL_THROW(cfg.wifi_mgr->init(), InitError, "failed to init wifi mgr");
     UTIL_THROW(cfg.wifi_mgr->connect(), InitError, "Failed to connect to WiFi");
 
@@ -14,28 +14,36 @@ u_ptr<Runnable> Runtime<EGroup>::create(RuntimeConfig &&cfg) {
     auto otaurl =
         base.get() + "/api/esp/firmware/" + CONFIG_IDF_TARGET "/latest";
 
-    auto otacfg = ota::ClientConfig{
-        .httpcfg = {.url = move(otaurl),
-                    .auth_header = move(cfg.backend_cfg.auth_header),
-                    .cert_pem = cfg.backend_cfg.cert_pem,
-                    .cert_len = cfg.backend_cfg.cert_len,
-                    .skip_cn_check = cfg.backend_cfg.skip_cn_check},
-        .ota = make_unique<T_FullOTA>()};
-    auto icfg = InnerConfig{.ota_client = OTAClient{move(otacfg)},
-                            .wifi_mgr = move(cfg.wifi_mgr)};
+    auto otacfg =
+        ota::HTTPSConfig{.url = move(otaurl),
+                         .auth_header = move(cfg.backend_cfg.auth_header),
+                         .cert_pem = cfg.backend_cfg.cert_pem,
+                         .cert_len = cfg.backend_cfg.cert_len,
+                         .skip_cn_check = cfg.backend_cfg.skip_cn_check};
+    auto icfg =
+        InnerConfig<T_OTAClient>{.ota_client = T_OTAClient{move(otacfg)},
+                                 .wifi_mgr = move(cfg.wifi_mgr)};
     return u_ptr<Runnable>{new Runtime{move(icfg)}};
     // NOLINTNEXTLINE(clang-analyzer-cplusplus.NewDeleteLeaks)
 }
 
 template <typename EGroup>
-Runtime<EGroup>::Runtime(InnerConfig &&cfg)
-    : wifi_mgr{move(cfg.wifi_mgr)}, egroup{},
-      ota_thread{
-          move(cfg.ota_client),
-          util::JoinEventGroup{.egroup = this->egroup, .join_bit = OTA_BIT}},
-      queue{4} {}
+util::JoinEventGroup get_ota_join_group(EGroup &egroup) {
+    return util::JoinEventGroup{.egroup = egroup, .join_bit = OTA_BIT};
+}
 
-template <typename EGroup> void Runtime<EGroup>::run() {
+template <typename EGroup>
+util::JoinEventGroup get_server_join_group(EGroup &egroup) {
+    return util::JoinEventGroup{.egroup = egroup, .join_bit = SERVER_BIT};
+}
+
+template <typename T>
+Runtime<T>::Runtime(InnerConfig<T_OTAClient> &&cfg)
+    : wifi_mgr{move(cfg.wifi_mgr)}, egroup{},
+      ota_thread{move(cfg.ota_client), get_server_join_group(egroup)},
+      server_thread{get_server_join_group(egroup)}, queue{4} {}
+
+template <typename T> void Runtime<T>::run() {
     setup();
     int ret{};
     try {
@@ -49,20 +57,17 @@ template <typename EGroup> void Runtime<EGroup>::run() {
     ESP_LOGE(runtime_tag, "Runtime finished");
 }
 
-template <typename EGroup> void Runtime<EGroup>::setup() { ota_thread.start(); }
+template <typename T> void Runtime<T>::setup() { ota_thread.start(); }
 
-template <typename EGroup> int Runtime<EGroup>::perform() {
+template <typename T> int Runtime<T>::perform() {
     auto data = pop_queue();
     int ret = data ? process(*data) : ESP_OK;
     return ret;
 }
 
-template <typename EGroup> void Runtime<EGroup>::cleanup() {
-    ota_thread.join();
-}
+template <typename T> void Runtime<T>::cleanup() { ota_thread.join(); }
 
-template <typename EGroup>
-std::unique_ptr<master::Data> Runtime<EGroup>::pop_queue() {
+template <typename T> std::unique_ptr<master::Data> Runtime<T>::pop_queue() {
     const auto delay_ms = 5000;
     auto data = queue.receive(delay_ms);
     if (data.get())
@@ -71,8 +76,7 @@ std::unique_ptr<master::Data> Runtime<EGroup>::pop_queue() {
     return data;
 }
 
-template <typename EGroup>
-esp_err_t Runtime<EGroup>::process(master::Data &data) {
+template <typename T> esp_err_t Runtime<T>::process(master::Data &data) {
     (void)data;
     return ESP_OK;
 }

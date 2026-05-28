@@ -11,14 +11,19 @@
 extern const char *runtime_tag;
 extern const char *server_tag;
 extern const EventBits_t OTA_BIT;
+extern const EventBits_t SERVER_BIT;
 
-class OTAThread : public util::PostponedThread {
+template <typename T_OTAClient> class OTAThread : public util::PostponedThread {
   public:
-    OTAThread(OTAClient &&ota_client, const util::JoinEventGroup &join_group);
+    using Client = T_OTAClient;
+
+    OTAThread(T_OTAClient &&ota_client, const util::JoinEventGroup &join_group);
     void start();
 
   private:
-    OTAClient ota_client;
+    static void ota_thread_fun(void *ota_thread_ptr);
+
+    T_OTAClient ota_client;
 };
 
 URL resolve_base(const URL &base_url);

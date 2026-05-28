@@ -21,8 +21,8 @@ struct RuntimeConfig {
     u_ptr<I_WiFiManager> wifi_mgr;
 };
 
-struct InnerConfig {
-    OTAClient ota_client;
+template <typename T_OTAClient> struct InnerConfig {
+    T_OTAClient ota_client;
     u_ptr<I_WiFiManager> wifi_mgr;
 };
 
@@ -32,16 +32,20 @@ class Runnable {
     virtual void run() = 0;
 };
 
-template <typename EGroup>
+template <typename T>
 class Runtime : public Runnable, public util::Notifiable<master::Data> {
+    using EGroup = typename T::EGroup;
+    using T_OTAThread = typename T::T_OTAThread;
+    using T_OTAClient = typename T::T_OTAThread::Client;
+    using T_ServerThread = typename T::T_ServerThread;
+
   public:
-    template <typename T_FullOTA>
     static std::unique_ptr<Runnable> create(RuntimeConfig &&cfg);
     void run() override;
     void notify(u_ptr<master::Data> &&data) override { queue.send(move(data)); }
 
   protected:
-    Runtime(InnerConfig &&cfg);
+    Runtime(InnerConfig<T_OTAClient> &&cfg);
     void setup();
     int perform();
     void cleanup();
@@ -50,7 +54,8 @@ class Runtime : public Runnable, public util::Notifiable<master::Data> {
 
     u_ptr<I_WiFiManager> wifi_mgr{};
     EGroup egroup{};
-    OTAThread ota_thread;
+    T_OTAThread ota_thread;
+    T_ServerThread server_thread;
     util::PointerQueue<master::Data> queue;
 };
 
