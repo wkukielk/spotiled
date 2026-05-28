@@ -38,7 +38,7 @@ class Runtime : public Runnable, public util::Notifiable<master::Data> {
     template <typename T_FullOTA>
     static std::unique_ptr<Runnable> create(RuntimeConfig &&cfg);
     void run() override;
-    void notify(u_ptr<master::Data> &&data) override;
+    void notify(u_ptr<master::Data> &&data) override { queue.send(move(data)); }
 
   protected:
     Runtime(InnerConfig &&cfg);

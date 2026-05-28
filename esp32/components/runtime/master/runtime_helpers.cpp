@@ -2,13 +2,11 @@
 #include "wifi_aux.hpp"
 
 using namespace std;
+using namespace util;
 
 const char *runtime_tag = "Runtime";
 const char *server_tag = "Server";
 const EventBits_t OTA_BIT = 1 << 0;
-
-PostponedThread::PostponedThread(const JoinEventGroup &join_group)
-    : join_group{join_group} {}
 
 static void ota_thread_fun(void *ota_client_ptr);
 

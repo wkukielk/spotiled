@@ -57,6 +57,9 @@ void Thread::wrapfn(void *params) {
     vTaskDelete(NULL);
 }
 
+PostponedThread::PostponedThread(const JoinEventGroup &join_group)
+    : join_group{join_group} {}
+
 Mutex::Mutex() : s{xSemaphoreCreateBinary()} {
     UTIL_THROW(s == NULL, InitError, "sem");
 }

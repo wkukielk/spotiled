@@ -22,6 +22,7 @@ IGNORE_UNUSED_POP
 #include "freertos/event_groups.h"
 #include "straux.hpp"
 #include <functional>
+#include <optional>
 #include <span>
 
 #define UTIL_RETURN(ret)                                                       \
@@ -144,6 +145,21 @@ class Thread {
     void *fun_parameters{};
     I_EventGroup &join_group;
     EventBits_t join_bit{};
+};
+
+struct JoinEventGroup {
+    std::reference_wrapper<I_EventGroup> egroup;
+    EventBits_t join_bit;
+};
+
+class PostponedThread {
+  public:
+    PostponedThread(const JoinEventGroup &join_group);
+    void join() { thread->join(); };
+
+  protected:
+    JoinEventGroup join_group;
+    std::optional<Thread> thread;
 };
 
 class Mutex {

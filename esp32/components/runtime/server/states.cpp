@@ -24,7 +24,7 @@ IdleState::IdleState() noexcept {}
 
 int IdleState::perform(Data &data) {
     auto ret = ESP_OK;
-    std::visit(overloaded{[&](Command &&) {}, [&](const auto &&) { ret = -2; }},
+    std::visit(overloaded{[&](ACK &&) {}, [&](NACK &&) { ret = -1; }},
                std::move(data));
     return ret;
 }

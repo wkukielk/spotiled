@@ -9,8 +9,6 @@ ErrorData::ErrorData(runtime::TaskID task_id)
 } // namespace master
 
 namespace server {
-Command::Command(runtime::TaskID task_id)
-    : runtime::Data<DataType>{DataType::COMMAND, task_id} {}
 
 ACK::ACK(runtime::TaskID task_id)
     : runtime::Data<DataType>{DataType::ACK, task_id} {}

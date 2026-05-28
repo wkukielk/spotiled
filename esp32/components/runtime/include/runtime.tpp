@@ -30,8 +30,9 @@ u_ptr<Runnable> Runtime<EGroup>::create(RuntimeConfig &&cfg) {
 template <typename EGroup>
 Runtime<EGroup>::Runtime(InnerConfig &&cfg)
     : wifi_mgr{move(cfg.wifi_mgr)}, egroup{},
-      ota_thread{move(cfg.ota_client),
-                 JoinEventGroup{.egroup = this->egroup, .join_bit = OTA_BIT}},
+      ota_thread{
+          move(cfg.ota_client),
+          util::JoinEventGroup{.egroup = this->egroup, .join_bit = OTA_BIT}},
       queue{4} {}
 
 template <typename EGroup> void Runtime<EGroup>::run() {
@@ -46,11 +47,6 @@ template <typename EGroup> void Runtime<EGroup>::run() {
     ESP_LOGE(runtime_tag, "Return: %d", ret);
     cleanup();
     ESP_LOGE(runtime_tag, "Runtime finished");
-}
-
-template <typename EGroup>
-void Runtime<EGroup>::notify(u_ptr<master::Data> &&data) {
-    queue.send(move(data));
 }
 
 template <typename EGroup> void Runtime<EGroup>::setup() { ota_thread.start(); }

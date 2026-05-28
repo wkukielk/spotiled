@@ -35,11 +35,7 @@ using Data = std::variant<ConnectionErrorData, ErrorData>;
 
 namespace server {
 
-enum class DataType { COMMAND, ACK, NACK };
-
-struct Command : public runtime::Data<DataType> {
-    Command(runtime::TaskID task_id);
-};
+enum class DataType { ACK, NACK };
 
 struct ACK : public runtime::Data<DataType> {
     ACK(runtime::TaskID task_id);
@@ -49,7 +45,7 @@ struct NACK : public runtime::Data<DataType> {
     NACK(runtime::TaskID task_id);
 };
 
-using Data = std::variant<Command, ACK, NACK>;
+using Data = std::variant<ACK, NACK>;
 
 } // namespace server
 
