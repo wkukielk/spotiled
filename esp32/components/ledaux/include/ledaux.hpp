@@ -2,6 +2,7 @@
 #define LEDAUX_HPP
 
 #include "I_LED.hpp"
+#include "errors.hpp"
 #include "rgb.hpp"
 #include "util.hpp"
 
@@ -43,30 +44,26 @@ extern const ledc_channel_t BLUE;
 extern const ledc_channel_t WW;
 } // namespace channel
 
-inline constexpr ledc_clk_cfg_t CLOCK = LEDC_USE_APB_CLK;
-inline constexpr ledc_timer_t TIMER = LEDC_TIMER_0;
-inline constexpr ledc_mode_t MODE = LEDC_LOW_SPEED_MODE;
-inline constexpr ledc_intr_type_t INTERRUPT_F = LEDC_INTR_DISABLE;
-inline constexpr ledc_sleep_mode_t SLEEP_MODE = LEDC_SLEEP_MODE_NO_ALIVE_NO_PD;
+extern const ledc_timer_t TIMER;
+extern const ledc_mode_t MODE;
+extern const ledc_intr_type_t INTERRUPT_F;
+extern const ledc_sleep_mode_t SLEEP_MODE;
 
 inline constexpr int FREQ = 1000; // Hz
-inline constexpr ledc_timer_bit_t RESOLUTION = LEDC_TIMER_8_BIT;
-inline constexpr int MAX_DUTY = (1 << RESOLUTION) - 1;
+extern const ledc_timer_bit_t RESOLUTION;
+extern const int MAX_DUTY;
 
 inline constexpr bool INVERT = false;
-extern const int DEFAULT_FADE_TIME_MS;
+inline constexpr int DEFAULT_FADE_TIME_MS = 1000;
 }; // namespace PWM
+extern ledc_cbs_t fade_cb_s;
 }; // namespace led
 
-class LEDC {
-    using channel_config_t = ledc_channel_config_t;
-    using mode_t = ledc_mode_t;
+template <I_LED LED> class LEDC {
     using channel_t = ledc_channel_t;
-    using timer_config_t = ledc_timer_config_t;
-    using fade_mode_t = ledc_fade_mode_t;
 
   public:
-    explicit LEDC(u_ptr<I_LED> &&led) noexcept;
+    LEDC() noexcept;
     esp_err_t set_color(RGB rgb) noexcept;
     RGB get_current_color() const noexcept;
 
@@ -77,7 +74,10 @@ class LEDC {
     esp_err_t start_fade(channel_t channel, uint32_t target_duty) noexcept;
     RGBDuty get_current_duty() const noexcept;
 
-    u_ptr<I_LED> led{};
+  protected:
+    LED led_;
 };
+
+#include "ledaux.tpp"
 
 #endif

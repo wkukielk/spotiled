@@ -1,5 +1,5 @@
 idf_component_register(
-    SRCS "LED.cpp" "mDNS.cpp"
+    SRCS "mDNS.cpp"
          "OTA.cpp"
          "WiFi.cpp"
          "WiFiProv.cpp"

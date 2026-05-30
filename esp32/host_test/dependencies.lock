@@ -33,6 +33,6 @@ direct_dependencies:
 - espressif/cjson
 - espressif/network_provisioning
 - idf
-manifest_hash: ee47f58c18a8bdcb55215534e6f6f0a91e4c1cea586eb39b8f004ec4a8932eb0
+manifest_hash: f59cb4c025da926dea0110b1109651a957c5730f7a78695aefeb11f76e0a7380
 target: linux
 version: 3.0.0
