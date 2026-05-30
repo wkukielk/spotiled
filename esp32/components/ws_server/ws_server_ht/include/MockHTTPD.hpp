@@ -19,7 +19,7 @@ class MockHTTPD {
   public:
     using Config = HTTPDConfig;
 
-    MockHTTPD(u_ptr<HTTPDConfig> config);
+    MockHTTPD(HTTPDConfig config);
     MOCK_METHOD(esp_err_t, start, (), (noexcept));
     MOCK_METHOD(esp_err_t, stop, (), (noexcept));
     MOCK_METHOD(esp_err_t, register_uri_handler,

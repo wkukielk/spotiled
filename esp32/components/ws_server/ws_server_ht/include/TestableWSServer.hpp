@@ -7,6 +7,7 @@
 class TestableWSServer : public WSServer<MockHTTPD> {
   public:
     MockHTTPD &get_httpd() noexcept { return httpd; }
+    using WSServer<MockHTTPD>::handler;
 };
 
 #endif

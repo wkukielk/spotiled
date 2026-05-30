@@ -2,7 +2,7 @@
 
 thread_local MockHTTPD *MockHTTPD::instance = nullptr;
 
-MockHTTPD::MockHTTPD(u_ptr<Config> config) {
+MockHTTPD::MockHTTPD(Config config) {
     (void)config;
     MockHTTPD::instance = this;
 }
