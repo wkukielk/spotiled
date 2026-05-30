@@ -7,10 +7,10 @@
 using namespace std;
 
 namespace {
-template <I_HTTPD HTTPD> u_ptr<typename HTTPD::Config> get_config() {
+template <I_HTTPD HTTPD> typename HTTPD::Config get_config() {
     auto config = HTTPD::get_default_config();
     config.server_port = 8000;
-    return make_unique<typename HTTPD::Config>(config);
+    return config;
 }
 } // namespace
 
@@ -49,12 +49,12 @@ template <I_HTTPD HTTPD> esp_err_t WSServer<HTTPD>::stop() noexcept {
 
 template <I_HTTPD HTTPD> esp_err_t WSServer<HTTPD>::handler(httpd_req_t *req) {
     httpd_ws_frame_t ws_pkt{.type = HTTPD_WS_TYPE_TEXT};
-    UTIL_RETURN(httpd_ws_recv_frame(req, &ws_pkt, 0));
+    UTIL_RETURN(HTTPD::ws_recv_frame(req, &ws_pkt, 0));
     UTIL_RETURN(ws_pkt.len == 0);
 
     auto buf = u_ptr<uint8_t[]>{new uint8_t[ws_pkt.len + 1]};
     ws_pkt.payload = buf.get();
-    UTIL_RETURN(httpd_ws_recv_frame(req, &ws_pkt, ws_pkt.len));
+    UTIL_RETURN(HTTPD::ws_recv_frame(req, &ws_pkt, ws_pkt.len));
     buf.get()[ws_pkt.len] = '\0';
 
     auto elem = std::pair{std::move(buf), ws_pkt.len};

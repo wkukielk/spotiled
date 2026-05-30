@@ -10,4 +10,4 @@ MDNS_HOSTNAME,data,string,spotiled-esp32
 MDNS_INSTANCE,data,string,spotiled-ledcontrol
 BACKEND_URL,data,string,https://localhost:7777
 SKIP_CN_CHECK,data,string,yes
-LOG_LEVEL,data,string,INFO
+LOG_LEVEL,data,string,info

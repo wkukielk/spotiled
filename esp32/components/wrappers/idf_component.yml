@@ -2,7 +2,7 @@ dependencies:
   idf:
     version: '>=4.1.0'
   espressif/mdns:
-    version: '*'
+    version: '1.11.1'
     rules:
       - if: target != "linux"
   espressif/network_provisioning:

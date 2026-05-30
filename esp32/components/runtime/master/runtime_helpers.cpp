@@ -15,6 +15,7 @@ URL resolve_base(const URL &base_url) {
         [&]() {
             auto err = esp_err_t{};
             base = resolve_url(base_url, err);
+            ESP_LOGD("resolve_base", "ret: %d", err);
             return err;
         },
         5);

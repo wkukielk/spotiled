@@ -26,8 +26,7 @@ concept I_HTTPD_CONFIG =
 
 template <typename T>
 concept I_HTTPD =
-    std::constructible_from<T, std::unique_ptr<typename T::Config>> &&
-    requires(T httpd) {
+    std::constructible_from<T, typename T::Config> && requires(T httpd) {
         typename T::Config;
         requires I_HTTPD_CONFIG<typename T::Config>;
 
