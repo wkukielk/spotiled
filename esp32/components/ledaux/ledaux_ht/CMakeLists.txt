@@ -1,5 +1,7 @@
 idf_component_register(
-    SRCS "test_ledaux.cpp"
+    SRCS "MockLED.cpp"
+         "test_channel.cpp"
+         "test_LEDC.cpp"
     INCLUDE_DIRS "include"
     REQUIRES ledaux
     WHOLE_ARCHIVE

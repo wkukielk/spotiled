@@ -44,7 +44,7 @@ class Runtime : public Runnable, public util::Notifiable<master::Data> {
     void run() override;
     void notify(u_ptr<master::Data> &&data) override { queue.send(move(data)); }
 
-  protected:
+  private:
     Runtime(InnerConfig<T_OTAClient> &&cfg);
     esp_err_t setup();
     int perform();
@@ -52,6 +52,7 @@ class Runtime : public Runnable, public util::Notifiable<master::Data> {
     std::unique_ptr<master::Data> pop_queue();
     esp_err_t process(master::Data &data);
 
+  protected:
     u_ptr<I_WiFiManager> wifi_mgr{};
     EGroup egroup{};
     T_OTAThread ota_thread;

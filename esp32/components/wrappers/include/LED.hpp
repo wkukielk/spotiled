@@ -2,8 +2,11 @@
 #define LED_WRAP_HPP
 
 #include "I_LED.hpp"
+#include "global.hpp"
 
 class LED {
+    LED();
+
   public:
     esp_err_t configure_channel(const ledc_channel_config_t *cfg) noexcept {
         return ledc_channel_config(cfg);
@@ -11,9 +14,13 @@ class LED {
     esp_err_t configure_timer(const ledc_timer_config_t *cfg) noexcept {
         return ledc_timer_config(cfg);
     }
-    uint32_t get_duty(ledc_mode_t speed_mode,
-                      ledc_channel_t channel) const noexcept {
-        return ledc_get_duty(speed_mode, channel);
+    esp_err_t get_duty(ledc_mode_t speed_mode, ledc_channel_t channel,
+                       uint32_t &duty) const noexcept {
+        auto err = ledc_get_duty(speed_mode, channel);
+        if (err == LEDC_ERR_DUTY)
+            return err;
+        duty = err;
+        return ESP_OK;
     }
     esp_err_t fade_func_install(int intr_alloc_flags) noexcept {
         return ledc_fade_func_install(intr_alloc_flags);
@@ -31,7 +38,14 @@ class LED {
         return ledc_cb_register(speed_mode, channel, cbs, user_arg);
     }
 
+    static LED &get() { return instance; }
+
     static const ledc_clk_cfg_t CLOCK = LEDC_USE_APB_CLK;
+
+  private:
+    static LED instance;
+
+    friend class Global;
 };
 
 static_assert(I_LED<LED>);

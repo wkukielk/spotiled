@@ -8,49 +8,37 @@
 #include "time_aux.hpp"
 #include <memory>
 
-class Netif {
-  public:
-    Netif();
-    ~Netif() noexcept;
-};
-
-class DefaultEventLoop {
-  public:
-    DefaultEventLoop();
-    ~DefaultEventLoop() noexcept;
-};
-
 class Global {
-  private:
     Global();
+    ~Global() noexcept;
 
   public:
+    template <typename G> void set(G &&obj);
     void set_time(std::unique_ptr<I_Time> &&time);
     void set_nvs(std::unique_ptr<I_NVS> &&nvs);
     void set_wifi(std::unique_ptr<I_WiFi> &&wifi);
     void set_mdns(std::unique_ptr<I_mDNS> &&mdns);
-    inline I_Time &get_time() { return *time; }
-    inline I_NVS &get_nvs() { return *nvs; }
-    inline I_WiFi &get_wifi() { return *wifi; }
-    inline I_mDNS &get_mdns() { return *mdns; }
+    template <typename G> G &get();
+    I_Time &get_time() { return *time; }
+    I_NVS &get_nvs() { return *nvs; }
+    I_WiFi &get_wifi() { return *wifi; }
+    I_mDNS &get_mdns() { return *mdns; }
 
-    static Global *get_global();
+    static Global &get_global();
     static void deinit();
     static void init_default();
 
   private:
     static Global *instance;
-    std::unique_ptr<DefaultEventLoop> eloop{};
-    std::unique_ptr<Netif> netif{};
     std::unique_ptr<I_Time> time{};
     std::unique_ptr<I_NVS> nvs{};
     std::unique_ptr<I_WiFi> wifi{};
     std::unique_ptr<I_mDNS> mdns{};
 };
 
-inline I_Time &time() { return Global::get_global()->get_time(); }
-inline I_NVS &nvs_() { return Global::get_global()->get_nvs(); }
-inline I_WiFi &wifi_() { return Global::get_global()->get_wifi(); }
-inline I_mDNS &mdns_() { return Global::get_global()->get_mdns(); }
+inline I_Time &time() { return Global::get_global().get_time(); }
+inline I_NVS &nvs_() { return Global::get_global().get_nvs(); }
+inline I_WiFi &wifi_() { return Global::get_global().get_wifi(); }
+inline I_mDNS &mdns_() { return Global::get_global().get_mdns(); }
 
 #endif
