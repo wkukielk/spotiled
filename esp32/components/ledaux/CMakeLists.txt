@@ -2,6 +2,7 @@ idf_component_register(
     SRCS "ledaux.cpp"
     INCLUDE_DIRS "include"
     REQUIRES colors
+             esp_event
              i_nterfaces
              util
 )

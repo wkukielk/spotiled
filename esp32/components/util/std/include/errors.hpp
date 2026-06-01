@@ -24,10 +24,16 @@ struct InitError : public BaseError {
     InitError(int reason = 0) : BaseError("InitError", "", reason) {};
 };
 
+struct CleanupError : public BaseError {
+    CleanupError(int reason, const char *msg)
+        : BaseError("CleanupError", msg, reason) {};
+    CleanupError(int reason = 0) : BaseError("CleanupError", "", reason) {};
+};
+
 struct NVSError : public BaseError {
     NVSError(int reason, const char *msg)
         : BaseError("NVSError", msg, reason) {};
-    NVSError(int reason = 0) : BaseError("InitError", "", reason) {};
+    NVSError(int reason = 0) : BaseError("NVSError", "", reason) {};
 };
 
 struct NullError : public BaseError {

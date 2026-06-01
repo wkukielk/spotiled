@@ -13,12 +13,10 @@ class Global {
     ~Global() noexcept;
 
   public:
-    template <typename G> void set(G &&obj);
     void set_time(std::unique_ptr<I_Time> &&time);
     void set_nvs(std::unique_ptr<I_NVS> &&nvs);
     void set_wifi(std::unique_ptr<I_WiFi> &&wifi);
     void set_mdns(std::unique_ptr<I_mDNS> &&mdns);
-    template <typename G> G &get();
     I_Time &get_time() { return *time; }
     I_NVS &get_nvs() { return *nvs; }
     I_WiFi &get_wifi() { return *wifi; }

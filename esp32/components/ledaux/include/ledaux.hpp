@@ -1,10 +1,15 @@
 #ifndef LEDAUX_HPP
 #define LEDAUX_HPP
 
+#include "I_DftEventLoop.hpp"
 #include "I_LED.hpp"
 #include "errors.hpp"
+#include "esp_event.h"
 #include "rgb.hpp"
 #include "util.hpp"
+#include <atomic>
+
+ESP_EVENT_DECLARE_BASE(LEDC_FADE_EVENTS);
 
 template <int8_t n> constexpr uint32_t rshift(uint32_t x) {
     static_assert(n > -32 && n < 32, "Shift amount must be between -31 and 31");
@@ -27,6 +32,11 @@ struct RGBDuty {
 };
 
 namespace led {
+
+struct PendingFade {
+    std::atomic<int32_t> duty{-1};
+    std::atomic<bool> active{false};
+};
 
 namespace pin {
 extern const gpio_num_t RED;
@@ -57,24 +67,32 @@ inline constexpr bool INVERT = false;
 inline constexpr int DEFAULT_FADE_TIME_MS = 1000;
 }; // namespace PWM
 extern ledc_cbs_t fade_cb_s;
+extern ledc_cbs_t fade_cb_null;
 
-template <I_LED LED> class Channel {
+template <I_LED LED, I_DftEventLoop DEL> class Channel {
     using channel_t = ledc_channel_t;
 
   public:
     Channel(channel_t channel, gpio_num_t pin);
+    ~Channel();
     void configure();
     void register_callback();
+    void unregister_callback();
     esp_err_t fade(uint32_t target_duty) noexcept;
     uint32_t get_duty() const;
 
   private:
+    static void on_fade_event(void *handler_arg, esp_event_base_t base,
+                              int32_t id, void *event_data);
+
     channel_t channel_;
     gpio_num_t pin_;
+    PendingFade pending_;
+    esp_event_handler_instance_t event_instance_{};
 };
 }; // namespace led
 
-template <I_LED LED> class LEDC {
+template <I_LED LED, I_DftEventLoop DEL> class LEDC {
   public:
     LEDC() noexcept;
     esp_err_t set_color(RGB rgb) noexcept;
@@ -83,10 +101,10 @@ template <I_LED LED> class LEDC {
   private:
     void configure_pwm();
 
-    led::Channel<LED> red_;
-    led::Channel<LED> green_;
-    led::Channel<LED> blue_;
-    led::Channel<LED> ww_;
+    led::Channel<LED, DEL> red_;
+    led::Channel<LED, DEL> green_;
+    led::Channel<LED, DEL> blue_;
+    led::Channel<LED, DEL> ww_;
 };
 
 #include "ledaux.tpp"

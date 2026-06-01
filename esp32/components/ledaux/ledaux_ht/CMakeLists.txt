@@ -4,6 +4,7 @@ idf_component_register(
          "test_LEDC.cpp"
     INCLUDE_DIRS "include"
     REQUIRES ledaux
+             i_nterfaces_ht
     WHOLE_ARCHIVE
 )
 include("${CMAKE_CONFIG_DIR}/set_ht_gccoptions.cmake")

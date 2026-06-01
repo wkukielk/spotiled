@@ -1,3 +1,4 @@
+#include "MockDftEventLoop.hpp"
 #include "MockLED.hpp"
 #include "ledaux.hpp"
 #include <gmock/gmock.h>
@@ -13,7 +14,7 @@ class LEDCTest : public testing::Test {
 
   protected:
     MockLED &led_;
-    LEDC<MockLED> ledc;
+    LEDC<MockLED, MockDftEventLoop> ledc;
 };
 
 TEST_F(LEDCTest, setColor) {

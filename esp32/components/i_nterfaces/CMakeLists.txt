@@ -1,6 +1,7 @@
 idf_component_register(
      SRCS "I_WiFi.cpp"
           "global.cpp"
+          "I_DftEventLoop.cpp"
      INCLUDE_DIRS "include"
      REQUIRES esp_event
               esp_netif
