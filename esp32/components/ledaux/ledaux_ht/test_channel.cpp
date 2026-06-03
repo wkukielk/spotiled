@@ -3,49 +3,95 @@
 #include "ledaux.hpp"
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include <optional>
 
 using namespace testing;
 
-class ChannelTest : public testing::Test {
+// Tests that exercise construction and destruction of Channel.
+// No Channel is pre-built; each test controls the mock setup.
+class ChannelConstructTest : public testing::Test {
   protected:
-    void SetUp() override { esp_event_loop_create_default(); }
-    void TearDown() override { esp_event_loop_delete_default(); }
-
     const ledc_channel_t channel = led::PWM::channel::RED;
     const gpio_num_t pin = led::pin::RED;
+    DftEventLoopConfigurer dft_eloop{};
     MockLED &led_{MockLED::reset_and_get()};
+    MockDftEventLoop &eloop{MockDftEventLoop::reset_and_get()};
 };
 
-TEST_F(ChannelTest, fade) {
-    auto ch = led::Channel<MockLED, MockDftEventLoop>{channel, pin};
-    auto tgt_duty = 100;
-    EXPECT_CALL(led_, set_fade_time_and_start(_, channel, tgt_duty, _, _))
-        .WillOnce(Return(ESP_OK));
-    ASSERT_EQ(ESP_OK, ch.fade(tgt_duty));
+TEST_F(ChannelConstructTest, configFail) {
+    EXPECT_CALL(led_, configure_channel(_)).WillOnce(Return(ESP_FAIL));
+    ASSERT_THROW((led::Channel<MockLED, MockDftEventLoop>{channel, pin}),
+                 InitError);
 }
 
+TEST_F(ChannelConstructTest, callbackRegisterFail) {
+    EXPECT_CALL(led_, cb_register(_, channel, &led::fade_cb_s, _))
+        .WillOnce(Return(ESP_FAIL));
+    ASSERT_THROW((led::Channel<MockLED, MockDftEventLoop>{channel, pin}),
+                 InitError);
+}
+
+// Tests that assume construction succeeded and exercise Channel methods.
+// SetUp builds the channel; tests get a ready-to-use ch_.
+class ChannelTest : public testing::Test {
+  public:
+    void SetUp() override {
+        EXPECT_CALL(led_, cb_register(_, channel, &led::fade_cb_s, _))
+            .WillOnce(
+                DoAll(SaveArg<3, void **>((void **)&pen_), Return(ESP_OK)));
+        EXPECT_CALL(led_, cb_register(_, channel, &led::fade_cb_null, nullptr))
+            .WillOnce(Return(ESP_OK));
+        ch_.emplace(channel, pin);
+    }
+
+  protected:
+    const ledc_channel_t channel = led::PWM::channel::RED;
+    const gpio_num_t pin = led::pin::RED;
+    DftEventLoopConfigurer dft_eloop{};
+    MockLED &led_{MockLED::reset_and_get()};
+    MockDftEventLoop &eloop{MockDftEventLoop::reset_and_get()};
+    led::PendingFade *pen_{};
+    std::optional<led::Channel<MockLED, MockDftEventLoop>> ch_;
+};
+
 TEST_F(ChannelTest, getDutySuccess) {
-    auto ch = led::Channel<MockLED, MockDftEventLoop>{channel, pin};
     EXPECT_CALL(led_, get_duty(led::PWM::MODE, channel, _))
         .WillOnce(DoAll(SetArgReferee<2>(100), Return(ESP_OK)));
-    ASSERT_EQ(100, ch.get_duty());
+    ASSERT_EQ(100, ch_->get_duty());
 }
 
 TEST_F(ChannelTest, getDutyFail) {
-    auto ch = led::Channel<MockLED, MockDftEventLoop>{channel, pin};
     EXPECT_CALL(led_, get_duty(led::PWM::MODE, channel, _))
         .WillOnce(DoAll(SetArgReferee<2>(100), Return(ESP_FAIL)));
-    ASSERT_THROW(ch.get_duty(), RuntimeError);
+    ASSERT_THROW(ch_->get_duty(), RuntimeError);
 }
 
-TEST_F(ChannelTest, registerCallbackSuccess) {
-    auto ch = led::Channel<MockLED, MockDftEventLoop>{channel, pin};
-    EXPECT_CALL(led_, cb_register(_, channel, _, _)).WillOnce(Return(ESP_OK));
-    ch.register_callback();
+TEST_F(ChannelTest, fade) {
+    auto tgt_duty = 100;
+    EXPECT_CALL(led_, set_fade_time_and_start(_, channel, tgt_duty, _, _))
+        .WillOnce(Return(ESP_OK));
+    ASSERT_EQ(ESP_OK, ch_->fade(tgt_duty));
+    auto param = ledc_cb_param_t{.channel = channel};
+    (led::fade_cb_s.fade_cb)(&param, pen_);
 }
 
-TEST_F(ChannelTest, registerCallbackFail) {
-    auto ch = led::Channel<MockLED, MockDftEventLoop>{channel, pin};
-    EXPECT_CALL(led_, cb_register(_, channel, _, _)).WillOnce(Return(ESP_FAIL));
-    ASSERT_THROW(ch.register_callback(), InitError);
+TEST_F(ChannelTest, fade2Times) {
+    auto tgt_duty1 = 100;
+    {
+        EXPECT_CALL(led_, set_fade_time_and_start(_, channel, tgt_duty1, _, _))
+            .WillOnce(Return(ESP_OK));
+        ASSERT_EQ(ESP_OK, ch_->fade(tgt_duty1));
+    }
+
+    auto tgt_duty2 = 200;
+    {
+        EXPECT_CALL(led_, set_fade_time_and_start(_, _, _, _, _)).Times(0);
+        ASSERT_EQ(ESP_OK, ch_->fade(tgt_duty2));
+    }
+
+    EXPECT_CALL(led_, set_fade_time_and_start(_, channel, tgt_duty2, _, _))
+        .WillOnce(Return(ESP_OK));
+    auto param = ledc_cb_param_t{.channel = channel};
+    (led::fade_cb_s.fade_cb)(&param, pen_);
+    eloop.wait_for_event();
 }

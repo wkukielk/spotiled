@@ -27,6 +27,12 @@ concept I_DftEventLoop = requires(T t) {
     } -> std::same_as<esp_err_t>;
 };
 
+class DftEventLoopConfigurer {
+  public:
+    DftEventLoopConfigurer();
+    ~DftEventLoopConfigurer();
+};
+
 class DftEventLoop {
   public:
     esp_err_t
@@ -50,7 +56,8 @@ class DftEventLoop {
                               wait);
     }
     static DftEventLoop &get() noexcept { return *instance; }
-    static void create();
+    static esp_err_t create() noexcept;
+    static esp_err_t cleanup() noexcept;
 
   private:
     static std::optional<DftEventLoop> instance;

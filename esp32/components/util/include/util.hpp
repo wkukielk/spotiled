@@ -216,6 +216,7 @@ template <class T> constexpr inline bool in_between(T x, T a, T b) {
 }
 
 esp_err_t retry(std::function<esp_err_t()> fun, unsigned retries);
+
 }; // namespace util
 
 template <typename T> using u_ptr = std::unique_ptr<T>;

@@ -1,19 +1,10 @@
 #pragma once
 
 namespace led {
-template <I_LED LED, I_DftEventLoop DEL>
-Channel<LED, DEL>::Channel(channel_t channel, gpio_num_t pin)
-    : channel_{channel}, pin_{pin} {}
 
-template <I_LED LED, I_DftEventLoop DEL> Channel<LED, DEL>::~Channel() {
-    if (event_instance_) {
-        DEL::get().handler_unregister(LEDC_FADE_EVENTS, (int32_t)channel_,
-                                      event_instance_);
-        ESP_LOGW("ledaux", "%s", "Channel wasn't deinitialized.");
-    }
-}
-
-template <I_LED LED, I_DftEventLoop DEL> void Channel<LED, DEL>::configure() {
+template <I_LED LED>
+ChannelConfig<LED>::ChannelConfig(ledc_channel_t channel, gpio_num_t pin)
+    : channel_{channel}, pin_{pin} {
     auto ch_config =
         ledc_channel_config_t{.gpio_num = pin_,
                               .speed_mode = led::PWM::MODE,
@@ -25,30 +16,62 @@ template <I_LED LED, I_DftEventLoop DEL> void Channel<LED, DEL>::configure() {
                               .sleep_mode = led::PWM::SLEEP_MODE,
                               .flags{.output_invert = led::PWM::INVERT}};
     auto err = LED::get().configure_channel(&ch_config);
-    UTIL_THROW(err, InitError, "pwm channel config");
+    UTIL_THROW(err, InitError, "ledc channel config");
+}
+
+template <I_LED LED> ChannelConfig<LED>::~ChannelConfig() noexcept {
+    auto ch_config = ledc_channel_config_t{.gpio_num = pin_,
+                                           .speed_mode = led::PWM::MODE,
+                                           .channel = channel_,
+                                           .deconfigure = true};
+    if (LED::get().configure_channel(&ch_config) != ESP_OK)
+        ESP_LOGW("ledaux", "channel deconfig failed");
 }
 
 template <I_LED LED, I_DftEventLoop DEL>
-void Channel<LED, DEL>::register_callback() {
-    auto mode = led::PWM::MODE;
-    auto err =
-        LED::get().cb_register(mode, channel_, &led::fade_cb_s, &pending_);
+ChannelCallbacks<LED, DEL>::ChannelCallbacks(ledc_channel_t channel,
+                                             PendingFade &pending)
+    : channel_{channel} {
+    auto err = LED::get().cb_register(led::PWM::MODE, channel_, &led::fade_cb_s,
+                                      &pending);
     UTIL_THROW(err, InitError, "ledc cb register");
     err = DEL::get().handler_register(LEDC_FADE_EVENTS, (int32_t)channel_,
                                       &on_fade_event, this, &event_instance_);
-    UTIL_THROW(err, InitError, "ledc fade event register");
+    if (err != ESP_OK) {
+        LED::get().cb_register(led::PWM::MODE, channel_, &led::fade_cb_null,
+                               nullptr);
+        throw InitError(err, "ledc fade event register");
+    }
 }
 
 template <I_LED LED, I_DftEventLoop DEL>
-void Channel<LED, DEL>::unregister_callback() {
-    auto mode = led::PWM::MODE;
-    auto err =
-        LED::get().cb_register(mode, channel_, &led::fade_cb_null, nullptr);
-    UTIL_THROW(err, CleanupError, "ledc cb unregister");
-    err = DEL::get().handler_unregister(LEDC_FADE_EVENTS, (int32_t)channel_,
-                                        event_instance_);
-    UTIL_THROW(err, CleanupError, "ledc fade event unregister");
+ChannelCallbacks<LED, DEL>::~ChannelCallbacks() noexcept {
+    auto err = LED::get().cb_register(led::PWM::MODE, channel_,
+                                      &led::fade_cb_null, nullptr);
+    if (err != ESP_OK)
+        ESP_LOGW("ledaux", "ledc cb unregister failed: %d", err);
+    if (event_instance_) {
+        auto err = DEL::get().handler_unregister(
+            LEDC_FADE_EVENTS, (int32_t)channel_, event_instance_);
+        if (err != ESP_OK)
+            ESP_LOGW("ledaux", "ledc fade event unregister failed: %d", err);
+    }
 }
+
+template <I_LED LED, I_DftEventLoop DEL>
+void ChannelCallbacks<LED, DEL>::on_fade_event(void *handler_arg,
+                                               esp_event_base_t, int32_t,
+                                               void *event_data) {
+    auto *self = static_cast<ChannelCallbacks<LED, DEL> *>(handler_arg);
+    auto duty = *static_cast<uint32_t *>(event_data);
+    LED::get().set_fade_time_and_start(led::PWM::MODE, self->channel_, duty,
+                                       led::PWM::DEFAULT_FADE_TIME_MS,
+                                       LEDC_FADE_NO_WAIT);
+}
+
+template <I_LED LED, I_DftEventLoop DEL>
+Channel<LED, DEL>::Channel(channel_t channel, gpio_num_t pin)
+    : channel_{channel}, config_{channel, pin}, callbacks_{channel, pending_} {}
 
 template <I_LED LED, I_DftEventLoop DEL>
 esp_err_t Channel<LED, DEL>::fade(uint32_t target_duty) noexcept {
@@ -70,16 +93,31 @@ uint32_t Channel<LED, DEL>::get_duty() const {
     return duty;
 }
 
-template <I_LED LED, I_DftEventLoop DEL>
-void Channel<LED, DEL>::on_fade_event(void *handler_arg, esp_event_base_t,
-                                      int32_t, void *event_data) {
-    auto *self = static_cast<Channel<LED, DEL> *>(handler_arg);
-    auto duty = *static_cast<uint32_t *>(event_data);
-    LED::get().set_fade_time_and_start(led::PWM::MODE, self->channel_, duty,
-                                       led::PWM::DEFAULT_FADE_TIME_MS,
-                                       LEDC_FADE_NO_WAIT);
-}
 } // namespace led
+
+template <I_LED LED>
+esp_err_t LEDCConfigurer<LED>::configure_timer(Mode mode) noexcept {
+    auto t_config = ledc_timer_config_t{
+        led::PWM::MODE, led::PWM::RESOLUTION, led::PWM::TIMER,
+        led::PWM::FREQ, LED::CLOCK,           mode == Mode::deconfig};
+    return LED::get().configure_timer(&t_config);
+}
+
+template <I_LED LED> LEDCConfigurer<LED>::LEDCConfigurer() {
+    UTIL_THROW(this->configure_timer(Mode::config), InitError, "timer config");
+    if (LED::get().fade_func_install(0) != ESP_OK)
+        ESP_LOGW("LEDC", "fade func install fail");
+}
+
+template <I_LED LED> LEDCConfigurer<LED>::~LEDCConfigurer() {
+    if (this->configure_timer(Mode::deconfig) != ESP_OK)
+        ESP_LOGW("LEDC", "timer deconfig fail");
+    if (LED::get().fade_func_uninstall() != ESP_OK)
+        ESP_LOGW("LEDC", "fade func uninstall fail");
+}
+
+template <I_LED LED> bool is_timer_configured_ = false;
+template <I_LED LED> bool is_fade_func_installed_ = false;
 
 template <I_LED LED, I_DftEventLoop DEL>
 LEDC<LED, DEL>::LEDC() noexcept
@@ -101,20 +139,4 @@ template <I_LED LED, I_DftEventLoop DEL>
 RGB LEDC<LED, DEL>::get_current_color() const noexcept {
     auto duty = RGBDuty{red_.get_duty(), green_.get_duty(), blue_.get_duty()};
     return duty.to_rgb();
-}
-
-template <I_LED LED, I_DftEventLoop DEL> void LEDC<LED, DEL>::configure_pwm() {
-    auto t_config =
-        ledc_timer_config_t{led::PWM::MODE, led::PWM::RESOLUTION,
-                            led::PWM::TIMER, led::PWM::FREQ, LED::CLOCK};
-    UTIL_THROW(LED::get().configure_timer(&t_config), InitError, "ledc config");
-    red_.configure();
-    green_.configure();
-    blue_.configure();
-    ww_.configure();
-    UTIL_THROW(LED::get().fade_func_install(0), InitError, "fade func install");
-    red_.register_callback();
-    green_.register_callback();
-    blue_.register_callback();
-    ww_.register_callback();
 }

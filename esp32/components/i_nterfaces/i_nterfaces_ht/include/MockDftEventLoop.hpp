@@ -36,13 +36,15 @@ class MockDftEventLoop {
         return *instance;
     };
     static void reset() {
-        assert(instance->handlers_data.empty());
+        if (instance)
+            assert(instance->handlers_data.empty());
         instance.reset();
     };
     static MockDftEventLoop &reset_and_get() {
         reset();
         return get();
     };
+    void wait_for_event() { mutex.take(); }
 
   private:
     static void handler_adapter(void *event_handler_arg,

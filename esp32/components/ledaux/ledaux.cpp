@@ -7,7 +7,7 @@ using namespace led;
 
 namespace led {
 bool IRAM_ATTR fade_callback(const ledc_cb_param_t *param, void *user_arg) {
-    auto *p = static_cast<PendingFade *>(user_arg);
+    auto *p = (PendingFade *)user_arg;
     int32_t duty = p->duty.exchange(-1);
     if (duty >= 0) {
         auto d = (uint32_t)duty;

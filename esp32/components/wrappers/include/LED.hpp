@@ -25,6 +25,7 @@ class LED {
     esp_err_t fade_func_install(int intr_alloc_flags) noexcept {
         return ledc_fade_func_install(intr_alloc_flags);
     }
+    void fade_func_uninstall() noexcept { return ledc_fade_func_uninstall(); }
     esp_err_t set_fade_time_and_start(ledc_mode_t speed_mode,
                                       ledc_channel_t channel,
                                       uint32_t target_duty,

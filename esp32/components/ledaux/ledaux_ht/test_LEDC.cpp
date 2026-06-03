@@ -9,12 +9,10 @@ using namespace testing;
 using namespace led::PWM;
 
 class LEDCTest : public testing::Test {
-  public:
-    LEDCTest() : led_{MockLED::reset_and_get()}, ledc{} {}
-
   protected:
-    MockLED &led_;
-    LEDC<MockLED, MockDftEventLoop> ledc;
+    DftEventLoopConfigurer dft_eloop{};
+    MockLED &led_{MockLED::reset_and_get()};
+    LEDC<MockLED, MockDftEventLoop> ledc{};
 };
 
 TEST_F(LEDCTest, setColor) {

@@ -69,37 +69,60 @@ inline constexpr int DEFAULT_FADE_TIME_MS = 1000;
 extern ledc_cbs_t fade_cb_s;
 extern ledc_cbs_t fade_cb_null;
 
-template <I_LED LED, I_DftEventLoop DEL> class Channel {
-    using channel_t = ledc_channel_t;
-
+template <I_LED LED> class ChannelConfig {
   public:
-    Channel(channel_t channel, gpio_num_t pin);
-    ~Channel();
-    void configure();
-    void register_callback();
-    void unregister_callback();
-    esp_err_t fade(uint32_t target_duty) noexcept;
-    uint32_t get_duty() const;
+    ChannelConfig(ledc_channel_t channel, gpio_num_t pin);
+    ~ChannelConfig() noexcept;
+
+  private:
+    ledc_channel_t channel_;
+    gpio_num_t pin_;
+};
+
+template <I_LED LED, I_DftEventLoop DEL> class ChannelCallbacks {
+  public:
+    ChannelCallbacks(ledc_channel_t channel, PendingFade &pending);
+    ~ChannelCallbacks() noexcept;
 
   private:
     static void on_fade_event(void *handler_arg, esp_event_base_t base,
                               int32_t id, void *event_data);
 
-    channel_t channel_;
-    gpio_num_t pin_;
-    PendingFade pending_;
+    ledc_channel_t channel_;
     esp_event_handler_instance_t event_instance_{};
 };
+
+template <I_LED LED, I_DftEventLoop DEL> class Channel {
+    using channel_t = ledc_channel_t;
+
+  public:
+    Channel(channel_t channel, gpio_num_t pin);
+    esp_err_t fade(uint32_t target_duty) noexcept;
+    uint32_t get_duty() const;
+
+  private:
+    channel_t channel_;
+    PendingFade pending_;
+    ChannelConfig<LED> config_;
+    ChannelCallbacks<LED, DEL> callbacks_;
+};
 }; // namespace led
+
+template <I_LED LED> class LEDCConfigurer {
+  public:
+    LEDCConfigurer();
+    ~LEDCConfigurer();
+
+  private:
+    enum class Mode { config, deconfig };
+    static esp_err_t configure_timer(Mode mode) noexcept;
+};
 
 template <I_LED LED, I_DftEventLoop DEL> class LEDC {
   public:
     LEDC() noexcept;
     esp_err_t set_color(RGB rgb) noexcept;
     RGB get_current_color() const noexcept;
-
-  private:
-    void configure_pwm();
 
     led::Channel<LED, DEL> red_;
     led::Channel<LED, DEL> green_;

@@ -35,8 +35,8 @@ extern "C" int app_main() {
     for (auto [i, arg] : enumerate(args))
         argv[i] = arg.data();
 
-    ESP_LOGE("APP", "%s", argv[0]);
-    ESP_LOGE("APP", "%s", argv[1]);
+    ESP_LOGI("APP", "%s", argv[0]);
+    ESP_LOGI("APP", "%s", argv[1]);
 
     testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();

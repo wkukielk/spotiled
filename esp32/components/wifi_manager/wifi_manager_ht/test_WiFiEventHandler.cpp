@@ -8,8 +8,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-using ::testing::_;
-using ::testing::Return;
+using namespace testing;
 
 class WiFiEventHandlerTest : public BaseTest {
   protected:

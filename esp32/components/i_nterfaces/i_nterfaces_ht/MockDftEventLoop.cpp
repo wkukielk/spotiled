@@ -22,20 +22,21 @@ esp_err_t MockDftEventLoop::handler_register(
     esp_event_base_t event_base, int32_t event_id,
     esp_event_handler_t event_handler, void *event_handler_arg,
     esp_event_handler_instance_t *instance) noexcept {
-    auto &cbd =
-        handlers_data.emplace_back(new cbdata{.base = event_base,
-                                              .id = event_id,
-                                              .handler = event_handler,
-                                              .handler_arg = event_handler_arg,
-                                              .instance{},
-                                              .eloop = *this,
-                                              .cnt = 0});
+    auto &cbd = handlers_data.emplace_back(
+        make_unique<cbdata>(cbdata{.base = event_base,
+                                   .id = event_id,
+                                   .handler = event_handler,
+                                   .handler_arg = event_handler_arg,
+                                   .instance{},
+                                   .eloop = *this,
+                                   .cnt = 0}));
+    auto adapter = MockDftEventLoop::handler_adapter;
     auto err = DftEventLoop::get().handler_register(
-        event_base, event_id, MockDftEventLoop::handler_adapter, cbd.get(),
-        instance);
+        event_base, event_id, adapter, cbd.get(), instance);
     if (err != ESP_OK)
         handlers_data.pop_back();
-    cbd->instance = *instance;
+    else
+        cbd->instance = *instance;
     return err;
 }
 esp_err_t MockDftEventLoop::handler_unregister(
@@ -72,8 +73,12 @@ void MockDftEventLoop::handler_adapter(void *event_handler_arg,
                                        int32_t event_id, void *event_data) {
     static atomic<int> curr_counter{0};
     auto &cbd = *(cbdata *)event_handler_arg;
-    if (cbd.cnt > curr_counter.exchange(cbd.cnt)) {
-        proxy_callback(cbd, event_base, event_id, event_data);
-        cbd.eloop.get().mutex.give();
-    }
+    // if (cbd.cnt == 0) {
+    //     // Posted directly via esp_event_isr_post (not through mock::post)
+    proxy_callback(cbd, event_base, event_id, event_data);
+    cbd.eloop.get().mutex.give();
+    // } else if (cbd.cnt > curr_counter.exchange(cbd.cnt)) {
+    //     proxy_callback(cbd, event_base, event_id, event_data);
+    //     cbd.eloop.get().mutex.give();
+    // }
 }
