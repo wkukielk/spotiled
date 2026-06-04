@@ -12,6 +12,10 @@ namespace wifi {
 using HandlerGetter = std::function<util::EventHandler *(util::I_EventGroup &)>;
 using ProvGetter = std::function<I_WiFiProv *()>;
 int await_connection(util::I_EventGroup &event_group);
+
+extern const EventBits_t fail_bit;
+extern const EventBits_t success_bit;
+extern const EventBits_t end_bit;
 } // namespace wifi
 
 struct WiFiManagerError : public BaseError {

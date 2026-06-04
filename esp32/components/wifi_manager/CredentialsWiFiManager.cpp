@@ -2,10 +2,6 @@
 #include "global.hpp"
 #include <cstring>
 
-using util::end_bit;
-using util::fail_bit;
-using util::success_bit;
-
 static const char *TAG = "WiFiManager";
 
 CredentialsWiFiManager::CredentialsWiFiManager(
@@ -34,11 +30,11 @@ int CredentialsWiFiManager::connect() {
 
 int CredentialsWiFiManager::disconnect() {
     UTIL_RETURN(wifi_().stop());
-    auto bits = event_group->wait(end_bit, pdFALSE, pdFALSE,
+    auto bits = event_group->wait(wifi::end_bit, pdFALSE, pdFALSE,
                                   10000 / portTICK_PERIOD_MS);
-    return bits & end_bit ? ESP_OK : ESP_FAIL;
+    return bits & wifi::end_bit ? ESP_OK : ESP_FAIL;
 }
 
 bool CredentialsWiFiManager::is_connected() {
-    return event_group->get() & success_bit;
+    return event_group->get() & wifi::success_bit;
 }

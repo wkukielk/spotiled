@@ -4,6 +4,7 @@
 #include "errors.hpp"
 #include "esp_log.h"
 #include "esp_wifi.h"
+#include "wifi_aux.hpp"
 
 static const char *TAG = "ProvEventHandler";
 util::I_EventGroup *ProvEventHandler::event_group{};
@@ -25,7 +26,7 @@ ProvEventHandler::ProvEventHandler(util::I_EventGroup &event_group,
     UTIL_THROW(ProvEventHandler::event_group != nullptr, InitError,
                "two prov handlers");
     ProvEventHandler::event_group = &event_group;
-    event_group.set(util::end_bit);
+    event_group.set(wifi::end_bit);
     if (reg == util::Register::YES)
         UTIL_THROW(register_self(), InitError, "ProvEventHandler register");
     ESP_LOGI("ProvEventHandler", "init");
@@ -60,7 +61,7 @@ void ProvEventHandler::handler(void *arg, esp_event_base_t event_base,
     switch (event_id) {
     case (int32_t)ProvEvent::START:
         retries_left = retries;
-        event_group->clear(util::end_bit | util::fail_bit | util::success_bit);
+        event_group->clear(wifi::end_bit | wifi::fail_bit | wifi::success_bit);
         reason = ProvReason::OK;
         break;
     case (int32_t)ProvEvent::SET_STA_CONFIG: {
@@ -72,7 +73,7 @@ void ProvEventHandler::handler(void *arg, esp_event_base_t event_base,
         break;
     }
     case (int32_t)ProvEvent::CRED_SUCCESS:
-        event_group->set(util::success_bit);
+        event_group->set(wifi::success_bit);
         break;
     case (int32_t)ProvEvent::CRED_FAIL: {
         reason = *static_cast<ProvReason *>(event_data);
@@ -82,12 +83,12 @@ void ProvEventHandler::handler(void *arg, esp_event_base_t event_base,
                  (reason == ProvReason::AUTH_ERROR)
                      ? "Wi-Fi station authentication failed"
                      : "Wi-Fi access-point not found");
-        event_group->set(util::fail_bit || util::end_bit);
+        event_group->set(wifi::fail_bit || wifi::end_bit);
         break;
     }
     case (int32_t)ProvEvent::END:
         ESP_LOGI(TAG, "Provisioning ended");
-        event_group->set(util::end_bit);
+        event_group->set(wifi::end_bit);
         break;
     default:;
     }

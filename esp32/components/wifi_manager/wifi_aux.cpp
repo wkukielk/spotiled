@@ -12,6 +12,10 @@ int await_connection(util::I_EventGroup &event_group) {
     time().delay_ms(100); // let other event handlers run
     return bits & success_bit ? ESP_OK : ESP_FAIL;
 }
+
+const EventBits_t fail_bit = 1 << 0;
+const EventBits_t success_bit = 1 << 1;
+const EventBits_t end_bit = 1 << 2;
 } // namespace wifi
 
 esp_err_t mdns_resolve(const string &hostname, string &out, uint32_t timeout) {

@@ -27,15 +27,13 @@ u_ptr<I_WiFiManager> WiFiManagerFactory::get() const {
         return get_credentials_wifi_manager();
 }
 
-u_ptr<WiFiManager> WiFiManagerFactory::get_wifi_manager() const {
+u_ptr<WiFiManager<WiFiManagerTypes>>
+WiFiManagerFactory::get_wifi_manager() const {
     auto event_group = mkuptr<util::EventGroup>();
-    auto egrp = event_group.get();
-    auto handler = [=]() { return mkuptr<WiFiEventHandler>(*egrp, 3); };
-    auto toggle_handler = mkuptr<ToggleEventHandler>(handler);
+    auto get_handler = [](auto &egroup) { return WiFiEventHandler{egroup, 3}; };
     auto provisioning = u_ptr<Provisioning>(get_provisioning(*event_group));
-    return mkuptr<WiFiManager>(std::move(event_group),
-                               std::move(toggle_handler),
-                               std::move(provisioning));
+    return mkuptr<WiFiManager<WiFiManagerTypes>>(get_handler,
+                                                 std::move(provisioning));
 }
 
 u_ptr<CredentialsWiFiManager>

@@ -3,7 +3,7 @@
 
 #include "I_WiFi.hpp"
 #include "Provisioning.hpp"
-#include "ToggleEventHandler.hpp"
+#include "Toggle.hpp"
 #include "WiFiEventHandler.hpp"
 #include "util.hpp"
 #include <functional>
@@ -19,11 +19,23 @@ class I_WiFiManager {
     virtual bool is_connected() = 0;
 };
 
-class WiFiManager : public I_WiFiManager {
+template <typename F, typename ReturnType, typename... Args>
+concept Returns = requires(F &&f, Args &&...args) {
+    {
+        std::forward<F>(f)(std::forward<Args>(args)...)
+    } -> std::same_as<ReturnType>;
+};
+
+template <typename T> class WiFiManager : public I_WiFiManager {
+    using EGroup = typename T::EventGroup;
+    using Handler = typename T::EventHandler;
+
   public:
-    WiFiManager(std::unique_ptr<util::I_EventGroup> &&event_group,
-                std::unique_ptr<I_ToggleEventHandler> &&handler,
-                std::unique_ptr<I_Provisioning> &&provisioning);
+    template <typename HandlerFactory>
+        requires Returns<HandlerFactory, Handler, EGroup &>
+    WiFiManager(HandlerFactory handler_factory,
+                std::unique_ptr<I_Provisioning> &&provisioning) noexcept;
+
     ~WiFiManager();
     int init() override;
     int connect() override;
@@ -35,9 +47,12 @@ class WiFiManager : public I_WiFiManager {
     int connect_with_prov();
     void switch_to_prov();
     void switch_to_no_prov();
-    std::unique_ptr<util::I_EventGroup> event_group;
-    std::unique_ptr<I_ToggleEventHandler> handler;
+
+    EGroup event_group;
+    Toggle<Handler> handler;
     std::unique_ptr<I_Provisioning> provisioning;
 };
+
+#include "WiFiManager.tpp"
 
 #endif

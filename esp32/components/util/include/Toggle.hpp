@@ -9,22 +9,25 @@ concept I_Toggle = requires(T t, const T ct) {
     { ct.is_on() } noexcept -> std::same_as<bool>;
     { t.off() } noexcept -> std::same_as<void>;
     { t.on() } noexcept -> std::same_as<esp_err_t>;
-    { t.get() } -> std::same_as<T &>;
+    { t.get() } -> std::same_as<typename T::Inner &>;
 };
 
 template <typename T> class Toggle {
   public:
-    template <typename... Args> Toggle(Args &&...args);
+    using Inner = T;
+
+    template <typename F> Toggle(F &&factory) noexcept;
     esp_err_t on() noexcept;
-    void off() noexcept;
-    bool is_on() const noexcept;
+    void off() noexcept { obj.reset(); }
+    bool is_on() const noexcept { return obj.has_value(); }
+    T &get() const { return *obj; }
 
   private:
     std::move_only_function<T()> factory;
     std::optional<T> obj;
 };
 
-static_assert(I_Toggle<Toggle>);
+static_assert(I_Toggle<Toggle<int>>);
 
 #include "Toggle.tpp"
 

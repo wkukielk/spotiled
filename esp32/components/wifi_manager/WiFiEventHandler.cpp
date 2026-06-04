@@ -4,6 +4,7 @@
 #include "esp_netif.h"
 #include "esp_wifi.h"
 #include "global.hpp"
+#include "wifi_aux.hpp"
 #include <algorithm>
 #include <iterator>
 
@@ -23,7 +24,7 @@ WiFiEventHandler::WiFiEventHandler(util::I_EventGroup &event_group,
     this->event_group = &event_group;
     this->max_retries = retries;
     this->retries_left = retries;
-    event_group.set(util::end_bit);
+    event_group.set(wifi::end_bit);
     if (reg == util::Register::YES)
         UTIL_THROW(register_self(), InitError, "handler register");
 }
@@ -57,12 +58,12 @@ void WiFiEventHandler::handler(void *arg, esp_event_base_t event_base,
                                int32_t event_id, void *event_data) {
     switch (event_id) {
     case WIFI_EVENT_STA_START:
-        event_group->clear(util::end_bit);
+        event_group->clear(wifi::end_bit);
         retries_left = max_retries;
         wifi_().connect();
         break;
     case WIFI_EVENT_STA_DISCONNECTED: {
-        event_group->clear(util::success_bit);
+        event_group->clear(wifi::success_bit);
         auto *data = (wifi_event_sta_disconnected_t *)event_data;
         auto reason = static_cast<WiFiReason>(data->reason);
         UTIL_LOGW("Failed, reason: %hhu", (int)reason);
@@ -70,12 +71,12 @@ void WiFiEventHandler::handler(void *arg, esp_event_base_t event_base,
             UTIL_LOGW("Retrying...");
             wifi_().connect();
         } else
-            event_group->set(util::fail_bit);
+            event_group->set(wifi::fail_bit);
         break;
     }
     case WIFI_EVENT_STA_STOP:
-        event_group->clear(util::success_bit | util::fail_bit);
-        event_group->set(util::end_bit);
+        event_group->clear(wifi::success_bit | wifi::fail_bit);
+        event_group->set(wifi::end_bit);
         break;
     default:;
     }
@@ -83,7 +84,7 @@ void WiFiEventHandler::handler(void *arg, esp_event_base_t event_base,
 
 void WiFiEventHandler::ip_handler(void *arg, esp_event_base_t event_base,
                                   int32_t event_id, void *event_data) {
-    event_group->clear(util::fail_bit);
-    event_group->set(util::success_bit);
+    event_group->clear(wifi::fail_bit);
+    event_group->set(wifi::success_bit);
     retries_left = 0;
 }

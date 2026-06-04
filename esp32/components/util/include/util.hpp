@@ -70,10 +70,6 @@ struct cbdata {
 
 enum class Register { YES, NO };
 
-const EventBits_t fail_bit = 1 << 0;
-const EventBits_t success_bit = 1 << 1;
-const EventBits_t end_bit = 1 << 2;
-
 class EventHandler {
   public:
     virtual ~EventHandler() {};

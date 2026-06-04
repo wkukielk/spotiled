@@ -13,10 +13,6 @@
 #define QRCODE_BASE_URL "https://espressif.github.io/esp-jumpstart/qrcode.html"
 static const char *TAG = "Provisioning";
 
-using util::end_bit;
-using util::fail_bit;
-using util::success_bit;
-
 uint8_t Provisioning::custom_service_uuid[16] = {
     /* little-endian */
     0xb4, 0xdf, 0x5a, 0x1c, 0x3f, 0x6b, 0xf4, 0xbf,
@@ -60,7 +56,7 @@ int Provisioning::connect() {
         time().delay_ms(3000); // wait for message to user,
                                // can't synchronise any other way
         wifi_prov->stop_provisioning();
-        event_group->wait(end_bit);
+        event_group->wait(wifi::end_bit);
         start();
     }
     return ESP_OK;

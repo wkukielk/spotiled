@@ -1,8 +1,8 @@
 idf_component_register(
-     SRCS "CredentialsWiFiManager.cpp" "Provisioning.cpp"
+     SRCS "CredentialsWiFiManager.cpp"
+          "Provisioning.cpp"
           "ProvEventHandler.cpp"
           "WiFiEventHandler.cpp"
-          "WiFiManager.cpp"
           "wifi_aux.cpp"
      INCLUDE_DIRS "include"
      REQUIRES  i_nterfaces
