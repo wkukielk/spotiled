@@ -5,6 +5,7 @@
 #include "ProvEventHandler.hpp"
 #include "esp_event.h"
 #include "esp_wifi.h"
+#include "wifi_aux.hpp"
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
@@ -36,25 +37,25 @@ class ProvEventHandlerTest : public BaseTest {
 };
 
 TEST_F(ProvEventHandlerTest, init) {
-    expect_state({{util::end_bit, true},
-                  {util::fail_bit, false},
-                  {util::success_bit, false}});
+    expect_state({{wifi::end_bit, true},
+                  {wifi::fail_bit, false},
+                  {wifi::success_bit, false}});
 }
 
 TEST_F(ProvEventHandlerTest, start) {
     aux->post(nullptr, 0, NETWORK_PROV_EVENT, (int32_t)ProvEvent::START);
-    expect_state({{util::end_bit, false},
-                  {util::fail_bit, false},
-                  {util::success_bit, false}});
+    expect_state({{wifi::end_bit, false},
+                  {wifi::fail_bit, false},
+                  {wifi::success_bit, false}});
 }
 
 TEST_F(ProvEventHandlerTest, success) {
     aux->post(nullptr, 0, NETWORK_PROV_EVENT, (int32_t)ProvEvent::START);
     aux->post(nullptr, 0, NETWORK_PROV_EVENT, (int32_t)ProvEvent::CRED_SUCCESS);
     aux->post(nullptr, 0, NETWORK_PROV_EVENT, (int32_t)ProvEvent::END);
-    expect_state({{util::end_bit, true},
-                  {util::fail_bit, false},
-                  {util::success_bit, true}});
+    expect_state({{wifi::end_bit, true},
+                  {wifi::fail_bit, false},
+                  {wifi::success_bit, true}});
 }
 
 TEST_F(ProvEventHandlerTest, failThenEnd) {
@@ -62,9 +63,9 @@ TEST_F(ProvEventHandlerTest, failThenEnd) {
     aux->post(&reason, sizeof(reason), NETWORK_PROV_EVENT,
               (int32_t)ProvEvent::CRED_FAIL);
     aux->post(nullptr, 0, NETWORK_PROV_EVENT, (int32_t)ProvEvent::END);
-    expect_state({{util::end_bit, true},
-                  {util::fail_bit, true},
-                  {util::success_bit, false}});
+    expect_state({{wifi::end_bit, true},
+                  {wifi::fail_bit, true},
+                  {wifi::success_bit, false}});
 }
 
 TEST_F(ProvEventHandlerTest, failAndRecover) {
@@ -72,9 +73,9 @@ TEST_F(ProvEventHandlerTest, failAndRecover) {
     aux->post(&disc_rec, sizeof(disc_rec), WIFI_EVENT,
               WIFI_EVENT_STA_DISCONNECTED);
     aux->post(nullptr, 0, NETWORK_PROV_EVENT, (int32_t)ProvEvent::CRED_SUCCESS);
-    expect_state({{util::end_bit, false},
-                  {util::fail_bit, false},
-                  {util::success_bit, true}});
+    expect_state({{wifi::end_bit, false},
+                  {wifi::fail_bit, false},
+                  {wifi::success_bit, true}});
 }
 
 TEST_F(ProvEventHandlerTest, tooManyRetries) {
@@ -85,9 +86,9 @@ TEST_F(ProvEventHandlerTest, tooManyRetries) {
               WIFI_EVENT_STA_DISCONNECTED);
     aux->post(&reason, sizeof(reason), NETWORK_PROV_EVENT,
               (int32_t)ProvEvent::CRED_FAIL);
-    expect_state({{util::end_bit, false},
-                  {util::fail_bit, true},
-                  {util::success_bit, false}});
+    expect_state({{wifi::end_bit, false},
+                  {wifi::fail_bit, true},
+                  {wifi::success_bit, false}});
 }
 
 TEST_F(ProvEventHandlerTest, reset) {
@@ -98,9 +99,9 @@ TEST_F(ProvEventHandlerTest, reset) {
               WIFI_EVENT_STA_DISCONNECTED);
     aux->post(nullptr, 0, NETWORK_PROV_EVENT, (int32_t)ProvEvent::END);
     aux->post(nullptr, 0, NETWORK_PROV_EVENT, (int32_t)ProvEvent::START);
-    expect_state({{util::end_bit, false},
-                  {util::fail_bit, false},
-                  {util::success_bit, false}});
+    expect_state({{wifi::end_bit, false},
+                  {wifi::fail_bit, false},
+                  {wifi::success_bit, false}});
 }
 
 TEST_F(ProvEventHandlerTest, retriesReset) {
@@ -114,7 +115,7 @@ TEST_F(ProvEventHandlerTest, retriesReset) {
     aux->post(&disc_rec, sizeof(disc_rec), WIFI_EVENT,
               WIFI_EVENT_STA_DISCONNECTED);
     aux->post(nullptr, 0, NETWORK_PROV_EVENT, (int32_t)ProvEvent::CRED_SUCCESS);
-    expect_state({{util::end_bit, false},
-                  {util::fail_bit, false},
-                  {util::success_bit, true}});
+    expect_state({{wifi::end_bit, false},
+                  {wifi::fail_bit, false},
+                  {wifi::success_bit, true}});
 }

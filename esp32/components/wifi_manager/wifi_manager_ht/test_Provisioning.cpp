@@ -5,6 +5,7 @@
 #include "MockWiFiProv.hpp"
 #include "Provisioning.hpp"
 #include "esp_event.h"
+#include "wifi_aux.hpp"
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
@@ -39,9 +40,9 @@ class ProvisioningTest : public BaseTest {
     const char *service_name = "MAC_HERE";
 };
 
-using util::end_bit;
-using util::fail_bit;
-using util::success_bit;
+using wifi::end_bit;
+using wifi::fail_bit;
+using wifi::success_bit;
 
 TEST_F(ProvisioningTest, isProvisioned) {
     EXPECT_CALL(*wifi_prov, is_provisioned(_)).WillOnce(Return(ESP_FAIL));

@@ -5,6 +5,7 @@
 #include "WiFiEventHandler.hpp"
 #include "esp_event.h"
 #include "esp_wifi.h"
+#include "wifi_aux.hpp"
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
@@ -34,42 +35,42 @@ class WiFiEventHandlerTest : public BaseTest {
 };
 
 TEST_F(WiFiEventHandlerTest, init) {
-    expect_state({{util::end_bit, true},
-                  {util::fail_bit, false},
-                  {util::success_bit, false}});
+    expect_state({{wifi::end_bit, true},
+                  {wifi::fail_bit, false},
+                  {wifi::success_bit, false}});
 }
 
 TEST_F(WiFiEventHandlerTest, start) {
     aux->post(nullptr, 0, WIFI_EVENT, WIFI_EVENT_STA_START);
-    expect_state({{util::end_bit, false},
-                  {util::fail_bit, false},
-                  {util::success_bit, false}});
+    expect_state({{wifi::end_bit, false},
+                  {wifi::fail_bit, false},
+                  {wifi::success_bit, false}});
 }
 
 TEST_F(WiFiEventHandlerTest, success) {
     aux->post(nullptr, 0, WIFI_EVENT, WIFI_EVENT_STA_START);
     aux->post(nullptr, 0, IP_EVENT, IP_EVENT_STA_GOT_IP);
-    expect_state({{util::end_bit, false},
-                  {util::fail_bit, false},
-                  {util::success_bit, true}});
+    expect_state({{wifi::end_bit, false},
+                  {wifi::fail_bit, false},
+                  {wifi::success_bit, true}});
 }
 
 TEST_F(WiFiEventHandlerTest, fail) {
     aux->post(nullptr, 0, WIFI_EVENT, WIFI_EVENT_STA_START);
     aux->post(&disc_unrec, sizeof(disc_unrec), WIFI_EVENT,
               WIFI_EVENT_STA_DISCONNECTED);
-    expect_state({{util::end_bit, false},
-                  {util::fail_bit, true},
-                  {util::success_bit, false}});
+    expect_state({{wifi::end_bit, false},
+                  {wifi::fail_bit, true},
+                  {wifi::success_bit, false}});
 }
 
 TEST_F(WiFiEventHandlerTest, noFailIfRecoverable) {
     aux->post(nullptr, 0, WIFI_EVENT, WIFI_EVENT_STA_START);
     aux->post(&disc_rec, sizeof(disc_rec), WIFI_EVENT,
               WIFI_EVENT_STA_DISCONNECTED);
-    expect_state({{util::end_bit, false},
-                  {util::fail_bit, false},
-                  {util::success_bit, false}});
+    expect_state({{wifi::end_bit, false},
+                  {wifi::fail_bit, false},
+                  {wifi::success_bit, false}});
 }
 
 TEST_F(WiFiEventHandlerTest, tooManyRetries) {
@@ -78,9 +79,9 @@ TEST_F(WiFiEventHandlerTest, tooManyRetries) {
               WIFI_EVENT_STA_DISCONNECTED);
     aux->post(&disc_rec, sizeof(disc_rec), WIFI_EVENT,
               WIFI_EVENT_STA_DISCONNECTED);
-    expect_state({{util::end_bit, false},
-                  {util::fail_bit, true},
-                  {util::success_bit, false}});
+    expect_state({{wifi::end_bit, false},
+                  {wifi::fail_bit, true},
+                  {wifi::success_bit, false}});
 }
 
 TEST_F(WiFiEventHandlerTest, recover) {
@@ -88,9 +89,9 @@ TEST_F(WiFiEventHandlerTest, recover) {
     aux->post(&disc_rec, sizeof(disc_rec), WIFI_EVENT,
               WIFI_EVENT_STA_DISCONNECTED);
     aux->post(nullptr, 0, IP_EVENT, IP_EVENT_STA_GOT_IP);
-    expect_state({{util::end_bit, false},
-                  {util::fail_bit, false},
-                  {util::success_bit, true}});
+    expect_state({{wifi::end_bit, false},
+                  {wifi::fail_bit, false},
+                  {wifi::success_bit, true}});
 }
 
 TEST_F(WiFiEventHandlerTest, connectThenDisconnect) {
@@ -98,9 +99,9 @@ TEST_F(WiFiEventHandlerTest, connectThenDisconnect) {
     aux->post(nullptr, 0, IP_EVENT, IP_EVENT_STA_GOT_IP);
     aux->post(&disc_rec, sizeof(disc_rec), WIFI_EVENT,
               WIFI_EVENT_STA_DISCONNECTED);
-    expect_state({{util::end_bit, false},
-                  {util::fail_bit, true},
-                  {util::success_bit, false}});
+    expect_state({{wifi::end_bit, false},
+                  {wifi::fail_bit, true},
+                  {wifi::success_bit, false}});
 }
 
 TEST_F(WiFiEventHandlerTest, connectThenStop) {
@@ -109,9 +110,9 @@ TEST_F(WiFiEventHandlerTest, connectThenStop) {
     aux->post(&disc_rec, sizeof(disc_rec), WIFI_EVENT,
               WIFI_EVENT_STA_DISCONNECTED);
     aux->post(nullptr, 0, WIFI_EVENT, WIFI_EVENT_STA_STOP);
-    expect_state({{util::end_bit, true},
-                  {util::fail_bit, false},
-                  {util::success_bit, false}});
+    expect_state({{wifi::end_bit, true},
+                  {wifi::fail_bit, false},
+                  {wifi::success_bit, false}});
 }
 
 TEST_F(WiFiEventHandlerTest, failThenConnect) {
@@ -119,7 +120,7 @@ TEST_F(WiFiEventHandlerTest, failThenConnect) {
     aux->post(&disc_unrec, sizeof(disc_rec), WIFI_EVENT,
               WIFI_EVENT_STA_DISCONNECTED);
     aux->post(nullptr, 0, IP_EVENT, IP_EVENT_STA_GOT_IP);
-    expect_state({{util::end_bit, false},
-                  {util::fail_bit, false},
-                  {util::success_bit, true}});
+    expect_state({{wifi::end_bit, false},
+                  {wifi::fail_bit, false},
+                  {wifi::success_bit, true}});
 }
