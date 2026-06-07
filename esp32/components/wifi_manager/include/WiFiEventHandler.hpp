@@ -1,20 +1,31 @@
 #ifndef WIFI_EVENT_HANDLER_HPP
 #define WIFI_EVENT_HANDLER_HPP
 
+#include "I_DftEventLoop.hpp"
 #include "I_WiFi.hpp"
+#include "wifi_aux.hpp"
 #include "esp_event.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/event_groups.h"
 #include "util.hpp"
 
+
+template<typename T>
+concept WiFiEventHandlerTypes =
+  I_WiFi<typename T::WiFi>
+  && util::I_EventGroup<typename T::EventGroup>
+  && I_DftEventLoop<typename T::EventLoop>;
+
 // only one per program
-class WiFiEventHandler : public util::EventHandler {
+template <WiFiEventHandlerTypes T>  class WiFiEventHandler {
+  using WiFi = typename T::WiFi;
+  using EGroup = typename T::EventGroup;
+  using DEL = typename T::EventLoop;
+
   public:
-    WiFiEventHandler(util::I_EventGroup &event_group, uint8_t retries,
-                     util::Register reg = util::Register::YES);
+    WiFiEventHandler(EGroup &event_group, uint8_t retries);
     ~WiFiEventHandler();
-    esp_err_t register_self();
-    std::span<const util::cbdata> get_cbdata() const noexcept override;
+    esp_err_t register_self() noexcept;
 
   private:
     static void handler(void *arg, esp_event_base_t event_base,
@@ -22,10 +33,14 @@ class WiFiEventHandler : public util::EventHandler {
     static void ip_handler(void *arg, esp_event_base_t event_base,
                            int32_t event_id, void *event_data);
 
-    static util::I_EventGroup *event_group;
+    static EGroup *event_group;
     static uint8_t max_retries;
     static int8_t retries_left;
-    static std::vector<util::cbdata> cbdata;
+
+    esp_event_handler_instance_t instance{};
+    esp_event_handler_instance_t ip_instance{};
 };
+
+#include "WiFiEventHandler.tpp"
 
 #endif

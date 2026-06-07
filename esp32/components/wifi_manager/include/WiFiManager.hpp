@@ -19,20 +19,14 @@ class I_WiFiManager {
     virtual bool is_connected() = 0;
 };
 
-template <typename F, typename ReturnType, typename... Args>
-concept Returns = requires(F &&f, Args &&...args) {
-    {
-        std::forward<F>(f)(std::forward<Args>(args)...)
-    } -> std::same_as<ReturnType>;
-};
-
-template <typename T> class WiFiManager : public I_WiFiManager {
+template <WiFiManagerTypes T> class WiFiManager : public I_WiFiManager {
+    using WiFi = typename T::WiFi;
     using EGroup = typename T::EventGroup;
     using Handler = typename T::EventHandler;
 
   public:
     template <typename HandlerFactory>
-        requires Returns<HandlerFactory, Handler, EGroup &>
+        requires util::Returns<HandlerFactory, Handler, EGroup &>
     WiFiManager(HandlerFactory handler_factory,
                 std::unique_ptr<I_Provisioning> &&provisioning) noexcept;
 

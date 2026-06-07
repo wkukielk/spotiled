@@ -1,7 +1,7 @@
 #include "I_WiFi.hpp"
 #include "util.hpp"
 
-bool I_WiFi::is_disconnect_recoverable(WiFiReason reason) {
+bool wifi::is_disconnect_recoverable(WiFiReason reason) {
     return reason == WiFiReason::AUTH_EXPIRE ||
            reason == WiFiReason::ASSOC_EXPIRE ||
            reason == WiFiReason::ASSOC_FAIL ||

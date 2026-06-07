@@ -4,6 +4,7 @@
 #include "CredentialsWiFiManager.hpp"
 #include "WiFiManager.hpp"
 #include "errors.hpp"
+#include "WiFi.hpp"
 #include "nvs.hpp"
 
 struct ConfigError : public BaseError {
@@ -12,10 +13,23 @@ struct ConfigError : public BaseError {
     ConfigError() : BaseError("ConfigError", "") {};
 };
 
-struct WiFiManagerTypes {
+struct DefaultWiFiEventHandlerTypes {
     using EventGroup = util::EventGroup;
-    using EventHandler = WiFiEventHandler;
+    using EventLoop = DftEventLoop;
+    using WiFi = ::WiFi;
 };
+
+using DftWiFiEventHandler = WiFiEventHandler<DefaultWiFiEventHandlerTypes>;
+struct DefaultWiFiManagerTypes {
+    using EventGroup = util::EventGroup;
+    using EventHandler = DftWiFiEventHandler;
+    using WiFi = ::WiFi;
+};
+
+using DftCredentialsWiFiManager =
+    CredentialsWiFiManager<DefaultWiFiManagerTypes>;
+
+using DftWiFiManager = WiFiManager<DefaultWiFiManagerTypes>;
 
 class WiFiManagerFactory {
   public:
@@ -23,8 +37,8 @@ class WiFiManagerFactory {
     u_ptr<I_WiFiManager> get() const;
 
   private:
-    u_ptr<WiFiManager<WiFiManagerTypes>> get_wifi_manager() const;
-    u_ptr<CredentialsWiFiManager> get_credentials_wifi_manager() const;
+    u_ptr<DftWiFiManager> get_wifi_manager() const;
+    u_ptr<DftCredentialsWiFiManager> get_credentials_wifi_manager() const;
     Provisioning *get_provisioning(util::EventGroup &event_group) const;
     const I_NVS *cfgnvs{};
 };

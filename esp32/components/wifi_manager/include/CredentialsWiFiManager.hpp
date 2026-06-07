@@ -4,11 +4,21 @@
 #include "WiFiManager.hpp"
 #include <string_view>
 
+
+template<typename Types, typename T>
+concept HandlerFactory = WiFiManagerTypes<Types> && util::Returns<T, typename Types::EventHandler, typename Types::EventGroup&>;
+
+template <WiFiManagerTypes T>
 class CredentialsWiFiManager : public I_WiFiManager {
+  using EGroup = typename T::EventGroup;
+  using Handler = typename T::EventHandler;
+  using WiFi = typename T::WiFi;
+
   public:
+    template <typename Factory>
+    requires HandlerFactory<T, Factory>
     CredentialsWiFiManager(std::string_view ssid, std::string_view passwd,
-                           u_ptr<util::EventHandler> handler,
-                           u_ptr<util::I_EventGroup> event_group);
+                           Factory factory);
     int init() override;
     int connect() override;
     int disconnect() override;
@@ -17,8 +27,10 @@ class CredentialsWiFiManager : public I_WiFiManager {
   private:
     std::string ssid{};
     std::string passwd{};
-    u_ptr<util::EventHandler> handler{};
-    u_ptr<util::I_EventGroup> event_group{};
+    EGroup event_group{};
+    Handler handler;
 };
+
+#include "CredentialsWiFiManager.tpp"
 
 #endif

@@ -28,7 +28,7 @@ class ProvisioningTest : public BaseTest {
     ProvEssentials get_essentials() {
         return {.get_wifi_prov = []() { return new MockWiFiProv{}; },
                 .get_handler =
-                    [](util::I_EventGroup &g) {
+                    [](util::EventGroupBase &g) {
                         (void)g;
                         return new MockEventHandler{};
                     }};

@@ -20,7 +20,7 @@ uint8_t Provisioning::custom_service_uuid[16] = {
 };
 
 Provisioning::Provisioning(const ProvEssentials &essentials,
-                           util::I_EventGroup &event_group,
+                           util::EventGroupBase &event_group,
                            const char *prov_name)
     : essentials{essentials}, event_group{&event_group},
       service_name{prov_name} {}

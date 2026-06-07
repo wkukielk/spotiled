@@ -4,7 +4,7 @@
 #include "util.hpp"
 #include <gmock/gmock.h>
 
-class MockEventGroup : public util::I_EventGroup {
+class MockEventGroup : public util::EventGroupBase {
   public:
     MOCK_METHOD(EventBits_t, clear, (const EventBits_t uxBitsToClear),
                 (override));

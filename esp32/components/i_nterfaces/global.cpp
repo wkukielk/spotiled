@@ -35,22 +35,12 @@ void DefaultEventLoop::deinit() {
 
 Global *Global::instance{};
 
-Global::Global() {
-    DefaultEventLoop::init();
-    Netif::init();
-}
+Global::Global() { Netif::init(); }
 
-Global::~Global() noexcept {
-    Netif::deinit();
-    DefaultEventLoop::deinit();
-}
+Global::~Global() noexcept { Netif::deinit(); }
 
 void Global::set_nvs(std::unique_ptr<I_NVS> &&nvs) {
     this->nvs = std::move(nvs);
-}
-
-void Global::set_wifi(std::unique_ptr<I_WiFi> &&wifi) {
-    this->wifi = std::move(wifi);
 }
 
 void Global::set_time(std::unique_ptr<I_Time> &&time) {
@@ -70,4 +60,5 @@ Global &Global::get_global() {
 void Global::deinit() {
     if (instance)
         delete instance;
+    instance = nullptr;
 }

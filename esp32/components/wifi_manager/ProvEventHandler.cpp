@@ -7,7 +7,7 @@
 #include "wifi_aux.hpp"
 
 static const char *TAG = "ProvEventHandler";
-util::I_EventGroup *ProvEventHandler::event_group{};
+util::EventGroupBase *ProvEventHandler::event_group{};
 uint8_t ProvEventHandler::retries{};
 int8_t ProvEventHandler::retries_left{};
 esp_event_handler_instance_t ProvEventHandler::disconnect_handle{};
@@ -20,7 +20,7 @@ const util::cbdata ProvEventHandler::cbdata[2]{
      .id = WIFI_EVENT_STA_DISCONNECTED}};
 ProvReason ProvEventHandler::reason = ProvReason::OK;
 
-ProvEventHandler::ProvEventHandler(util::I_EventGroup &event_group,
+ProvEventHandler::ProvEventHandler(util::EventGroupBase &event_group,
                                    uint8_t retries, util::Register reg) {
     this->retries = retries;
     UTIL_THROW(ProvEventHandler::event_group != nullptr, InitError,
@@ -99,7 +99,7 @@ void ProvEventHandler::disconnect_handler(void *arg,
                                           int32_t event_id, void *event_data) {
     auto *data = static_cast<wifi_event_sta_disconnected_t *>(event_data);
     auto reason = static_cast<WiFiReason>(data->reason);
-    if (I_WiFi::is_disconnect_recoverable(reason) && --retries_left <= 0) {
+    if (wifi::is_disconnect_recoverable(reason) && --retries_left <= 0) {
         ESP_LOGI(TAG, "Too many retries. Failure");
         // wifi_prov_mgr's event handler will receive modified event_data.
         // The following reason will cause wifi_prov_mgr to stop retrying.

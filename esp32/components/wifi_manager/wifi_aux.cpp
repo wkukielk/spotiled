@@ -7,7 +7,7 @@ using namespace util;
 using namespace std;
 
 namespace wifi {
-int await_connection(util::I_EventGroup &event_group) {
+int await_connection(util::EventGroupBase &event_group) {
     auto bits = event_group.wait(success_bit | fail_bit);
     time().delay_ms(100); // let other event handlers run
     return bits & success_bit ? ESP_OK : ESP_FAIL;

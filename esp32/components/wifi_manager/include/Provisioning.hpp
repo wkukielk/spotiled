@@ -28,7 +28,7 @@ class I_Provisioning : util::Toggle {
 class Provisioning : public I_Provisioning {
   public:
     Provisioning(const ProvEssentials &essentials,
-                 util::I_EventGroup &event_group, const char *prov_name);
+                 util::EventGroupBase &event_group, const char *prov_name);
     esp_err_t on() override;
     esp_err_t off() override;
     bool is_on() const override;
@@ -44,7 +44,7 @@ class Provisioning : public I_Provisioning {
     ProvEssentials essentials;
     safe_unique_ptr<I_WiFiProv> wifi_prov{};
     safe_unique_ptr<util::EventHandler> handler{};
-    util::I_EventGroup *event_group;
+    util::EventGroupBase *event_group;
     std::string service_name;
     const WiFiProvSecurity security = WiFiProvSecurity::S1;
     const char pop{};

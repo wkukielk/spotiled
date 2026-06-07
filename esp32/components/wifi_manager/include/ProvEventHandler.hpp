@@ -13,7 +13,7 @@
 // only one per program
 class ProvEventHandler : public util::EventHandler {
   public:
-    ProvEventHandler(util::I_EventGroup &event_group, uint8_t retries,
+    ProvEventHandler(util::EventGroupBase &event_group, uint8_t retries,
                      util::Register reg = util::Register::YES);
     ~ProvEventHandler();
     esp_err_t register_self();
@@ -24,7 +24,7 @@ class ProvEventHandler : public util::EventHandler {
                         int32_t event_id, void *event_data);
     static void disconnect_handler(void *arg, esp_event_base_t event_base,
                                    int32_t event_id, void *event_data);
-    static util::I_EventGroup *event_group;
+    static util::EventGroupBase *event_group;
     static uint8_t retries;
     static int8_t retries_left;
     static esp_event_handler_instance_t handle;

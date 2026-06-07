@@ -6,6 +6,7 @@ idf_component_register(
          "test_wifi_aux.cpp"
     INCLUDE_DIRS "include"
     REQUIRES wifi_manager
+             i_nterfaces_ht
              htutils
     WHOLE_ARCHIVE
 )

@@ -7,7 +7,8 @@ DftEventLoopConfigurer::DftEventLoopConfigurer() {
 
 DftEventLoopConfigurer::~DftEventLoopConfigurer() {
     auto err = DftEventLoop::cleanup();
-    ESP_LOGW("DftEventLoop", "DftEventLoop cleanup fail: %d", err);
+    if (err != ESP_OK)
+        ESP_LOGW("DftEventLoop", "DftEventLoop cleanup fail: %d", err);
 }
 
 std::optional<DftEventLoop> DftEventLoop::instance{};

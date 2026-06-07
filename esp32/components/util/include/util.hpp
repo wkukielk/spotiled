@@ -76,9 +76,9 @@ class EventHandler {
     virtual std::span<const util::cbdata> get_cbdata() const noexcept = 0;
 };
 
-class I_EventGroup {
+class EventGroupBase {
   public:
-    virtual ~I_EventGroup() noexcept {};
+    virtual ~EventGroupBase() noexcept {};
     virtual EventBits_t clear(const EventBits_t uxBitsToClear) = 0;
     virtual EventBits_t get() = 0;
     virtual EventBits_t set(const EventBits_t uxBitsToSet) = 0;
@@ -89,7 +89,17 @@ class I_EventGroup {
                              TickType_t xTicksToWait) = 0;
 };
 
-class EventGroup : public I_EventGroup {
+template <typename T>
+concept I_EventGroup = requires(T t, const EventBits_t bits, const BaseType_t b,
+                                TickType_t ticks) {
+    { t.clear(bits) } -> std::same_as<EventBits_t>;
+    { t.get() } -> std::same_as<EventBits_t>;
+    { t.set(bits) } -> std::same_as<EventBits_t>;
+    { t.wait(bits) } -> std::same_as<EventBits_t>;
+    { t.wait(bits, b, b, ticks) } -> std::same_as<EventBits_t>;
+};
+
+class EventGroup : public EventGroupBase {
   public:
     EventGroup();
     ~EventGroup() noexcept override;
@@ -103,6 +113,15 @@ class EventGroup : public I_EventGroup {
 
   private:
     EventGroupHandle_t handle;
+};
+
+static_assert(I_EventGroup<EventGroup>);
+
+template <typename F, typename ReturnType, typename... Args>
+concept Returns = requires(F &&f, Args &&...args) {
+    {
+        std::forward<F>(f)(std::forward<Args>(args)...)
+    } -> std::same_as<ReturnType>;
 };
 
 class Toggle {
@@ -125,7 +144,7 @@ struct thread_params {
     configSTACK_DEPTH_TYPE stack_depth;
     void *fun_parameters{};
     UBaseType_t priority;
-    std::reference_wrapper<I_EventGroup> join_group;
+    std::reference_wrapper<EventGroupBase> join_group;
     EventBits_t join_bit;
 };
 
@@ -139,12 +158,12 @@ class Thread {
     TaskHandle_t handle{};
     TaskFunction_t fun{};
     void *fun_parameters{};
-    I_EventGroup &join_group;
+    EventGroupBase &join_group;
     EventBits_t join_bit{};
 };
 
 struct JoinEventGroup {
-    std::reference_wrapper<I_EventGroup> egroup;
+    std::reference_wrapper<EventGroupBase> egroup;
     EventBits_t join_bit;
 };
 

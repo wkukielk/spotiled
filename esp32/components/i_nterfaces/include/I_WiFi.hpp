@@ -7,6 +7,7 @@
 #include "esp_event.h"
 #pragma GCC diagnostic pop
 #include "esp_wifi.h"
+#include <concepts>
 
 extern "C" {
 ESP_EVENT_DECLARE_BASE(WIFI_EVENT);
@@ -36,19 +37,21 @@ enum class WiFiPSType {
     MAX_MODEM,
 };
 
-class I_WiFi {
-  public:
-    // init(const wifi_init_config_t *config);
-    virtual ~I_WiFi() noexcept {};
-    virtual esp_err_t start() = 0;
-    virtual esp_err_t stop() = 0;
-    virtual esp_err_t set_config(WiFiIF ifx, wifi_config_t *conf) = 0;
-    virtual esp_err_t set_mode(WiFiMode mode) = 0;
-    virtual esp_err_t set_ps(WiFiPSType pstype) = 0;
-    virtual esp_err_t connect() = 0;
-    virtual esp_err_t get_mac(WiFiIF ifx, uint8_t mac[6]) = 0;
-
-    static bool is_disconnect_recoverable(WiFiReason reason);
+template <typename T>
+concept I_WiFi = requires(T t, WiFiIF ifx, wifi_config_t *conf, WiFiMode mode,
+                          WiFiPSType ps, uint8_t mac[6]) {
+    { T::get() } -> std::same_as<T &>;
+    { t.start() } noexcept -> std::same_as<esp_err_t>;
+    { t.stop() } noexcept -> std::same_as<esp_err_t>;
+    { t.set_config(ifx, conf) } noexcept -> std::same_as<esp_err_t>;
+    { t.set_mode(mode) } noexcept -> std::same_as<esp_err_t>;
+    { t.set_ps(ps) } noexcept -> std::same_as<esp_err_t>;
+    { t.connect() } noexcept -> std::same_as<esp_err_t>;
+    { t.get_mac(ifx, mac) } noexcept -> std::same_as<esp_err_t>;
 };
+
+namespace wifi {
+bool is_disconnect_recoverable(WiFiReason reason);
+}
 
 #endif

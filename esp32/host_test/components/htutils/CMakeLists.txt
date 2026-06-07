@@ -1,5 +1,6 @@
 idf_component_register(
     SRCS "HandlerAdapter.cpp"
+         "MockWiFi.cpp"
     INCLUDE_DIRS "include"
     REQUIRES i_nterfaces_ht
     WHOLE_ARCHIVE

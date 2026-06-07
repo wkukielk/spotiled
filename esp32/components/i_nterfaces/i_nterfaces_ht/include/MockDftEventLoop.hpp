@@ -29,6 +29,11 @@ class MockDftEventLoop {
     esp_err_t post(esp_event_base_t event_base, int32_t event_id,
                    const void *event_data, size_t event_data_size,
                    TickType_t ticks_to_wait) noexcept;
+    esp_err_t post(esp_event_base_t event_base, int32_t event_id,
+                   const void *event_data, size_t event_data_size) noexcept {
+        return post(event_base, event_id, event_data, event_data_size,
+                    portMAX_DELAY);
+    }
 
     static MockDftEventLoop &get() {
         if (!instance)
