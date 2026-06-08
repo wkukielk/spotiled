@@ -1,21 +1,17 @@
 #ifndef WIFI_AUX_HPP
 #define WIFI_AUX_HPP
 
-#include "I_WiFiProv.hpp"
 #include "I_WiFi.hpp"
+#include "I_WiFiProv.hpp"
 #include "URL.hpp"
 #include "errors.hpp"
 #include "util.hpp"
 #include <functional>
 #include <optional>
 
-template<typename T>
-concept WiFiManagerTypes = util::I_EventGroup<typename T::EventGroup> && I_WiFi<typename T::WiFi>;
-
-
 namespace wifi {
-using HandlerGetter = std::function<util::EventHandler *(util::EventGroupBase &)>;
-using ProvGetter = std::function<I_WiFiProv *()>;
+using HandlerGetter =
+    std::function<util::EventHandler *(util::EventGroupBase &)>;
 int await_connection(util::EventGroupBase &event_group);
 
 extern const EventBits_t fail_bit;

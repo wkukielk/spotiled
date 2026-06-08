@@ -3,31 +3,29 @@
 
 #include "I_DftEventLoop.hpp"
 #include "I_WiFi.hpp"
-#include "wifi_aux.hpp"
 #include "esp_event.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/event_groups.h"
 #include "util.hpp"
+#include "wifi_aux.hpp"
 
-
-template<typename T>
+template <typename T>
 concept WiFiEventHandlerTypes =
-  I_WiFi<typename T::WiFi>
-  && util::I_EventGroup<typename T::EventGroup>
-  && I_DftEventLoop<typename T::EventLoop>;
+    I_WiFi<typename T::WiFi> && util::I_EventGroup<typename T::EventGroup> &&
+    I_DftEventLoop<typename T::EventLoop>;
 
 // only one per program
-template <WiFiEventHandlerTypes T>  class WiFiEventHandler {
-  using WiFi = typename T::WiFi;
-  using EGroup = typename T::EventGroup;
-  using DEL = typename T::EventLoop;
+template <WiFiEventHandlerTypes T> class WiFiEventHandler {
+    using WiFi = typename T::WiFi;
+    using EGroup = typename T::EventGroup;
+    using DEL = typename T::EventLoop;
 
   public:
     WiFiEventHandler(EGroup &event_group, uint8_t retries);
-    ~WiFiEventHandler();
-    esp_err_t register_self() noexcept;
+    ~WiFiEventHandler() noexcept;
 
   private:
+    esp_err_t register_self() noexcept;
     static void handler(void *arg, esp_event_base_t event_base,
                         int32_t event_id, void *event_data);
     static void ip_handler(void *arg, esp_event_base_t event_base,

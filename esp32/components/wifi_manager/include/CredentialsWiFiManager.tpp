@@ -4,15 +4,12 @@
 
 #include "global.hpp"
 
-template <WiFiManagerTypes T>
-template<typename Factory>
-requires HandlerFactory<T, Factory>
-    CredentialsWiFiManager<T>::CredentialsWiFiManager(std::string_view ssid,
-                                                      std::string_view passwd,
-                                                      Factory fctry)
-    : ssid{ssid}, passwd{passwd}, event_group{}, handler{fctry(event_group)} {}
+template <CredentialsWiFiManagerTypes T>
+CredentialsWiFiManager<T>::CredentialsWiFiManager(std::string_view ssid,
+                                                  std::string_view passwd)
+    : ssid{ssid}, passwd{passwd}, event_group{}, handler{event_group, 3} {}
 
-template <WiFiManagerTypes T> int CredentialsWiFiManager<T>::init() {
+template <CredentialsWiFiManagerTypes T> int CredentialsWiFiManager<T>::init() {
     UTIL_THROW(WiFi::get().set_mode(WiFiMode::STA), InitError,
                "Failed to set STA mode");
     auto cfg = wifi_config_t{};
@@ -23,15 +20,16 @@ template <WiFiManagerTypes T> int CredentialsWiFiManager<T>::init() {
     return ESP_OK;
 }
 
-template <WiFiManagerTypes T>
+template <CredentialsWiFiManagerTypes T>
 int CredentialsWiFiManager<T>::connect() {
     ESP_LOGI("CredentailsWiFiManager", "Connecting to %s", ssid.c_str());
     UTIL_THROW(WiFi::get().start(), WiFiManagerError, "Failed to start WiFi");
-    UTIL_THROW(WiFi::get().set_ps(WiFiPSType::NONE), WiFiManagerError, "set ps");
+    UTIL_THROW(WiFi::get().set_ps(WiFiPSType::NONE), WiFiManagerError,
+               "set ps");
     return wifi::await_connection(event_group);
 }
 
-template <WiFiManagerTypes T>
+template <CredentialsWiFiManagerTypes T>
 int CredentialsWiFiManager<T>::disconnect() {
     UTIL_RETURN(WiFi::get().stop());
     auto bits = event_group.wait(wifi::end_bit, pdFALSE, pdFALSE,
@@ -39,7 +37,7 @@ int CredentialsWiFiManager<T>::disconnect() {
     return bits & wifi::end_bit ? ESP_OK : ESP_FAIL;
 }
 
-template <WiFiManagerTypes T>
+template <CredentialsWiFiManagerTypes T>
 bool CredentialsWiFiManager<T>::is_connected() {
     return event_group.get() & wifi::success_bit;
 }

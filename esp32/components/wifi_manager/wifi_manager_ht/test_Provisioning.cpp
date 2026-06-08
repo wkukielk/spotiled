@@ -1,43 +1,35 @@
-#include "BaseTest.hpp"
 #include "I_WiFi.hpp"
-#include "MockEventGroup.hpp"
-#include "MockEventHandler.hpp"
-#include "MockWiFiProv.hpp"
+#include "MockTime.hpp"
 #include "Provisioning.hpp"
+#include "TestableProvisioning.hpp"
 #include "esp_event.h"
 #include "wifi_aux.hpp"
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-using ::testing::_;
-using ::testing::Return;
-using ::testing::StrEq;
+using namespace testing;
 
-class ProvisioningTest : public BaseTest {
+class InitTimeTest : public Test {
   protected:
-    ProvisioningTest() {
-        event_group = std::make_unique<MockEventGroup>();
-        manager = std::make_unique<Provisioning>(get_essentials(), *event_group,
-                                                 service_name);
-        manager->on();
-        wifi_prov = (MockWiFiProv *)&manager->get_wifi_prov();
+    InitTimeTest() {
+        auto &global = Global::get_global();
+        global.set_time(std::make_unique<MockTime>());
     }
-
-    ~ProvisioningTest() { manager->off(); }
-
-    ProvEssentials get_essentials() {
-        return {.get_wifi_prov = []() { return new MockWiFiProv{}; },
-                .get_handler =
-                    [](util::EventGroupBase &g) {
-                        (void)g;
-                        return new MockEventHandler{};
-                    }};
+    ~InitTimeTest() {
+        auto &global = Global::get_global();
+        global.set_time(nullptr);
+        Global::deinit();
     }
+};
 
-    MockWiFiProv *wifi_prov{};
-    std::unique_ptr<MockEventGroup> event_group;
-    std::unique_ptr<Provisioning> manager;
-    const char *service_name = "MAC_HERE";
+class ProvisioningTest : public InitTimeTest {
+  protected:
+    MockTime *time_m{};
+    const char *service_name = "TEST_PROV";
+    MockEventGroup event_group{};
+    TestableProvisioning prov{event_group, service_name};
+    MockWiFiProv &wifi_prov{prov.get_prov()};
+    MockProvEventHandler &handler{prov.get_handler()};
 };
 
 using wifi::end_bit;
@@ -45,22 +37,22 @@ using wifi::fail_bit;
 using wifi::success_bit;
 
 TEST_F(ProvisioningTest, isProvisioned) {
-    EXPECT_CALL(*wifi_prov, is_provisioned(_)).WillOnce(Return(ESP_FAIL));
-    EXPECT_THROW(manager->is_provisioned(), WiFiManagerError);
+    EXPECT_CALL(wifi_prov, is_provisioned(_)).WillOnce(Return(ESP_FAIL));
+    EXPECT_THROW(prov.is_provisioned(), WiFiManagerError);
 }
 
 TEST_F(ProvisioningTest, success) {
-    EXPECT_CALL(*wifi_prov, start_provisioning(_, _, StrEq(service_name), _));
-    EXPECT_CALL(*event_group, wait(success_bit | fail_bit))
+    EXPECT_CALL(wifi_prov, start_provisioning(_, _, StrEq(service_name), _));
+    EXPECT_CALL(event_group, wait(success_bit | fail_bit))
         .WillOnce(Return(success_bit));
-    EXPECT_EQ(manager->connect(), ESP_OK);
+    EXPECT_EQ(prov.connect(), ESP_OK);
 }
 
 TEST_F(ProvisioningTest, failAndRecover) {
-    EXPECT_CALL(*event_group, wait(success_bit | fail_bit))
+    EXPECT_CALL(event_group, wait(success_bit | fail_bit))
         .Times(2)
         .WillOnce(Return(fail_bit))
         .WillOnce(Return(success_bit));
-    EXPECT_CALL(*event_group, wait(end_bit)).WillOnce(Return(end_bit));
-    EXPECT_EQ(manager->connect(), ESP_OK);
+    EXPECT_CALL(event_group, wait(end_bit)).WillOnce(Return(end_bit));
+    EXPECT_EQ(prov.connect(), ESP_OK);
 }

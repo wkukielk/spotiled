@@ -11,14 +11,12 @@ template <WiFiManagerTypes T>
 template <typename HandlerFactory>
     requires util::Returns<HandlerFactory, typename T::EventHandler,
                            typename T::EventGroup &>
-WiFiManager<T>::WiFiManager(
-    HandlerFactory handler_factory,
-    std::unique_ptr<I_Provisioning> &&provisioning) noexcept
+WiFiManager<T>::WiFiManager(HandlerFactory handler_factory) noexcept
     : event_group{EGroup{}},
       handler{[this, ftry = std::move(handler_factory)]() {
           return ftry(event_group);
       }},
-      provisioning{std::move(provisioning)} {}
+      provisioning{Provisioning{event_group, "ESP_PROV"}} {}
 
 template <WiFiManagerTypes T> WiFiManager<T>::~WiFiManager() {
     WiFi::get().stop();
@@ -38,7 +36,8 @@ template <WiFiManagerTypes T> int WiFiManager<T>::init() {
 }
 
 template <WiFiManagerTypes T> int WiFiManager<T>::connect() {
-    return provisioning->is_on() ? connect_with_prov() : connect_without_prov();
+    return provisioning.has_value() ? connect_with_prov()
+                                    : connect_without_prov();
 }
 
 template <WiFiManagerTypes T> int WiFiManager<T>::disconnect() {
@@ -66,11 +65,11 @@ template <WiFiManagerTypes T> int WiFiManager<T>::connect_without_prov() {
 }
 
 template <WiFiManagerTypes T> void WiFiManager<T>::switch_to_prov() {
-    provisioning->on();
+    provisioning.emplace(event_group, "ESP_PROV");
     handler.off();
 }
 
 template <WiFiManagerTypes T> void WiFiManager<T>::switch_to_no_prov() {
     handler.on();
-    provisioning->off();
+    provisioning.reset();
 }

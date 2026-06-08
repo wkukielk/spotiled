@@ -28,6 +28,8 @@ WiFi::~WiFi() noexcept {
     ESP_LOGI("WIFI", "WiFi deinit");
 }
 
+esp_err_t WiFi::create() { return create(&wifi::cfg); }
+
 esp_err_t WiFi::create(const wifi_init_config_t *config) {
     instance.emplace(config);
     return ESP_OK;

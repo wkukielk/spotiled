@@ -13,11 +13,11 @@ class WiFi {
   public:
     static WiFi &get() noexcept { return *instance; }
     static esp_err_t create(const wifi_init_config_t *config);
+    static esp_err_t create();
     static esp_err_t cleanup() noexcept;
 
     WiFi(const wifi_init_config_t *config);
     ~WiFi() noexcept;
-    
 
     esp_err_t start() noexcept;
     esp_err_t stop() noexcept;

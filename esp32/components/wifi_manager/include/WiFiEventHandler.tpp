@@ -11,15 +11,12 @@
 template <WiFiEventHandlerTypes T>
 T::EventGroup *WiFiEventHandler<T>::event_group{};
 
-template <WiFiEventHandlerTypes T>
-uint8_t WiFiEventHandler<T>::max_retries{};
+template <WiFiEventHandlerTypes T> uint8_t WiFiEventHandler<T>::max_retries{};
+
+template <WiFiEventHandlerTypes T> int8_t WiFiEventHandler<T>::retries_left{};
 
 template <WiFiEventHandlerTypes T>
-int8_t WiFiEventHandler<T>::retries_left{};
-
-template <WiFiEventHandlerTypes T>
-WiFiEventHandler<T>::WiFiEventHandler(EGroup &event_group,
-                                                uint8_t retries) {
+WiFiEventHandler<T>::WiFiEventHandler(EGroup &event_group, uint8_t retries) {
     UTIL_THROW(WiFiEventHandler::event_group != nullptr, InitError,
                "two handlers");
     UTIL_THROW(register_self(), InitError, "handler register");
@@ -30,7 +27,7 @@ WiFiEventHandler<T>::WiFiEventHandler(EGroup &event_group,
 }
 
 template <WiFiEventHandlerTypes T>
-WiFiEventHandler<T>::~WiFiEventHandler() {
+WiFiEventHandler<T>::~WiFiEventHandler() noexcept {
     WiFiEventHandler::event_group = nullptr;
     DEL::get().handler_unregister(IP_EVENT, IP_EVENT_STA_GOT_IP, ip_instance);
     DEL::get().handler_unregister(WIFI_EVENT, ESP_EVENT_ANY_ID, instance);
@@ -46,10 +43,8 @@ esp_err_t WiFiEventHandler<T>::register_self() noexcept {
 }
 
 template <WiFiEventHandlerTypes T>
-void WiFiEventHandler<T>::handler(void *arg,
-                                            esp_event_base_t event_base,
-                                            int32_t event_id,
-                                            void *event_data) {
+void WiFiEventHandler<T>::handler(void *arg, esp_event_base_t event_base,
+                                  int32_t event_id, void *event_data) {
     (void)arg;
     (void)event_base;
     (void)event_id;
@@ -80,10 +75,8 @@ void WiFiEventHandler<T>::handler(void *arg,
 }
 
 template <WiFiEventHandlerTypes T>
-void WiFiEventHandler<T>::ip_handler(void *arg,
-                                               esp_event_base_t event_base,
-                                               int32_t event_id,
-                                               void *event_data) {
+void WiFiEventHandler<T>::ip_handler(void *arg, esp_event_base_t event_base,
+                                     int32_t event_id, void *event_data) {
     (void)arg;
     (void)event_base;
     (void)event_id;

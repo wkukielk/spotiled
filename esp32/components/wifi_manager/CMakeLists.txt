@@ -1,7 +1,5 @@
 idf_component_register(
-     SRCS "Provisioning.cpp"
-          "ProvEventHandler.cpp"
-          "wifi_aux.cpp"
+     SRCS "wifi_aux.cpp"
      INCLUDE_DIRS "include"
      REQUIRES  i_nterfaces
                esp_netif

@@ -2,9 +2,12 @@
 #define WIFI_MANAGER_FACTORY_HPP
 
 #include "CredentialsWiFiManager.hpp"
-#include "WiFiManager.hpp"
-#include "errors.hpp"
+#include "ProvEventHandler.hpp"
+#include "Provisioning.hpp"
 #include "WiFi.hpp"
+#include "WiFiManager.hpp"
+#include "WiFiProv.hpp"
+#include "errors.hpp"
 #include "nvs.hpp"
 
 struct ConfigError : public BaseError {
@@ -18,18 +21,34 @@ struct DefaultWiFiEventHandlerTypes {
     using EventLoop = DftEventLoop;
     using WiFi = ::WiFi;
 };
-
+static_assert(WiFiEventHandlerTypes<DefaultWiFiEventHandlerTypes>);
 using DftWiFiEventHandler = WiFiEventHandler<DefaultWiFiEventHandlerTypes>;
+
+struct DftProvisioningTypes {
+    using WiFiProv = ::WiFiProv;
+    using EventGroup = ::util::EventGroup;
+    using EventHandler = ProvEventHandler<EventGroup, DftEventLoop>;
+};
+static_assert(ProvisioningTypes<DftProvisioningTypes>);
+using DftProvisioning = Provisioning<DftProvisioningTypes>;
+
 struct DefaultWiFiManagerTypes {
     using EventGroup = util::EventGroup;
     using EventHandler = DftWiFiEventHandler;
     using WiFi = ::WiFi;
+    using Provisioning = DftProvisioning;
 };
-
-using DftCredentialsWiFiManager =
-    CredentialsWiFiManager<DefaultWiFiManagerTypes>;
-
+static_assert(WiFiManagerTypes<DefaultWiFiManagerTypes>);
 using DftWiFiManager = WiFiManager<DefaultWiFiManagerTypes>;
+
+struct DefaultCredentialsWiFiManagerTypes {
+    using EventGroup = util::EventGroup;
+    using EventHandler = DftWiFiEventHandler;
+    using WiFi = ::WiFi;
+};
+static_assert(CredentialsWiFiManagerTypes<DefaultCredentialsWiFiManagerTypes>);
+using DftCredentialsWiFiManager =
+    CredentialsWiFiManager<DefaultCredentialsWiFiManagerTypes>;
 
 class WiFiManagerFactory {
   public:
@@ -39,7 +58,8 @@ class WiFiManagerFactory {
   private:
     u_ptr<DftWiFiManager> get_wifi_manager() const;
     u_ptr<DftCredentialsWiFiManager> get_credentials_wifi_manager() const;
-    Provisioning *get_provisioning(util::EventGroup &event_group) const;
+    Provisioning<DftProvisioningTypes> *
+    get_provisioning(util::EventGroup &event_group) const;
     const I_NVS *cfgnvs{};
 };
 

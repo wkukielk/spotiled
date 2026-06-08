@@ -19,16 +19,21 @@ class I_WiFiManager {
     virtual bool is_connected() = 0;
 };
 
+template <typename T>
+concept WiFiManagerTypes =
+    util::I_EventGroup<typename T::EventGroup> && I_WiFi<typename T::WiFi> &&
+    I_Provisioning<typename T::Provisioning>;
+
 template <WiFiManagerTypes T> class WiFiManager : public I_WiFiManager {
     using WiFi = typename T::WiFi;
     using EGroup = typename T::EventGroup;
     using Handler = typename T::EventHandler;
+    using Provisioning = typename T::Provisioning;
 
   public:
     template <typename HandlerFactory>
         requires util::Returns<HandlerFactory, Handler, EGroup &>
-    WiFiManager(HandlerFactory handler_factory,
-                std::unique_ptr<I_Provisioning> &&provisioning) noexcept;
+    WiFiManager(HandlerFactory handler_factory) noexcept;
 
     ~WiFiManager();
     int init() override;
@@ -44,7 +49,7 @@ template <WiFiManagerTypes T> class WiFiManager : public I_WiFiManager {
 
     EGroup event_group;
     Toggle<Handler> handler;
-    std::unique_ptr<I_Provisioning> provisioning;
+    std::optional<Provisioning> provisioning;
 };
 
 #include "WiFiManager.tpp"

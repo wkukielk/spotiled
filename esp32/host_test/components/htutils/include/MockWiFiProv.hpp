@@ -4,17 +4,18 @@
 #include "I_WiFiProv.hpp"
 #include <gmock/gmock.h>
 
-class MockWiFiProv : public I_WiFiProv {
+class MockWiFiProv {
   public:
-    MOCK_METHOD(esp_err_t, is_provisioned, (bool *provisioned), (override));
+    MOCK_METHOD(esp_err_t, is_provisioned, (bool *provisioned), (const));
     MOCK_METHOD(esp_err_t, start_provisioning,
                 (WiFiProvSecurity security, const void *wifi_prov_sec_params,
-                 const char *service_name, const char *service_key),
-                (override));
-    MOCK_METHOD(void, stop_provisioning, (), (override));
-    MOCK_METHOD(esp_err_t, reset_sm_state_on_failure, (), (override));
-    MOCK_METHOD(esp_err_t, reset_provisioning, (), (override));
-    MOCK_METHOD(esp_err_t, set_service_uuid, (uint8_t *uuid128), (override));
+                 const char *service_name, const char *service_key));
+    MOCK_METHOD(void, stop_provisioning, ());
+    MOCK_METHOD(esp_err_t, reset_sm_state_on_failure, ());
+    MOCK_METHOD(esp_err_t, reset_provisioning, ());
+    MOCK_METHOD(esp_err_t, set_service_uuid, (uint8_t *uuid128));
 };
+
+static_assert(I_WiFiProv<MockWiFiProv>);
 
 #endif

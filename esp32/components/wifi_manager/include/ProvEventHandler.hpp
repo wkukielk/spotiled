@@ -6,32 +6,34 @@
 #include "esp_event.h"
 #pragma GCC diagnostic pop
 
+#include "I_DftEventLoop.hpp"
 #include "I_WiFiProv.hpp"
 #include "util.hpp"
 #include <memory>
 
 // only one per program
-class ProvEventHandler : public util::EventHandler {
+template <util::I_EventGroup EGroup, I_DftEventLoop ELoop>
+class ProvEventHandler {
   public:
-    ProvEventHandler(util::EventGroupBase &event_group, uint8_t retries,
-                     util::Register reg = util::Register::YES);
+    ProvEventHandler(EGroup &event_group, uint8_t retries);
     ~ProvEventHandler();
     esp_err_t register_self();
-    std::span<const util::cbdata> get_cbdata() const noexcept override;
     ProvReason get_reason() const noexcept;
 
     static void handler(void *arg, esp_event_base_t event_base,
                         int32_t event_id, void *event_data);
     static void disconnect_handler(void *arg, esp_event_base_t event_base,
                                    int32_t event_id, void *event_data);
-    static util::EventGroupBase *event_group;
+    static EGroup *event_group;
     static uint8_t retries;
     static int8_t retries_left;
     static esp_event_handler_instance_t handle;
     static esp_event_handler_instance_t disconnect_handle;
-    static esp_event_handler_instance_t ip_handle;
-    static const util::cbdata cbdata[2];
     static ProvReason reason;
 };
+
+extern const char *PEH_TAG;
+
+#include "ProvEventHandler.tpp"
 
 #endif

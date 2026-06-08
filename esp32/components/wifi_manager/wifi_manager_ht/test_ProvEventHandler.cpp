@@ -1,6 +1,7 @@
 #include "BaseTest.hpp"
 #include "HandlerAdapter.hpp"
 #include "I_WiFiProv.hpp"
+#include "MockDftEventLoop.hpp"
 #include "MockWiFi.hpp"
 #include "ProvEventHandler.hpp"
 #include "esp_event.h"
@@ -11,18 +12,14 @@
 
 using ::testing::_;
 using ::testing::Return;
+using util::EventGroup;
 
 class ProvEventHandlerTest : public BaseTest {
   protected:
-    ProvEventHandlerTest() {
-        handler = std::make_unique<ProvEventHandler>(event_group, 2,
-                                                     util::Register::NO);
-        aux = std::make_unique<HandlerAdapter>(*handler);
-    }
-
-    util::EventGroup event_group{};
-    std::unique_ptr<ProvEventHandler> handler;
-    std::unique_ptr<HandlerAdapter> aux;
+    DftEventLoopConfigurer dft_eloop{};
+    MockDftEventLoop &eloop{MockDftEventLoop::reset_and_get()};
+    EventGroup event_group{};
+    ProvEventHandler<EventGroup, MockDftEventLoop> handler{event_group, 2};
 
     wifi_event_sta_disconnected_t disc_unrec{.reason = WIFI_REASON_AUTH_FAIL};
     wifi_event_sta_disconnected_t disc_rec{.reason =
@@ -43,78 +40,78 @@ TEST_F(ProvEventHandlerTest, init) {
 }
 
 TEST_F(ProvEventHandlerTest, start) {
-    aux->post(nullptr, 0, NETWORK_PROV_EVENT, (int32_t)ProvEvent::START);
+    eloop.post(NETWORK_PROV_EVENT, (int32_t)ProvEvent::START, nullptr, 0);
     expect_state({{wifi::end_bit, false},
                   {wifi::fail_bit, false},
                   {wifi::success_bit, false}});
 }
 
 TEST_F(ProvEventHandlerTest, success) {
-    aux->post(nullptr, 0, NETWORK_PROV_EVENT, (int32_t)ProvEvent::START);
-    aux->post(nullptr, 0, NETWORK_PROV_EVENT, (int32_t)ProvEvent::CRED_SUCCESS);
-    aux->post(nullptr, 0, NETWORK_PROV_EVENT, (int32_t)ProvEvent::END);
+    eloop.post(NETWORK_PROV_EVENT, (int32_t)ProvEvent::START, nullptr, 0);
+    eloop.post(NETWORK_PROV_EVENT, (int32_t)ProvEvent::CRED_SUCCESS, nullptr, 0);
+    eloop.post(NETWORK_PROV_EVENT, (int32_t)ProvEvent::END, nullptr, 0);
     expect_state({{wifi::end_bit, true},
                   {wifi::fail_bit, false},
                   {wifi::success_bit, true}});
 }
 
 TEST_F(ProvEventHandlerTest, failThenEnd) {
-    aux->post(nullptr, 0, NETWORK_PROV_EVENT, (int32_t)ProvEvent::START);
-    aux->post(&reason, sizeof(reason), NETWORK_PROV_EVENT,
-              (int32_t)ProvEvent::CRED_FAIL);
-    aux->post(nullptr, 0, NETWORK_PROV_EVENT, (int32_t)ProvEvent::END);
+    eloop.post(NETWORK_PROV_EVENT, (int32_t)ProvEvent::START, nullptr, 0);
+    eloop.post(NETWORK_PROV_EVENT, (int32_t)ProvEvent::CRED_FAIL, &reason,
+               sizeof(reason));
+    eloop.post(NETWORK_PROV_EVENT, (int32_t)ProvEvent::END, nullptr, 0);
     expect_state({{wifi::end_bit, true},
                   {wifi::fail_bit, true},
                   {wifi::success_bit, false}});
 }
 
 TEST_F(ProvEventHandlerTest, failAndRecover) {
-    aux->post(nullptr, 0, NETWORK_PROV_EVENT, (int32_t)ProvEvent::START);
-    aux->post(&disc_rec, sizeof(disc_rec), WIFI_EVENT,
-              WIFI_EVENT_STA_DISCONNECTED);
-    aux->post(nullptr, 0, NETWORK_PROV_EVENT, (int32_t)ProvEvent::CRED_SUCCESS);
+    eloop.post(NETWORK_PROV_EVENT, (int32_t)ProvEvent::START, nullptr, 0);
+    eloop.post(WIFI_EVENT, WIFI_EVENT_STA_DISCONNECTED, &disc_rec,
+               sizeof(disc_rec));
+    eloop.post(NETWORK_PROV_EVENT, (int32_t)ProvEvent::CRED_SUCCESS, nullptr, 0);
     expect_state({{wifi::end_bit, false},
                   {wifi::fail_bit, false},
                   {wifi::success_bit, true}});
 }
 
 TEST_F(ProvEventHandlerTest, tooManyRetries) {
-    aux->post(nullptr, 0, NETWORK_PROV_EVENT, (int32_t)ProvEvent::START);
-    aux->post(&disc_rec, sizeof(disc_rec), WIFI_EVENT,
-              WIFI_EVENT_STA_DISCONNECTED);
-    aux->post(&disc_rec, sizeof(disc_rec), WIFI_EVENT,
-              WIFI_EVENT_STA_DISCONNECTED);
-    aux->post(&reason, sizeof(reason), NETWORK_PROV_EVENT,
-              (int32_t)ProvEvent::CRED_FAIL);
+    eloop.post(NETWORK_PROV_EVENT, (int32_t)ProvEvent::START, nullptr, 0);
+    eloop.post(WIFI_EVENT, WIFI_EVENT_STA_DISCONNECTED, &disc_rec,
+               sizeof(disc_rec));
+    eloop.post(WIFI_EVENT, WIFI_EVENT_STA_DISCONNECTED, &disc_rec,
+               sizeof(disc_rec));
+    eloop.post(NETWORK_PROV_EVENT, (int32_t)ProvEvent::CRED_FAIL, &reason,
+               sizeof(reason));
     expect_state({{wifi::end_bit, false},
                   {wifi::fail_bit, true},
                   {wifi::success_bit, false}});
 }
 
 TEST_F(ProvEventHandlerTest, reset) {
-    aux->post(nullptr, 0, NETWORK_PROV_EVENT, (int32_t)ProvEvent::START);
-    aux->post(&disc_rec, sizeof(disc_rec), WIFI_EVENT,
-              WIFI_EVENT_STA_DISCONNECTED);
-    aux->post(&disc_rec, sizeof(disc_rec), WIFI_EVENT,
-              WIFI_EVENT_STA_DISCONNECTED);
-    aux->post(nullptr, 0, NETWORK_PROV_EVENT, (int32_t)ProvEvent::END);
-    aux->post(nullptr, 0, NETWORK_PROV_EVENT, (int32_t)ProvEvent::START);
+    eloop.post(NETWORK_PROV_EVENT, (int32_t)ProvEvent::START, nullptr, 0);
+    eloop.post(WIFI_EVENT, WIFI_EVENT_STA_DISCONNECTED, &disc_rec,
+               sizeof(disc_rec));
+    eloop.post(WIFI_EVENT, WIFI_EVENT_STA_DISCONNECTED, &disc_rec,
+               sizeof(disc_rec));
+    eloop.post(NETWORK_PROV_EVENT, (int32_t)ProvEvent::END, nullptr, 0);
+    eloop.post(NETWORK_PROV_EVENT, (int32_t)ProvEvent::START, nullptr, 0);
     expect_state({{wifi::end_bit, false},
                   {wifi::fail_bit, false},
                   {wifi::success_bit, false}});
 }
 
 TEST_F(ProvEventHandlerTest, retriesReset) {
-    aux->post(nullptr, 0, NETWORK_PROV_EVENT, (int32_t)ProvEvent::START);
-    aux->post(&disc_rec, sizeof(disc_rec), WIFI_EVENT,
-              WIFI_EVENT_STA_DISCONNECTED);
-    aux->post(&disc_rec, sizeof(disc_rec), WIFI_EVENT,
-              WIFI_EVENT_STA_DISCONNECTED);
-    aux->post(nullptr, 0, NETWORK_PROV_EVENT, (int32_t)ProvEvent::END);
-    aux->post(nullptr, 0, NETWORK_PROV_EVENT, (int32_t)ProvEvent::START);
-    aux->post(&disc_rec, sizeof(disc_rec), WIFI_EVENT,
-              WIFI_EVENT_STA_DISCONNECTED);
-    aux->post(nullptr, 0, NETWORK_PROV_EVENT, (int32_t)ProvEvent::CRED_SUCCESS);
+    eloop.post(NETWORK_PROV_EVENT, (int32_t)ProvEvent::START, nullptr, 0);
+    eloop.post(WIFI_EVENT, WIFI_EVENT_STA_DISCONNECTED, &disc_rec,
+               sizeof(disc_rec));
+    eloop.post(WIFI_EVENT, WIFI_EVENT_STA_DISCONNECTED, &disc_rec,
+               sizeof(disc_rec));
+    eloop.post(NETWORK_PROV_EVENT, (int32_t)ProvEvent::END, nullptr, 0);
+    eloop.post(NETWORK_PROV_EVENT, (int32_t)ProvEvent::START, nullptr, 0);
+    eloop.post(WIFI_EVENT, WIFI_EVENT_STA_DISCONNECTED, &disc_rec,
+               sizeof(disc_rec));
+    eloop.post(NETWORK_PROV_EVENT, (int32_t)ProvEvent::CRED_SUCCESS, nullptr, 0);
     expect_state({{wifi::end_bit, false},
                   {wifi::fail_bit, false},
                   {wifi::success_bit, true}});
