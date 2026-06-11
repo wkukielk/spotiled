@@ -19,7 +19,7 @@ struct ConfigError : public BaseError {
 struct DefaultWiFiEventHandlerTypes {
     using EventGroup = util::EventGroup;
     using EventLoop = DftEventLoop;
-    using WiFi = ::WiFi;
+    using WiFi = Handle<::WiFi>;
 };
 static_assert(WiFiEventHandlerTypes<DefaultWiFiEventHandlerTypes>);
 using DftWiFiEventHandler = WiFiEventHandler<DefaultWiFiEventHandlerTypes>;
@@ -35,7 +35,7 @@ using DftProvisioning = Provisioning<DftProvisioningTypes>;
 struct DefaultWiFiManagerTypes {
     using EventGroup = util::EventGroup;
     using EventHandler = DftWiFiEventHandler;
-    using WiFi = ::WiFi;
+    using WiFi = Handle<::WiFi>;
     using Provisioning = DftProvisioning;
 };
 static_assert(WiFiManagerTypes<DefaultWiFiManagerTypes>);
@@ -44,7 +44,7 @@ using DftWiFiManager = WiFiManager<DefaultWiFiManagerTypes>;
 struct DefaultCredentialsWiFiManagerTypes {
     using EventGroup = util::EventGroup;
     using EventHandler = DftWiFiEventHandler;
-    using WiFi = ::WiFi;
+    using WiFi = Handle<::WiFi>;
 };
 static_assert(CredentialsWiFiManagerTypes<DefaultCredentialsWiFiManagerTypes>);
 using DftCredentialsWiFiManager =

@@ -40,7 +40,6 @@ enum class WiFiPSType {
 template <typename T>
 concept I_WiFi = requires(T t, WiFiIF ifx, wifi_config_t *conf, WiFiMode mode,
                           WiFiPSType ps, uint8_t mac[6]) {
-    { T::get() } -> std::same_as<T &>;
     { t.start() } noexcept -> std::same_as<esp_err_t>;
     { t.stop() } noexcept -> std::same_as<esp_err_t>;
     { t.set_config(ifx, conf) } noexcept -> std::same_as<esp_err_t>;
@@ -48,6 +47,11 @@ concept I_WiFi = requires(T t, WiFiIF ifx, wifi_config_t *conf, WiFiMode mode,
     { t.set_ps(ps) } noexcept -> std::same_as<esp_err_t>;
     { t.connect() } noexcept -> std::same_as<esp_err_t>;
     { t.get_mac(ifx, mac) } noexcept -> std::same_as<esp_err_t>;
+};
+
+template <typename T>
+concept WiFiHandle = std::constructible_from<T> && requires {
+    { T::get() } -> I_WiFi;
 };
 
 namespace wifi {

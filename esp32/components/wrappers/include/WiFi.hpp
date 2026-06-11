@@ -11,12 +11,8 @@ extern wifi_init_config_t cfg;
 
 class WiFi {
   public:
-    static WiFi &get() noexcept { return *instance; }
-    static esp_err_t create(const wifi_init_config_t *config);
-    static esp_err_t create();
-    static esp_err_t cleanup() noexcept;
-
     WiFi(const wifi_init_config_t *config);
+    WiFi();
     ~WiFi() noexcept;
 
     esp_err_t start() noexcept;
@@ -31,15 +27,8 @@ class WiFi {
 
   private:
     esp_netif_t *netif;
-    static std::optional<WiFi> instance;
 };
 
 static_assert(I_WiFi<WiFi>);
-
-class WiFiInitializer {
-  public:
-    WiFiInitializer();
-    ~WiFiInitializer();
-};
 
 #endif

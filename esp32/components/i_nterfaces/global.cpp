@@ -9,12 +9,6 @@ class Netif {
     static void deinit();
 };
 
-class DefaultEventLoop {
-  public:
-    static void init();
-    static void deinit();
-};
-
 void Netif::init() {
     auto err = esp_netif_init();
     UTIL_THROW(err, InitError, "netif init");
@@ -24,16 +18,7 @@ void Netif::deinit() {
     UTIL_THROW(err, InitError, "netif deinit");
 };
 
-void DefaultEventLoop::init() {
-    auto err = esp_event_loop_create_default();
-    UTIL_THROW(err, InitError, "default event loop create");
-}
-void DefaultEventLoop::deinit() {
-    auto err = esp_event_loop_delete_default();
-    UTIL_THROW(err, InitError, "default event loop delete");
-};
-
-Global *Global::instance{};
+std::optional<Global> Global::instance{};
 
 Global::Global() { Netif::init(); }
 
@@ -51,14 +36,8 @@ void Global::set_mdns(std::unique_ptr<I_mDNS> &&mdns) {
     this->mdns = std::move(mdns);
 }
 
-Global &Global::get_global() {
-    if (!instance)
-        instance = new Global{};
-    return *instance;
-}
+void Global::init() { instance.emplace(Global{}); }
 
-void Global::deinit() {
-    if (instance)
-        delete instance;
-    instance = nullptr;
-}
+Global &Global::get_global() { return *instance; }
+
+void Global::deinit() { instance.reset(); }

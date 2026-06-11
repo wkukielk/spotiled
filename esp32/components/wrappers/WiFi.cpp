@@ -7,8 +7,6 @@
 
 wifi_init_config_t wifi::cfg = WIFI_INIT_CONFIG_DEFAULT();
 
-std::optional<WiFi> WiFi::instance;
-
 WiFi::WiFi(const wifi_init_config_t *config) {
     netif = esp_netif_create_default_wifi_sta();
     UTIL_THROW(netif == nullptr, InitError, "create wifi sta");
@@ -21,23 +19,13 @@ WiFi::WiFi(const wifi_init_config_t *config) {
     ESP_LOGI("WIFI", "WiFi init");
 }
 
+WiFi::WiFi() : WiFi{&wifi::cfg} {}
+
 WiFi::~WiFi() noexcept {
     if (auto err = esp_wifi_deinit(); err != ESP_OK)
         ESP_LOGW("WIFI", "deinit failed: %d", err);
     esp_netif_destroy_default_wifi(netif);
     ESP_LOGI("WIFI", "WiFi deinit");
-}
-
-esp_err_t WiFi::create() { return create(&wifi::cfg); }
-
-esp_err_t WiFi::create(const wifi_init_config_t *config) {
-    instance.emplace(config);
-    return ESP_OK;
-}
-
-esp_err_t WiFi::cleanup() noexcept {
-    instance.reset();
-    return ESP_OK;
 }
 
 esp_err_t WiFi::start() noexcept { return esp_wifi_start(); }
@@ -57,7 +45,3 @@ esp_err_t WiFi::get_mac(WiFiIF ifx, uint8_t mac[6]) noexcept {
 }
 
 esp_netif_t *WiFi::get_netif() noexcept { return netif; }
-
-WiFiInitializer::WiFiInitializer() { WiFi::create(&wifi::cfg); }
-
-WiFiInitializer::~WiFiInitializer() { WiFi::cleanup(); }

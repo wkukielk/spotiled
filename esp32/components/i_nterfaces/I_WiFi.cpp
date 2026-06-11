@@ -1,5 +1,4 @@
 #include "I_WiFi.hpp"
-#include "util.hpp"
 
 bool wifi::is_disconnect_recoverable(WiFiReason reason) {
     return reason == WiFiReason::AUTH_EXPIRE ||

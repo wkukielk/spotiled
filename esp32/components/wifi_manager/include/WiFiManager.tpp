@@ -12,7 +12,7 @@ template <typename HandlerFactory>
     requires util::Returns<HandlerFactory, typename T::EventHandler,
                            typename T::EventGroup &>
 WiFiManager<T>::WiFiManager(HandlerFactory handler_factory) noexcept
-    : event_group{EGroup{}},
+    : event_group{EGroup{}}, wifi_{},
       handler{[this, ftry = std::move(handler_factory)]() {
           return ftry(event_group);
       }},

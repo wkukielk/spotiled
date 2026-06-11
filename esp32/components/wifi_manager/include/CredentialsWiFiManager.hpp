@@ -6,7 +6,8 @@
 
 template <typename T>
 concept CredentialsWiFiManagerTypes =
-    util::I_EventGroup<typename T::EventGroup> && I_WiFi<typename T::WiFi> &&
+    util::I_EventGroup<typename T::EventGroup> &&
+    WiFiHandle<typename T::WiFi> &&
     std::is_constructible_v<typename T::EventHandler, typename T::EventGroup &,
                             uint8_t>;
 

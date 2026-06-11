@@ -2,6 +2,7 @@
 #define WIFIMANAGER_HPP
 
 #include "I_WiFi.hpp"
+#include "Initializer.hpp"
 #include "Provisioning.hpp"
 #include "Toggle.hpp"
 #include "WiFiEventHandler.hpp"
@@ -21,8 +22,8 @@ class I_WiFiManager {
 
 template <typename T>
 concept WiFiManagerTypes =
-    util::I_EventGroup<typename T::EventGroup> && I_WiFi<typename T::WiFi> &&
-    I_Provisioning<typename T::Provisioning>;
+    util::I_EventGroup<typename T::EventGroup> &&
+    WiFiHandle<typename T::WiFi> && I_Provisioning<typename T::Provisioning>;
 
 template <WiFiManagerTypes T> class WiFiManager : public I_WiFiManager {
     using WiFi = typename T::WiFi;
@@ -48,6 +49,7 @@ template <WiFiManagerTypes T> class WiFiManager : public I_WiFiManager {
     void switch_to_no_prov();
 
     EGroup event_group;
+    WiFi wifi_;
     Toggle<Handler> handler;
     std::optional<Provisioning> provisioning;
 };

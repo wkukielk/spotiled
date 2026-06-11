@@ -10,9 +10,9 @@
 #include "wifi_aux.hpp"
 
 template <typename T>
-concept WiFiEventHandlerTypes =
-    I_WiFi<typename T::WiFi> && util::I_EventGroup<typename T::EventGroup> &&
-    I_DftEventLoop<typename T::EventLoop>;
+concept WiFiEventHandlerTypes = WiFiHandle<typename T::WiFi> &&
+                                util::I_EventGroup<typename T::EventGroup> &&
+                                I_DftEventLoop<typename T::EventLoop>;
 
 // only one per program
 template <WiFiEventHandlerTypes T> class WiFiEventHandler {

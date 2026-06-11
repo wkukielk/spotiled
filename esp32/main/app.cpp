@@ -23,7 +23,6 @@ u_ptr<Runnable> create_runtime(Config &&cfg) {
 }
 
 static std::optional<DftEventLoopConfigurer> eloop_handle;
-static std::optional<Initializer<WiFi>> wifi_handle;
 
 App::App(u_ptr<Runnable> &&runtime) : runtime{std::move(runtime)} {}
 
@@ -34,7 +33,6 @@ App *App::create() {
     cfg_reader.preconfigure();
     eloop_handle.emplace();
     Global::get_global().set_nvs(mkuptr<NVS>());
-    wifi_handle.emplace();
     Global::get_global().set_time(mkuptr<Time>());
     auto cfg = cfg_reader.get_config();
     Global::get_global().set_mdns(std::move(cfg.mdns));

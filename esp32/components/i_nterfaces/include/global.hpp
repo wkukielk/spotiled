@@ -1,19 +1,20 @@
 #ifndef GLOBAL_HPP
 #define GLOBAL_HPP
 
-#include "I_LED.hpp"
 #include "I_WiFi.hpp"
 #include "I_mDNS.hpp"
 #include "nvs.hpp"
 #include "time_aux.hpp"
-#include <format>
 #include <memory>
+#include <optional>
 
 class Global {
     Global();
-    ~Global() noexcept;
 
   public:
+    Global(Global &&) = default;
+    ~Global() noexcept;
+
     void set_time(std::unique_ptr<I_Time> &&time);
     void set_nvs(std::unique_ptr<I_NVS> &&nvs);
     void set_mdns(std::unique_ptr<I_mDNS> &&mdns);
@@ -21,12 +22,12 @@ class Global {
     I_NVS &get_nvs() { return *nvs; }
     I_mDNS &get_mdns() { return *mdns; }
 
+    static void init();
     static Global &get_global();
     static void deinit();
-    static void init_default();
 
   private:
-    static Global *instance;
+    static std::optional<Global> instance;
     std::unique_ptr<I_Time> time{};
     std::unique_ptr<I_NVS> nvs{};
     std::unique_ptr<I_mDNS> mdns{};
