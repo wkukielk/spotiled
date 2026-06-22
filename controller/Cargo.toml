@@ -1,0 +1,13 @@
+[package]
+name = "controller"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+librespot = { version = "0.8.0", default-features = false, features = ["native-tls", "with-libmdns"] }
+vergen-gitcl = "=1.0.8"
+vergen = "=9.0.6"
+vergen-lib = "=9.1.0"
+log = "0.4.33"
+tokio = "1.52.3"
+env_logger = "0.11.10"

@@ -13,6 +13,7 @@
 using ::testing::_;
 using ::testing::Return;
 using util::EventGroup;
+using namespace std::ranges;
 
 class ProvEventHandlerTest : public BaseTest {
   protected:
@@ -28,8 +29,9 @@ class ProvEventHandlerTest : public BaseTest {
 
   public:
     void expect_state(const std::map<EventBits_t, bool> bits) {
-        for (auto bit : bits)
-            EXPECT_TRUE((bool)(event_group.get() & bit.first) == bit.second);
+        EXPECT_TRUE(all_of(bits, [this](auto bit) {
+            return (bool)(event_group.get() & bit.first) == bit.second;
+        }));
     }
 };
 
@@ -48,7 +50,8 @@ TEST_F(ProvEventHandlerTest, start) {
 
 TEST_F(ProvEventHandlerTest, success) {
     eloop.post(NETWORK_PROV_EVENT, (int32_t)ProvEvent::START, nullptr, 0);
-    eloop.post(NETWORK_PROV_EVENT, (int32_t)ProvEvent::CRED_SUCCESS, nullptr, 0);
+    eloop.post(NETWORK_PROV_EVENT, (int32_t)ProvEvent::CRED_SUCCESS, nullptr,
+               0);
     eloop.post(NETWORK_PROV_EVENT, (int32_t)ProvEvent::END, nullptr, 0);
     expect_state({{wifi::end_bit, true},
                   {wifi::fail_bit, false},
@@ -69,7 +72,8 @@ TEST_F(ProvEventHandlerTest, failAndRecover) {
     eloop.post(NETWORK_PROV_EVENT, (int32_t)ProvEvent::START, nullptr, 0);
     eloop.post(WIFI_EVENT, WIFI_EVENT_STA_DISCONNECTED, &disc_rec,
                sizeof(disc_rec));
-    eloop.post(NETWORK_PROV_EVENT, (int32_t)ProvEvent::CRED_SUCCESS, nullptr, 0);
+    eloop.post(NETWORK_PROV_EVENT, (int32_t)ProvEvent::CRED_SUCCESS, nullptr,
+               0);
     expect_state({{wifi::end_bit, false},
                   {wifi::fail_bit, false},
                   {wifi::success_bit, true}});
@@ -111,7 +115,8 @@ TEST_F(ProvEventHandlerTest, retriesReset) {
     eloop.post(NETWORK_PROV_EVENT, (int32_t)ProvEvent::START, nullptr, 0);
     eloop.post(WIFI_EVENT, WIFI_EVENT_STA_DISCONNECTED, &disc_rec,
                sizeof(disc_rec));
-    eloop.post(NETWORK_PROV_EVENT, (int32_t)ProvEvent::CRED_SUCCESS, nullptr, 0);
+    eloop.post(NETWORK_PROV_EVENT, (int32_t)ProvEvent::CRED_SUCCESS, nullptr,
+               0);
     expect_state({{wifi::end_bit, false},
                   {wifi::fail_bit, false},
                   {wifi::success_bit, true}});
