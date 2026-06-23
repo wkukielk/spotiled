@@ -9,8 +9,8 @@ fn main() {
     );
     println!("cargo:rustc-link-lib=static=dom_color");
 
-    cxx_build::bridge("src/led_manager.rs")
-        .file("dom_color/led_manager/LEDManager.cpp")
+    cxx_build::bridge("src/dom_color.rs")
+        .file("dom_color/bridge.cpp")
         .include("dom_color")
         .include("dom_color/straux")
         .include("dom_color/colors")
@@ -20,10 +20,10 @@ fn main() {
         .include("dom_color/histograms/histogram_common")
         .include("dom_color/hsv_histograms")
         .std("c++20")
-        .compile("led_manager_bridge");
+        .compile("dom_color_bridge");
 
     println!("cargo:rerun-if-changed=src/led_manager.rs");
-    println!("cargo:rerun-if-changed=dom_color/led_manager/LEDManager.hpp");
-    println!("cargo:rerun-if-changed=dom_color/led_manager/LEDManager.cpp");
+    println!("cargo:rerun-if-changed=dom_color/led_manager/bridge.hpp");
+    println!("cargo:rerun-if-changed=dom_color/led_manager/bridge.cpp");
     println!("cargo:rerun-if-changed=dom_color/CMakeLists.txt");
 }

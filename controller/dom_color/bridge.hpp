@@ -4,6 +4,6 @@
 #include "rgb.hpp"
 #include "rust/cxx.h"
 
-RGB led_manager_get_color(rust::Slice<const uint16_t> pixels);
+RGB get_dominating_color(rust::Slice<const uint16_t> pixels);
 
 #endif

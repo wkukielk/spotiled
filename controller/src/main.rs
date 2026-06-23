@@ -1,4 +1,4 @@
-mod led_manager;
+mod dom_color;
 mod player_event_listener;
 mod song_pipeline;
 

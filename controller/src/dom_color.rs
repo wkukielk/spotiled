@@ -13,12 +13,12 @@ unsafe impl cxx::ExternType for Rgb {
 #[cxx::bridge]
 mod ffi {
     unsafe extern "C++" {
-        include!("led_manager/LEDManager.hpp");
+        include!("bridge.hpp");
 
         type RGB = super::Rgb;
 
-        fn led_manager_get_color(pixels: &[u16]) -> RGB;
+        fn get_dominating_color(pixels: &[u16]) -> RGB;
     }
 }
 
-pub use ffi::led_manager_get_color as get_color;
+pub use ffi::get_dominating_color as get_dominating_color;
