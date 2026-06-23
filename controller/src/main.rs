@@ -1,16 +1,22 @@
+mod led_manager;
+mod player_event_listener;
+mod song_pipeline;
+
 use librespot::{
     connect::{ConnectConfig, LoadRequest, LoadRequestOptions, Spirc},
     core::{
         Error, authentication::Credentials, cache::Cache, config::SessionConfig, session::Session,
     },
-    playback::mixer::MixerConfig,
     playback::{
         audio_backend,
         config::{AudioFormat, PlayerConfig},
         mixer,
+        mixer::MixerConfig,
         player::Player,
     },
 };
+use player_event_listener::PlayerEventListener;
+use song_pipeline::SongPipeline;
 
 use log::LevelFilter;
 
@@ -49,29 +55,36 @@ async fn main() -> Result<(), Error> {
             .map(|t| Credentials::with_access_token(t.access_token))
         })?;
 
-    let session = Session::new(session_config, Some(cache));
-    let mixer = mixer_builder(mixer_config)?;
+    let rt = tokio::runtime::Builder::new_multi_thread()
+        .enable_all()
+        .build()
+        .expect("Failed to build Tokio runtime");
 
-    let player = Player::new(
-        player_config,
-        session.clone(),
-        mixer.get_soft_volume(),
-        move || sink_builder(None, audio_format),
-    );
+    rt.block_on(async move {
+        let session = Session::new(session_config, Some(cache));
+        let mixer = mixer_builder(mixer_config)?;
+        let player = Player::new(
+            player_config,
+            session.clone(),
+            mixer.get_soft_volume(),
+            move || sink_builder(None, audio_format),
+        );
 
-    let (spirc, spirc_task) =
-        Spirc::new(connect_config, session.clone(), credentials, player, mixer).await?;
+        let listener =
+            PlayerEventListener::new(player.get_player_event_channel(), SongPipeline::new());
+        tokio::spawn(listener.run());
 
-    // these calls can be seen as "queued"
-    spirc.activate()?;
-    spirc.load(LoadRequest::from_context_uri(
-        format!("spotify:user:{}:collection", session.username()),
-        request_options,
-    ))?;
-    spirc.play()?;
+        let (spirc, spirc_task) =
+            Spirc::new(connect_config, session.clone(), credentials, player, mixer).await?;
 
-    // starting the connect device and processing the previously "queued" calls
-    spirc_task.await;
+        spirc.activate()?;
+        spirc.load(LoadRequest::from_context_uri(
+            format!("spotify:user:{}:collection", session.username()),
+            request_options,
+        ))?;
+        spirc.play()?;
 
-    Ok(())
+        spirc_task.await;
+        Ok(())
+    })
 }
