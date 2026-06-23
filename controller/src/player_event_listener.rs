@@ -1,5 +1,12 @@
-use librespot::metadata::audio::AudioItem;
-use librespot::playback::player::{PlayerEvent, PlayerEventChannel};
+use librespot::{
+    metadata::audio::AudioItem,
+    playback::{
+        player::{PlayerEvent, PlayerEventChannel},
+        audio_backend,
+        decoder::AudioPacket,
+        convert::Converter
+    }
+};
 
 pub trait SongChangeHandler {
     async fn on_song_changed(&self, audio_item: AudioItem);
@@ -21,5 +28,18 @@ impl<H: SongChangeHandler> PlayerEventListener<H> {
                 self.handler.on_song_changed(*audio_item).await;
             }
         }
+    }
+}
+
+pub struct MySink;
+
+impl MySink {
+    pub fn new() -> Self { MySink }
+}
+
+impl audio_backend::Sink for MySink {
+    fn write(&mut self, _: AudioPacket, _: &mut Converter)
+            -> audio_backend::SinkResult<()> {
+        Ok(())
     }
 }

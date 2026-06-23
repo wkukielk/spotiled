@@ -4,15 +4,18 @@
 #include "sv_histogram.hpp"
 #include "v_cluster.hpp"
 #include <span>
+#include <algorithm>
+#include <ranges>
+
+using namespace std;
 
 namespace
 {
-
     hue_hist::Dominant avg_hue(std::span<const uint16_t> bmp)
     {
         HueHistogram hue_histogram{};
-        for (auto px = bmp.begin(); px < bmp.end(); ++px)
-            hue_histogram.add_pixel(HSV{*px});
+        ranges::for_each(bmp, [&](auto px)
+                         { hue_histogram.add_pixel(HSV{px}); });
         return hue_histogram.get_dominant();
     }
 

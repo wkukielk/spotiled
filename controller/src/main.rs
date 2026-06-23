@@ -8,14 +8,16 @@ use librespot::{
         Error, authentication::Credentials, cache::Cache, config::SessionConfig, session::Session,
     },
     playback::{
-        audio_backend,
-        config::{AudioFormat, PlayerConfig},
+        config::{PlayerConfig},
         mixer,
         mixer::MixerConfig,
         player::Player,
     },
 };
-use player_event_listener::PlayerEventListener;
+use player_event_listener::{
+    PlayerEventListener,
+    MySink
+};
 use song_pipeline::SongPipeline;
 
 use log::LevelFilter;
@@ -23,20 +25,17 @@ use log::LevelFilter;
 const CACHE: &str = ".cache";
 const CACHE_FILES: &str = ".cache/files";
 
-#[tokio::main]
-async fn main() -> Result<(), Error> {
+fn main() -> Result<(), Error> {
     env_logger::builder()
         .filter_module("librespot", LevelFilter::Debug)
         .init();
 
     let session_config = SessionConfig::default();
     let player_config = PlayerConfig::default();
-    let audio_format = AudioFormat::default();
     let connect_config = ConnectConfig::default();
     let mixer_config = MixerConfig::default();
     let request_options = LoadRequestOptions::default();
 
-    let sink_builder = audio_backend::find(None).unwrap();
     let mixer_builder = mixer::find(None).unwrap();
 
     let cache = Cache::new(Some(CACHE), Some(CACHE), Some(CACHE_FILES), None)?;
@@ -67,7 +66,7 @@ async fn main() -> Result<(), Error> {
             player_config,
             session.clone(),
             mixer.get_soft_volume(),
-            move || sink_builder(None, audio_format),
+            move || Box::new(MySink::new()),
         );
 
         let listener =

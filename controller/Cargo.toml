@@ -14,6 +14,7 @@ env_logger = "0.11.10"
 reqwest = { version = "0.12.28", default-features = false, features = ["native-tls"] }
 bytes = "1.12.0"
 cxx = "1.0.194"
+image = { version = "0.25.6", default-features = false, features = ["jpeg"] }
 
 [build-dependencies]
 cmake = "0.1.58"
