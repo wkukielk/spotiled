@@ -293,6 +293,7 @@ checksum = "c2459377285ad874054d797f3ccebf984978aa39129f6eafde5cdc8315b612f8"
 name = "controller"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "bytes",
  "cmake",
  "cxx",
@@ -302,6 +303,7 @@ dependencies = [
  "librespot",
  "log",
  "reqwest",
+ "thiserror 2.0.18",
  "tokio",
  "vergen",
  "vergen-gitcl",

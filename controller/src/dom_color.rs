@@ -22,4 +22,4 @@ mod ffi {
     }
 }
 
-pub use ffi::get_dominating_color as get_dominating_color;
+pub use ffi::get_dominating_color;

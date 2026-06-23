@@ -1,11 +1,11 @@
 use librespot::{
     metadata::audio::AudioItem,
     playback::{
-        player::{PlayerEvent, PlayerEventChannel},
         audio_backend,
+        convert::Converter,
         decoder::AudioPacket,
-        convert::Converter
-    }
+        player::{PlayerEvent, PlayerEventChannel},
+    },
 };
 
 pub trait SongChangeHandler {
@@ -34,12 +34,13 @@ impl<H: SongChangeHandler> PlayerEventListener<H> {
 pub struct MySink;
 
 impl MySink {
-    pub fn new() -> Self { MySink }
+    pub fn new() -> Self {
+        MySink
+    }
 }
 
 impl audio_backend::Sink for MySink {
-    fn write(&mut self, _: AudioPacket, _: &mut Converter)
-            -> audio_backend::SinkResult<()> {
+    fn write(&mut self, _: AudioPacket, _: &mut Converter) -> audio_backend::SinkResult<()> {
         Ok(())
     }
 }

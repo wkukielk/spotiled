@@ -1,8 +1,10 @@
+use anyhow::Result;
 use std::fmt::Debug;
 
 use image::GenericImageView;
 use librespot::metadata::audio::AudioItem;
 
+use crate::dom_color::Rgb;
 use crate::dom_color::get_dominating_color;
 use crate::player_event_listener::SongChangeHandler;
 
@@ -28,6 +30,12 @@ fn log_and_extract<T, E: Debug>(result: Result<T, E>) -> Option<T> {
     }
 }
 
+#[derive(thiserror::Error, Debug)]
+pub enum SongPipelineError {
+    #[error("Song has no cover")]
+    NoCover,
+}
+
 pub struct SongPipeline {
     http: reqwest::Client,
 }
@@ -42,23 +50,25 @@ impl SongPipeline {
     async fn fetch_cover(&self, url: &str) -> Result<bytes::Bytes, reqwest::Error> {
         self.http.get(url).send().await?.bytes().await
     }
+
+    async fn on_song_changed_impl(&self, audio_item: AudioItem) -> Result<Rgb> {
+        let cover = audio_item
+            .covers
+            .first()
+            .ok_or(SongPipelineError::NoCover)?;
+        let jpg = self.fetch_cover(&cover.url).await?;
+        let pixels = decode_jpg_to_rgb565(&jpg)?;
+
+        let color = get_dominating_color(&pixels);
+        Ok(color)
+    }
 }
 
 impl SongChangeHandler for SongPipeline {
     async fn on_song_changed(&self, audio_item: AudioItem) {
         log::info!("song changed: {}", audio_item.name);
-
-        let Some(cover) = audio_item.covers.first() else {
-            return;
-        };
-
-        let result = self.fetch_cover(&cover.url).await;
-        let Some(jpg) = log_and_extract(result) else { return; };
-
-        let result = decode_jpg_to_rgb565(&jpg);
-        let Some(pixels) = log_and_extract(result) else { return; };
-
-        let color = get_dominating_color(&pixels);
-        println!("color: {:?}", color);
+        let result = self.on_song_changed_impl(audio_item).await;
+        let rgb = log_and_extract(result);
+        println!("color: {:?}", rgb);
     }
 }

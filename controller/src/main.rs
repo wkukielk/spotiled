@@ -7,17 +7,9 @@ use librespot::{
     core::{
         Error, authentication::Credentials, cache::Cache, config::SessionConfig, session::Session,
     },
-    playback::{
-        config::{PlayerConfig},
-        mixer,
-        mixer::MixerConfig,
-        player::Player,
-    },
+    playback::{config::PlayerConfig, mixer, mixer::MixerConfig, player::Player},
 };
-use player_event_listener::{
-    PlayerEventListener,
-    MySink
-};
+use player_event_listener::{MySink, PlayerEventListener};
 use song_pipeline::SongPipeline;
 
 use log::LevelFilter;
