@@ -2,31 +2,23 @@ use anyhow::Result;
 use std::fmt::Debug;
 use std::sync::Arc;
 
+use futures_util::StreamExt;
 use image::GenericImageView;
 use librespot::metadata::audio::AudioItem;
-
 use librespot::playback::player::PlayerEventChannel;
+use tokio::net::{TcpListener, TcpStream};
 use tokio::sync::Mutex;
+use tokio::task::JoinHandle;
+use tokio_tungstenite::WebSocketStream;
+use tokio_tungstenite::tungstenite::Message;
 
 use crate::dom_color::get_dominating_color;
-use crate::led_socket::LedSocket;
+use crate::led_socket::{LedSocket, LedSocketConnector};
 use crate::player_event_listener::{PlayerEventListener, SongChangeHandler};
 
-fn rgb565(r: u8, g: u8, b: u8) -> u16 {
-    ((r as u16 & 0xf8) << 8) | ((g as u16 & 0xfc) << 3) | (b as u16 >> 3)
-}
-
-fn decode_jpg_to_rgb565(jpg: &[u8]) -> Result<Vec<u16>, image::ImageError> {
-    let image = image::load_from_memory_with_format(jpg, image::ImageFormat::Jpeg)?;
-    Ok(image
-        .pixels()
-        .map(|(_, _, px)| rgb565(px[0], px[1], px[2]))
-        .collect())
-}
-
-fn log_on_error<T, E: Debug>(result: Result<T, E>) {
+fn log_on_error<T, E: Debug>(result: &Result<T, E>) {
     if let Err(err) = result {
-        log::error!("Algorithm error encountered: {:?}", err);
+        log::error!("error encountered: {:?}", err);
     }
 }
 
@@ -59,40 +51,116 @@ impl<S: LedSocket> CoverColorExtractor<S> {
         let cover = cover_opt.ok_or(SongPipelineError::NoCover)?;
 
         let jpg = self.fetch_cover(&cover.url).await?;
-        let pixels = decode_jpg_to_rgb565(&jpg)?;
+        let pixels = CoverColorExtractor::<S>::decode_jpg_to_rgb565(&jpg)?;
         let color = get_dominating_color(&pixels);
 
         let mut socket = self.socket.lock().await;
         socket.send_rgb(&color).await?;
         Ok(())
     }
+
+    fn rgb565(r: u8, g: u8, b: u8) -> u16 {
+        ((r as u16 & 0xf8) << 8) | ((g as u16 & 0xfc) << 3) | (b as u16 >> 3)
+    }
+
+    fn decode_jpg_to_rgb565(jpg: &[u8]) -> Result<Vec<u16>, image::ImageError> {
+        let image = image::load_from_memory_with_format(jpg, image::ImageFormat::Jpeg)?;
+        Ok(image
+            .pixels()
+            .map(|(_, _, px)| CoverColorExtractor::<S>::rgb565(px[0], px[1], px[2]))
+            .collect())
+    }
 }
 
 impl<S: LedSocket> SongChangeHandler for CoverColorExtractor<S> {
     async fn on_song_changed(&self, audio_item: AudioItem) {
         log::info!("song changed: {}", audio_item.name);
-        log_on_error(self.on_song_changed_impl(audio_item).await);
+        log_on_error(&self.on_song_changed_impl(audio_item).await);
     }
 }
 
-pub struct SongPipeline<S: LedSocket> {
-    listener: PlayerEventListener,
-    extractor: CoverColorExtractor<S>,
-    socket: Arc<Mutex<S>>,
+pub struct SongPipeline<C, F>
+where
+    C: LedSocketConnector,
+    F: Fn() -> PlayerEventChannel + Send + Sync,
+{
+    subscribe: F,
+    connector: C,
+    active: Option<JoinHandle<()>>,
 }
 
-impl<S: LedSocket> SongPipeline<S> {
-    pub fn new(events: PlayerEventChannel, socket: S) -> Self {
-        let socket = Arc::new(Mutex::new(socket));
+impl<C, F> SongPipeline<C, F>
+where
+    C: LedSocketConnector,
+    F: Fn() -> PlayerEventChannel + Send + Sync,
+{
+    pub fn new(connector: C, subscribe: F) -> Self {
         Self {
-            listener: PlayerEventListener::new(events),
-            extractor: CoverColorExtractor::new(socket.clone()),
-            socket,
+            subscribe,
+            connector,
+            active: None,
         }
     }
 
-    pub async fn run(&mut self) {
-        self.listener.run(&self.extractor).await
+    pub async fn serve(&mut self, listener: TcpListener) -> Result<()> {
+        loop {
+            let (stream, _) = listener.accept().await?;
+            let ws = tokio_tungstenite::accept_async(stream).await?;
+            self.handle_client(ws).await;
+        }
+    }
+
+    async fn handle_client(&mut self, mut ws: WebSocketStream<TcpStream>) {
+        while let Some(message) = ws.next().await {
+            match message {
+                Ok(Message::Text(command)) => {
+                    self.handle_command(&command).await;
+                }
+                Ok(Message::Close(_)) => {
+                    break;
+                }
+                Ok(_) => {}
+                Err(err) => {
+                    log::error!("message error encountered: {:?}", err);
+                    break;
+                }
+            }
+        }
+    }
+
+    async fn handle_command(&mut self, command: &str) {
+        match command {
+            "connect" => self.connect().await,
+            "disconnect" => self.disconnect(),
+            other => log::warn!("Unknown control command: {}", other),
+        }
+    }
+
+    async fn connect(&mut self) {
+        if self.active.is_some() {
+            return;
+        }
+
+        let socket = match self.connector.connect().await {
+            Ok(socket) => socket,
+            Err(err) => {
+                log::error!("Failed to connect to LED socket: {:?}", err);
+                return;
+            }
+        };
+
+        let extractor = CoverColorExtractor::new(Arc::new(Mutex::new(socket)));
+        let mut listener = PlayerEventListener::new((self.subscribe)());
+
+        self.active = Some(tokio::spawn(async move {
+            listener.run(&extractor).await;
+        }));
+    }
+
+    fn disconnect(&mut self) {
+        if let Some(task) = self.active.take() {
+            task.abort();
+        }
     }
 }
 

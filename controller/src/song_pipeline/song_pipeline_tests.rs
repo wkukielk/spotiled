@@ -98,7 +98,10 @@ async fn on_song_changed_impl_sends_dominant_color_when_cover_present() {
         .await;
 
     let mut socket = MockLedSocket::new();
-    socket.expect_send_rgb().times(1).returning(|_| Ok(()));
+    socket
+        .expect_send_rgb()
+        .times(1)
+        .returning(|_| Box::pin(async { Ok(()) }));
     let extractor = extractor_with(socket);
 
     let audio_item = test_audio_item(vec![CoverImage {

@@ -11,7 +11,7 @@ use librespot::{
         decoder::AudioPacket,
         mixer,
         mixer::MixerConfig,
-        player::{Player, PlayerEventChannel},
+        player::Player,
     },
 };
 use std::sync::Arc;
@@ -139,11 +139,10 @@ impl Spotify {
         Ok(())
     }
 
-    pub fn get_player_event_channel(&self) -> PlayerEventChannel {
+    pub fn player(&self) -> Arc<Player> {
         self.player
-            .as_ref()
-            .expect("Spotify::init must be called before get_player_event_channel")
-            .get_player_event_channel()
+            .clone()
+            .expect("Spotify::init must be called before player")
     }
 }
 

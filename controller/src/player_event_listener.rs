@@ -4,7 +4,7 @@ use librespot::{
 };
 
 pub trait SongChangeHandler {
-    async fn on_song_changed(&self, audio_item: AudioItem);
+    fn on_song_changed(&self, audio_item: AudioItem) -> impl Future<Output = ()> + Send;
 }
 
 pub struct PlayerEventListener {
