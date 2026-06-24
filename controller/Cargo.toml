@@ -21,3 +21,6 @@ anyhow = "1.0.102"
 [build-dependencies]
 cmake = "0.1.58"
 cxx-build = "1.0.194"
+
+[dev-dependencies]
+mockall = "0.14.0"
