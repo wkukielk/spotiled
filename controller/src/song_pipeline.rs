@@ -1,12 +1,16 @@
 use anyhow::Result;
 use std::fmt::Debug;
+use std::sync::Arc;
 
 use image::GenericImageView;
 use librespot::metadata::audio::AudioItem;
 
-use crate::dom_color::Rgb;
+use librespot::playback::player::PlayerEventChannel;
+use tokio::sync::Mutex;
+
 use crate::dom_color::get_dominating_color;
-use crate::player_event_listener::SongChangeHandler;
+use crate::led_socket::LedSocket;
+use crate::player_event_listener::{PlayerEventListener, SongChangeHandler};
 
 fn rgb565(r: u8, g: u8, b: u8) -> u16 {
     ((r as u16 & 0xf8) << 8) | ((g as u16 & 0xfc) << 3) | (b as u16 >> 3)
@@ -20,13 +24,9 @@ fn decode_jpg_to_rgb565(jpg: &[u8]) -> Result<Vec<u16>, image::ImageError> {
         .collect())
 }
 
-fn log_and_extract<T, E: Debug>(result: Result<T, E>) -> Option<T> {
-    match result {
-        Ok(value) => Some(value),
-        Err(err) => {
-            log::error!("Algorithm error encountered: {:?}", err);
-            None
-        }
+fn log_on_error<T, E: Debug>(result: Result<T, E>) {
+    if let Err(err) = result {
+        log::error!("Algorithm error encountered: {:?}", err);
     }
 }
 
@@ -36,39 +36,65 @@ pub enum SongPipelineError {
     NoCover,
 }
 
-pub struct SongPipeline {
+struct CoverColorExtractor<S: LedSocket> {
     http: reqwest::Client,
+    socket: Arc<Mutex<S>>,
 }
 
-impl SongPipeline {
-    pub fn new() -> Self {
+impl<S: LedSocket> CoverColorExtractor<S> {
+    fn new(socket: Arc<Mutex<S>>) -> Self {
         Self {
             http: reqwest::Client::new(),
+            socket,
         }
     }
 
     async fn fetch_cover(&self, url: &str) -> Result<bytes::Bytes, reqwest::Error> {
-        self.http.get(url).send().await?.bytes().await
+        let res = self.http.get(url).send().await?;
+        res.error_for_status()?.bytes().await
     }
 
-    async fn on_song_changed_impl(&self, audio_item: AudioItem) -> Result<Rgb> {
-        let cover = audio_item
-            .covers
-            .first()
-            .ok_or(SongPipelineError::NoCover)?;
+    async fn on_song_changed_impl(&self, audio_item: AudioItem) -> Result<()> {
+        let cover_opt = audio_item.covers.first();
+        let cover = cover_opt.ok_or(SongPipelineError::NoCover)?;
+
         let jpg = self.fetch_cover(&cover.url).await?;
         let pixels = decode_jpg_to_rgb565(&jpg)?;
-
         let color = get_dominating_color(&pixels);
-        Ok(color)
+
+        let mut socket = self.socket.lock().await;
+        socket.send_rgb(&color).await?;
+        Ok(())
     }
 }
 
-impl SongChangeHandler for SongPipeline {
+impl<S: LedSocket> SongChangeHandler for CoverColorExtractor<S> {
     async fn on_song_changed(&self, audio_item: AudioItem) {
         log::info!("song changed: {}", audio_item.name);
-        let result = self.on_song_changed_impl(audio_item).await;
-        let rgb = log_and_extract(result);
-        println!("color: {:?}", rgb);
+        log_on_error(self.on_song_changed_impl(audio_item).await);
     }
 }
+
+pub struct SongPipeline<S: LedSocket> {
+    listener: PlayerEventListener,
+    extractor: CoverColorExtractor<S>,
+    socket: Arc<Mutex<S>>,
+}
+
+impl<S: LedSocket> SongPipeline<S> {
+    pub fn new(events: PlayerEventChannel, socket: S) -> Self {
+        let socket = Arc::new(Mutex::new(socket));
+        Self {
+            listener: PlayerEventListener::new(events),
+            extractor: CoverColorExtractor::new(socket.clone()),
+            socket,
+        }
+    }
+
+    pub async fn run(&mut self) {
+        self.listener.run(&self.extractor).await
+    }
+}
+
+#[cfg(test)]
+mod song_pipeline_tests;

@@ -7,20 +7,19 @@ pub trait SongChangeHandler {
     async fn on_song_changed(&self, audio_item: AudioItem);
 }
 
-pub struct PlayerEventListener<H: SongChangeHandler> {
+pub struct PlayerEventListener {
     events: PlayerEventChannel,
-    handler: H,
 }
 
-impl<H: SongChangeHandler> PlayerEventListener<H> {
-    pub fn new(events: PlayerEventChannel, handler: H) -> Self {
-        Self { events, handler }
+impl PlayerEventListener {
+    pub fn new(events: PlayerEventChannel) -> Self {
+        Self { events }
     }
 
-    pub async fn run(mut self) {
+    pub async fn run(&mut self, handler: &impl SongChangeHandler) {
         while let Some(event) = self.events.recv().await {
             if let PlayerEvent::TrackChanged { audio_item } = event {
-                self.handler.on_song_changed(*audio_item).await;
+                handler.on_song_changed(*audio_item).await;
             }
         }
     }

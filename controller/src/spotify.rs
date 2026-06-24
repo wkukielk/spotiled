@@ -1,6 +1,6 @@
 use anyhow::Result;
 use librespot::{
-    connect::{ConnectConfig, LoadRequest, LoadRequestOptions, Spirc},
+    connect::{ConnectConfig, Spirc},
     core::{
         Error, authentication::Credentials, cache::Cache, config::SessionConfig, session::Session,
     },
@@ -85,7 +85,7 @@ impl Spotify {
     fn resolve_credentials(
         cached: Option<Credentials>,
         client_id: &str,
-        oauth: &dyn OAuthCredentialsProvider,
+        oauth: &impl OAuthCredentialsProvider,
     ) -> Result<Credentials> {
         match cached {
             Some(credentials) => Ok(credentials),
@@ -93,52 +93,47 @@ impl Spotify {
         }
     }
 
-    pub fn init(&mut self, rt: &tokio::runtime::Runtime) -> Result<()> {
+    fn get_credentials(&self) -> Result<Credentials> {
         let session_config = SessionConfig::default();
-        let player_config = PlayerConfig::default();
-        let connect_config = ConnectConfig::default();
-        let mixer_config = MixerConfig::default();
-        let request_options = LoadRequestOptions::default();
-
-        let mixer_builder = mixer::find(None).unwrap();
-
         let cached_credentials = self.cache.as_ref().and_then(|c| c.credentials());
-        let credentials = Spotify::resolve_credentials(
+        Spotify::resolve_credentials(
             cached_credentials,
             &session_config.client_id,
             &LibrespotOAuthProvider,
-        )?;
+        )
+    }
 
-        let cache = self.cache.clone();
-        let (player, spirc_task) = rt.block_on(async move {
-            let session = Session::new(session_config, cache);
-            let mixer = mixer_builder(mixer_config)?;
-            let player = Player::new(
-                player_config,
-                session.clone(),
-                mixer.get_soft_volume(),
-                || Box::new(MySink::new()),
-            );
+    async fn connect(
+        cache: Option<Cache>,
+        credentials: Credentials,
+    ) -> Result<(Arc<Player>, impl std::future::Future<Output = ()>), Error> {
+        let mixer = mixer::find(None).unwrap()(MixerConfig::default())?;
+        let session = Session::new(SessionConfig::default(), cache);
+        let player = Player::new(
+            PlayerConfig::default(),
+            session.clone(),
+            mixer.get_soft_volume(),
+            || Box::new(MySink::new()),
+        );
 
-            let (spirc, spirc_task) = Spirc::new(
-                connect_config,
-                session.clone(),
-                credentials,
-                player.clone(),
-                mixer,
-            )
-            .await?;
+        let (spirc, spirc_task) = Spirc::new(
+            ConnectConfig::default(),
+            session.clone(),
+            credentials,
+            player.clone(),
+            mixer,
+        )
+        .await?;
 
-            spirc.activate()?;
-            spirc.load(LoadRequest::from_context_uri(
-                format!("spotify:user:{}:collection", session.username()),
-                request_options,
-            ))?;
-            spirc.play()?;
+        spirc.activate()?;
 
-            Ok::<_, Error>((player, spirc_task))
-        })?;
+        Ok((player, spirc_task))
+    }
 
+    pub fn init(&mut self, rt: &tokio::runtime::Runtime) -> Result<()> {
+        let credentials = self.get_credentials()?;
+        let (player, spirc_task) =
+            rt.block_on(Spotify::connect(self.cache.clone(), credentials))?;
         self.player = Some(player);
         rt.spawn(spirc_task);
         Ok(())
@@ -153,4 +148,4 @@ impl Spotify {
 }
 
 #[cfg(test)]
-mod tests;
+mod spotify_tests;

@@ -9,10 +9,12 @@ vergen-gitcl = "=1.0.8"
 vergen = "=9.0.6"
 vergen-lib = "=9.1.0"
 log = "0.4.33"
-tokio = "1.52.3"
+tokio = { version = "1.52.3", features = ["rt-multi-thread", "macros"] }
 env_logger = "0.11.10"
 reqwest = { version = "0.12.28", default-features = false, features = ["native-tls"] }
 bytes = "1.12.0"
+tokio-tungstenite = "0.28.0"
+futures-util = "0.3.31"
 cxx = "1.0.194"
 image = { version = "0.25.6", default-features = false, features = ["jpeg"] }
 thiserror = "2.0.18"
@@ -24,3 +26,4 @@ cxx-build = "1.0.194"
 
 [dev-dependencies]
 mockall = "0.14.0"
+wiremock = "0.6.5"
