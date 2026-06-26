@@ -1,4 +1,5 @@
-#include "BaseTest.hpp"
+#include "MockMDNS.hpp"
+#include "global.hpp"
 #include "wifi_aux.hpp"
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -6,13 +7,15 @@
 using namespace std;
 using namespace testing;
 
-class WiFiAuxTest : public BaseTest {
+class WiFiAuxTest : public Test {
   protected:
     esp_ip4_addr_t addr{.addr = 0x2001A8C0};
+    MDNSHandle mdns_handle{mkuptr<MockMDNS>()};
+    MockMDNS &mdns = static_cast<MockMDNS &>(Global::get_mdns());
 };
 
 TEST_F(WiFiAuxTest, resolveHostname) {
-    EXPECT_CALL(*mdns_m, query_a(StrEq("my-computer"), _, _))
+    EXPECT_CALL(mdns, query_a(StrEq("my-computer"), _, _))
         .WillOnce(DoAll(SetArgPointee<2>(addr), Return(ESP_OK)));
     auto ip_str = std::string{};
     ASSERT_EQ(mdns_resolve("my-computer.local", ip_str), ESP_OK);
@@ -20,7 +23,7 @@ TEST_F(WiFiAuxTest, resolveHostname) {
 }
 
 TEST_F(WiFiAuxTest, resolveHostnameNoDotLocal) {
-    EXPECT_CALL(*mdns_m, query_a(StrEq("my-computer"), _, _))
+    EXPECT_CALL(mdns, query_a(StrEq("my-computer"), _, _))
         .WillOnce(DoAll(SetArgPointee<2>(addr), Return(ESP_OK)));
     auto ip_str = std::string{};
     ASSERT_EQ(mdns_resolve("my-computer.local", ip_str), ESP_OK);
@@ -28,14 +31,14 @@ TEST_F(WiFiAuxTest, resolveHostnameNoDotLocal) {
 }
 
 TEST_F(WiFiAuxTest, resolveHostnameTimeout) {
-    EXPECT_CALL(*mdns_m, query_a(StrEq("my-computer"), 551, _))
+    EXPECT_CALL(mdns, query_a(StrEq("my-computer"), 551, _))
         .WillOnce(Return(ESP_OK));
     auto ip_str = std::string{};
     ASSERT_EQ(mdns_resolve("my-computer.local", ip_str, 551), ESP_OK);
 }
 
 TEST_F(WiFiAuxTest, resolveUrl) {
-    EXPECT_CALL(*mdns_m, query_a(StrEq("my-computer"), _, _))
+    EXPECT_CALL(mdns, query_a(StrEq("my-computer"), _, _))
         .WillOnce(DoAll(SetArgPointee<2>(addr), Return(ESP_OK)));
     auto url = URL{"http://my-computer.local:8000/users?age_gt=31"};
     auto err = esp_err_t{};
@@ -51,7 +54,7 @@ TEST_F(WiFiAuxTest, resolveUrlAlreadyResolved) {
 }
 
 TEST_F(WiFiAuxTest, resolveUrlTimeout) {
-    EXPECT_CALL(*mdns_m, query_a(StrEq("my-computer"), 531, _))
+    EXPECT_CALL(mdns, query_a(StrEq("my-computer"), 531, _))
         .WillOnce(Return(ESP_OK));
     auto url = URL{"http://my-computer.local:8000/users?age_gt=31"};
     auto err = esp_err_t{};
@@ -59,7 +62,7 @@ TEST_F(WiFiAuxTest, resolveUrlTimeout) {
 }
 
 TEST_F(WiFiAuxTest, resolveFail) {
-    EXPECT_CALL(*mdns_m, query_a(StrEq("my-computer"), _, _))
+    EXPECT_CALL(mdns, query_a(StrEq("my-computer"), _, _))
         .WillOnce(Return(ESP_ERR_NOT_FOUND));
     auto url = URL{"http://my-computer.local:8000/users?age_gt=31"};
     auto err = esp_err_t{};

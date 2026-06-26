@@ -2,6 +2,7 @@
 #define WIFI_MANAGER_FACTORY_HPP
 
 #include "CredentialsWiFiManager.hpp"
+#include "Handle.hpp"
 #include "ProvEventHandler.hpp"
 #include "Provisioning.hpp"
 #include "WiFi.hpp"
@@ -18,7 +19,7 @@ struct ConfigError : public BaseError {
 
 struct DefaultWiFiEventHandlerTypes {
     using EventGroup = util::EventGroup;
-    using EventLoop = DftEventLoop;
+    using EventLoop = Handle<DftEventLoop>;
     using WiFi = Handle<::WiFi>;
 };
 static_assert(WiFiEventHandlerTypes<DefaultWiFiEventHandlerTypes>);
@@ -27,7 +28,7 @@ using DftWiFiEventHandler = WiFiEventHandler<DefaultWiFiEventHandlerTypes>;
 struct DftProvisioningTypes {
     using WiFiProv = ::WiFiProv;
     using EventGroup = ::util::EventGroup;
-    using EventHandler = ProvEventHandler<EventGroup, DftEventLoop>;
+    using EventHandler = ProvEventHandler<EventGroup, Handle<DftEventLoop>>;
 };
 static_assert(ProvisioningTypes<DftProvisioningTypes>);
 using DftProvisioning = Provisioning<DftProvisioningTypes>;

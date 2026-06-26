@@ -2,6 +2,7 @@ use anyhow::Result;
 use std::fmt::Debug;
 use std::sync::Arc;
 
+use futures_util::SinkExt;
 use futures_util::StreamExt;
 use image::GenericImageView;
 use librespot::metadata::audio::AudioItem;
@@ -23,9 +24,18 @@ fn log_on_error<T, E: Debug>(result: &Result<T, E>) {
 }
 
 #[derive(thiserror::Error, Debug)]
-pub enum SongPipelineError {
+enum SongPipelineError {
     #[error("Song has no cover")]
     NoCover,
+    #[error("Failed to connect")]
+    ConnectionError,
+    #[error("Unknown command")]
+    UnknownCommand,
+}
+
+enum LoopStatus {
+    Continue,
+    Break,
 }
 
 struct CoverColorExtractor<S: LedSocket> {
@@ -113,54 +123,68 @@ where
     async fn handle_client(&mut self, mut ws: WebSocketStream<TcpStream>) {
         while let Some(message) = ws.next().await {
             match message {
-                Ok(Message::Text(command)) => {
-                    self.handle_command(&command).await;
+                Ok(message) => {
+                    if let LoopStatus::Break = self.handle_message(message, &mut ws).await {
+                        break;
+                    }
                 }
-                Ok(Message::Close(_)) => {
-                    break;
-                }
-                Ok(_) => {}
-                Err(err) => {
-                    log::error!("message error encountered: {:?}", err);
+                Err(_err) => {
+                    log::warn!("Error message");
                     break;
                 }
             }
         }
     }
 
-    async fn handle_command(&mut self, command: &str) {
+    async fn handle_message(
+        &mut self,
+        msg: Message,
+        ws: &mut WebSocketStream<TcpStream>,
+    ) -> LoopStatus {
+        match msg {
+            Message::Text(command) => match self.handle_command(&command).await {
+                Ok(_) => LoopStatus::Continue,
+                Err(err) => {
+                    let _ = ws.send(Message::Text(err.to_string().into())).await;
+                    LoopStatus::Break
+                }
+            },
+            Message::Close(_) => LoopStatus::Break,
+            _ => LoopStatus::Continue,
+        }
+    }
+
+    async fn handle_command(&mut self, command: &str) -> Result<(), SongPipelineError> {
         match command {
             "connect" => self.connect().await,
             "disconnect" => self.disconnect(),
-            other => log::warn!("Unknown control command: {}", other),
+            _other => Err(SongPipelineError::UnknownCommand),
         }
     }
 
-    async fn connect(&mut self) {
+    async fn connect(&mut self) -> Result<(), SongPipelineError> {
         if self.active.is_some() {
-            return;
+            return Ok(());
         }
-
-        let socket = match self.connector.connect().await {
-            Ok(socket) => socket,
-            Err(err) => {
-                log::error!("Failed to connect to LED socket: {:?}", err);
-                return;
-            }
-        };
-
+        let socket = self
+            .connector
+            .connect()
+            .await
+            .map_err(|_e| SongPipelineError::ConnectionError)?;
         let extractor = CoverColorExtractor::new(Arc::new(Mutex::new(socket)));
         let mut listener = PlayerEventListener::new((self.subscribe)());
 
         self.active = Some(tokio::spawn(async move {
             listener.run(&extractor).await;
         }));
+        Ok(())
     }
 
-    fn disconnect(&mut self) {
+    fn disconnect(&mut self) -> Result<(), SongPipelineError> {
         if let Some(task) = self.active.take() {
             task.abort();
-        }
+        };
+        Ok(())
     }
 }
 

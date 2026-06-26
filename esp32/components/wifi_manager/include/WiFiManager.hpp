@@ -2,7 +2,6 @@
 #define WIFIMANAGER_HPP
 
 #include "I_WiFi.hpp"
-#include "Initializer.hpp"
 #include "Provisioning.hpp"
 #include "Toggle.hpp"
 #include "WiFiEventHandler.hpp"

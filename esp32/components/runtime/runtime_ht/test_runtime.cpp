@@ -1,4 +1,3 @@
-#include "BaseTest.hpp"
 #include "MockEventGroup.hpp"
 #include "MockOTA.hpp"
 #include "MockWiFiManager.hpp"
@@ -6,8 +5,9 @@
 #include <gtest/gtest.h>
 
 using namespace std;
+using namespace testing;
 
-class RuntimeTest : public BaseTest {
+class RuntimeTest : public Test {
     //   protected:
     //     RuntimeTest() : runtime{Runtime::create(std::move(cfg))}, {}
     //     ~RuntimeTest() {}

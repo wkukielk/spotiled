@@ -26,22 +26,15 @@ template <typename T_OTAClient> struct InnerConfig {
     u_ptr<I_WiFiManager> wifi_mgr;
 };
 
-class Runnable {
-  public:
-    virtual ~Runnable() noexcept {};
-    virtual void run() = 0;
-};
-
-template <typename T>
-class Runtime : public Runnable, public util::Notifiable<master::Data> {
+template <typename T> class Runtime : public util::Notifiable<master::Data> {
     using EGroup = typename T::EGroup;
     using T_OTAThread = typename T::T_OTAThread;
     using T_OTAClient = typename T::T_OTAThread::Client;
     using T_ServerThread = typename T::T_ServerThread;
 
   public:
-    static std::unique_ptr<Runnable> create(RuntimeConfig &&cfg);
-    void run() override;
+    static Runtime create(RuntimeConfig &&cfg);
+    void run();
     void notify(u_ptr<master::Data> &&data) override { queue.send(move(data)); }
 
   private:

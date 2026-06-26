@@ -12,7 +12,7 @@
 template <typename T>
 concept WiFiEventHandlerTypes = WiFiHandle<typename T::WiFi> &&
                                 util::I_EventGroup<typename T::EventGroup> &&
-                                I_DftEventLoop<typename T::EventLoop>;
+                                DftEventLoopHandle<typename T::EventLoop>;
 
 // only one per program
 template <WiFiEventHandlerTypes T> class WiFiEventHandler {

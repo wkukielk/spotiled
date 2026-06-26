@@ -1,21 +1,9 @@
-#ifndef INITIALIZER_HPP
-#define INITIALIZER_HPP
+#ifndef INITIALIZER_HANDLE_HPP
+#define INITIALIZER_HANDLE_HPP
 
 #include "errors.hpp"
 #include <concepts>
 #include <optional>
-
-template <typename T>
-concept Initializable = requires {
-    { T::create() };
-    { T::cleanup() };
-};
-
-template <Initializable T> class Initializer {
-  public:
-    Initializer() { T::create(); }
-    ~Initializer() noexcept { T::cleanup(); }
-};
 
 template <typename T> class Handle {
   public:
@@ -24,6 +12,8 @@ template <typename T> class Handle {
             throw InitError(ESP_FAIL, "Handle already initialized");
         instance.emplace(args...);
     }
+    Handle(Handle&&) = default;
+    ~Handle() noexcept { instance.reset(); }
     static T &get() { return *instance; }
 
   private:

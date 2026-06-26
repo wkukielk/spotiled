@@ -1,42 +1,43 @@
 #include "app.hpp"
 #include "Configurer.hpp"
-#include "HTTPD.hpp"
-#include "Initializer.hpp"
 #include "WiFi.hpp"
 #include "global.hpp"
 #include "server/server.hpp"
 #include "time_aux.hpp"
 #include <memory>
 
-struct RuntimeTypes {
-    using EGroup = util::EventGroup;
-    using T_OTAThread = OTAThread<OTAClient<OTA>>;
-    using T_ServerThread =
-        ServerThread<WSServer<HTTPD>, util::PointerQueue<server::Data>>;
-};
+using namespace std;
 
-using runtime_t = Runtime<RuntimeTypes>;
+App::App(AppHandles &&handles) : handles{move(handles)} {}
 
-u_ptr<Runnable> create_runtime(Config &&cfg) {
-    return runtime_t::create(RuntimeConfig{
-        .backend_cfg = cfg.backend_cfg, .wifi_mgr = std::move(cfg.wifi_mgr)});
-}
-
-static std::optional<DftEventLoopConfigurer> eloop_handle;
-
-App::App(u_ptr<Runnable> &&runtime) : runtime{std::move(runtime)} {}
-
-App *App::create() {
+App App::create() {
     auto cfgnvs = NVS{"cfg"};
     auto encnvs = NVS{"encnvs"};
     auto cfg_reader = Configurer{cfgnvs, encnvs};
     cfg_reader.preconfigure();
-    eloop_handle.emplace();
-    Global::get_global().set_nvs(mkuptr<NVS>());
-    Global::get_global().set_time(mkuptr<Time>());
+
+    auto eloop = Handle<DftEventLoop>{};
+    auto netif = Netif{};
+    auto nvs = NVSHandle{mkuptr<NVS>()};
+    auto time = TimeHandle{mkuptr<Time>()};
+    auto wifi_ = Handle<WiFi>{};
+
     auto cfg = cfg_reader.get_config();
-    Global::get_global().set_mdns(std::move(cfg.mdns));
-    return new App{create_runtime(std::move(cfg))};
+    auto mdns = MDNSHandle{move(cfg.mdns)};
+
+    auto runtime = runtime_t::create(RuntimeConfig{
+        .backend_cfg = cfg.backend_cfg, .wifi_mgr = move(cfg.wifi_mgr)});
+
+    auto handles = AppHandles{
+        .eloop{move(eloop)},
+        .netif{move(netif)},
+        .nvs{move(nvs)},
+        .time{move(time)},
+        .wifi_{move(wifi_)},
+        .mdns{move(mdns)},
+        .runtime{move(runtime)},
+    };
+    return App{move(handles)};
 }
 
-void App::run() { runtime->run(); }
+void App::run() { handles.runtime.run(); }

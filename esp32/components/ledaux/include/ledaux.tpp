@@ -28,7 +28,7 @@ template <I_LED LED> ChannelConfig<LED>::~ChannelConfig() noexcept {
         ESP_LOGW("ledaux", "channel deconfig failed");
 }
 
-template <I_LED LED, I_DftEventLoop DEL>
+template <I_LED LED, DftEventLoopHandle DEL>
 ChannelCallbacks<LED, DEL>::ChannelCallbacks(ledc_channel_t channel,
                                              PendingFade &pending)
     : channel_{channel} {
@@ -44,7 +44,7 @@ ChannelCallbacks<LED, DEL>::ChannelCallbacks(ledc_channel_t channel,
     }
 }
 
-template <I_LED LED, I_DftEventLoop DEL>
+template <I_LED LED, DftEventLoopHandle DEL>
 ChannelCallbacks<LED, DEL>::~ChannelCallbacks() noexcept {
     auto err = LED::get().cb_register(led::PWM::MODE, channel_,
                                       &led::fade_cb_null, nullptr);
@@ -58,7 +58,7 @@ ChannelCallbacks<LED, DEL>::~ChannelCallbacks() noexcept {
     }
 }
 
-template <I_LED LED, I_DftEventLoop DEL>
+template <I_LED LED, DftEventLoopHandle DEL>
 void ChannelCallbacks<LED, DEL>::on_fade_event(void *handler_arg,
                                                esp_event_base_t, int32_t,
                                                void *event_data) {
@@ -69,11 +69,11 @@ void ChannelCallbacks<LED, DEL>::on_fade_event(void *handler_arg,
                                        LEDC_FADE_NO_WAIT);
 }
 
-template <I_LED LED, I_DftEventLoop DEL>
+template <I_LED LED, DftEventLoopHandle DEL>
 Channel<LED, DEL>::Channel(channel_t channel, gpio_num_t pin)
     : channel_{channel}, config_{channel, pin}, callbacks_{channel, pending_} {}
 
-template <I_LED LED, I_DftEventLoop DEL>
+template <I_LED LED, DftEventLoopHandle DEL>
 esp_err_t Channel<LED, DEL>::fade(uint32_t target_duty) noexcept {
     pending_.duty.store((int32_t)target_duty);
     bool expected = false;
@@ -85,7 +85,7 @@ esp_err_t Channel<LED, DEL>::fade(uint32_t target_duty) noexcept {
                                               LEDC_FADE_NO_WAIT);
 }
 
-template <I_LED LED, I_DftEventLoop DEL>
+template <I_LED LED, DftEventLoopHandle DEL>
 uint32_t Channel<LED, DEL>::get_duty() const {
     uint32_t duty{};
     auto err = LED::get().get_duty(led::PWM::MODE, channel_, std::ref(duty));
@@ -119,14 +119,14 @@ template <I_LED LED> LEDCConfigurer<LED>::~LEDCConfigurer() {
 template <I_LED LED> bool is_timer_configured_ = false;
 template <I_LED LED> bool is_fade_func_installed_ = false;
 
-template <I_LED LED, I_DftEventLoop DEL>
+template <I_LED LED, DftEventLoopHandle DEL>
 LEDC<LED, DEL>::LEDC() noexcept
     : red_{led::PWM::channel::RED, led::pin::RED},
       green_{led::PWM::channel::GREEN, led::pin::GREEN},
       blue_{led::PWM::channel::BLUE, led::pin::BLUE},
       ww_{led::PWM::channel::WW, led::pin::WW} {}
 
-template <I_LED LED, I_DftEventLoop DEL>
+template <I_LED LED, DftEventLoopHandle DEL>
 esp_err_t LEDC<LED, DEL>::set_color(RGB rgb) noexcept {
     auto target = RGBDuty::rgb_to_duty(rgb);
     UTIL_RETURN(red_.fade(target.r_duty));
@@ -135,7 +135,7 @@ esp_err_t LEDC<LED, DEL>::set_color(RGB rgb) noexcept {
     return ESP_OK;
 }
 
-template <I_LED LED, I_DftEventLoop DEL>
+template <I_LED LED, DftEventLoopHandle DEL>
 RGB LEDC<LED, DEL>::get_current_color() const noexcept {
     auto duty = RGBDuty{red_.get_duty(), green_.get_duty(), blue_.get_duty()};
     return duty.to_rgb();

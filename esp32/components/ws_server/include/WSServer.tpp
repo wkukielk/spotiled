@@ -24,9 +24,9 @@ template <I_HTTPD HTTPD> WSServer<HTTPD>::~WSServer() noexcept {
     _server_ref.drop();
 }
 
-template <I_HTTPD HTTPD> WSServer<HTTPD>::WSServer(WSServer &&other) {
-    this->httpd = std::move(other.httpd);
-    this->queue = std::move(other.queue);
+template <I_HTTPD HTTPD>
+WSServer<HTTPD>::WSServer(WSServer &&other)
+    : httpd{std::move(other.httpd)}, queue{std::move(other.queue)} {
     _server_ref.store(this);
 }
 

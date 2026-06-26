@@ -12,7 +12,6 @@ IGNORE_UNUSED_POP
 
 template <typename T>
 concept I_DftEventLoop = requires(T t) {
-    { T::get() } -> std::same_as<T &>;
     {
         t.handler_register(esp_event_base_t{}, int32_t{}, esp_event_handler_t{},
                            (void *){}, (esp_event_handler_instance_t *){})
@@ -27,14 +26,16 @@ concept I_DftEventLoop = requires(T t) {
     } -> std::same_as<esp_err_t>;
 };
 
-class DftEventLoopConfigurer {
-  public:
-    DftEventLoopConfigurer();
-    ~DftEventLoopConfigurer();
+template <typename T>
+concept DftEventLoopHandle = requires(T t) {
+    { t.get() } -> I_DftEventLoop;
 };
 
 class DftEventLoop {
   public:
+    DftEventLoop();
+    ~DftEventLoop() noexcept;
+
     esp_err_t
     handler_register(esp_event_base_t event_base, int32_t event_id,
                      esp_event_handler_t event_handler, void *event_handler_arg,
@@ -55,12 +56,6 @@ class DftEventLoop {
         return esp_event_post(event_base, event_id, event_data, event_data_size,
                               wait);
     }
-    static DftEventLoop &get() noexcept { return *instance; }
-    static esp_err_t create() noexcept;
-    static esp_err_t cleanup() noexcept;
-
-  private:
-    static std::optional<DftEventLoop> instance;
 };
 
 static_assert(I_DftEventLoop<DftEventLoop>);

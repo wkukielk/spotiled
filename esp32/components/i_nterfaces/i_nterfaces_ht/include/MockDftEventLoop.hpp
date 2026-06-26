@@ -1,6 +1,7 @@
 #ifndef MOCK_DEFAULT_EVENT_LOOP_HPP
 #define MOCK_DEFAULT_EVENT_LOOP_HPP
 
+#include "Handle.hpp"
 #include "I_DftEventLoop.hpp"
 #include <functional>
 #include <gmock/gmock.h>
@@ -35,20 +36,6 @@ class MockDftEventLoop {
                     portMAX_DELAY);
     }
 
-    static MockDftEventLoop &get() {
-        if (!instance)
-            instance = std::make_unique<MockDftEventLoop>();
-        return *instance;
-    };
-    static void reset() {
-        if (instance)
-            assert(instance->handlers_data.empty());
-        instance.reset();
-    };
-    static MockDftEventLoop &reset_and_get() {
-        reset();
-        return get();
-    };
     void wait_for_event() { mutex.take(); }
 
   private:
@@ -56,8 +43,7 @@ class MockDftEventLoop {
                                 esp_event_base_t event_base, int32_t event_id,
                                 void *event_data);
 
-    static std::unique_ptr<MockDftEventLoop> instance;
-
+    DftEventLoop eloop{};
     util::Mutex mutex{};
     std::vector<std::unique_ptr<cbdata>> handlers_data{};
 };

@@ -79,7 +79,7 @@ template <I_LED LED> class ChannelConfig {
     gpio_num_t pin_;
 };
 
-template <I_LED LED, I_DftEventLoop DEL> class ChannelCallbacks {
+template <I_LED LED, DftEventLoopHandle DEL> class ChannelCallbacks {
   public:
     ChannelCallbacks(ledc_channel_t channel, PendingFade &pending);
     ~ChannelCallbacks() noexcept;
@@ -92,7 +92,7 @@ template <I_LED LED, I_DftEventLoop DEL> class ChannelCallbacks {
     esp_event_handler_instance_t event_instance_{};
 };
 
-template <I_LED LED, I_DftEventLoop DEL> class Channel {
+template <I_LED LED, DftEventLoopHandle DEL> class Channel {
     using channel_t = ledc_channel_t;
 
   public:
@@ -118,7 +118,7 @@ template <I_LED LED> class LEDCConfigurer {
     static esp_err_t configure_timer(Mode mode) noexcept;
 };
 
-template <I_LED LED, I_DftEventLoop DEL> class LEDC {
+template <I_LED LED, DftEventLoopHandle DEL> class LEDC {
   public:
     LEDC() noexcept;
     esp_err_t set_color(RGB rgb) noexcept;

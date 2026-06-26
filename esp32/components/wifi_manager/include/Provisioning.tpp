@@ -25,8 +25,8 @@ template <ProvisioningTypes T> int Provisioning<T>::connect() {
     start();
     while (wifi::await_connection(*event_group) != ESP_OK) {
         UTIL_THROW(hot_reset(), WiFiManagerError, "hot reset ProvManager");
-        time().delay_ms(3000); // wait for message to user,
-                               // can't synchronise any other way
+        time_().delay_ms(3000); // wait for message to user,
+                                // can't synchronise any other way
         wifi_prov.stop_provisioning();
         event_group->wait(wifi::end_bit);
         start();

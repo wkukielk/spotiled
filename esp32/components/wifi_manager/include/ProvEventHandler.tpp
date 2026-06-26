@@ -6,26 +6,26 @@
 #include "esp_wifi.h"
 #include "wifi_aux.hpp"
 
-template <util::I_EventGroup EGroup, I_DftEventLoop ELoop>
+template <util::I_EventGroup EGroup, DftEventLoopHandle ELoop>
 EGroup *ProvEventHandler<EGroup, ELoop>::event_group{};
 
-template <util::I_EventGroup EGroup, I_DftEventLoop ELoop>
+template <util::I_EventGroup EGroup, DftEventLoopHandle ELoop>
 uint8_t ProvEventHandler<EGroup, ELoop>::retries{};
 
-template <util::I_EventGroup EGroup, I_DftEventLoop ELoop>
+template <util::I_EventGroup EGroup, DftEventLoopHandle ELoop>
 int8_t ProvEventHandler<EGroup, ELoop>::retries_left{};
 
-template <util::I_EventGroup EGroup, I_DftEventLoop ELoop>
+template <util::I_EventGroup EGroup, DftEventLoopHandle ELoop>
 esp_event_handler_instance_t
     ProvEventHandler<EGroup, ELoop>::disconnect_handle{};
 
-template <util::I_EventGroup EGroup, I_DftEventLoop ELoop>
+template <util::I_EventGroup EGroup, DftEventLoopHandle ELoop>
 esp_event_handler_instance_t ProvEventHandler<EGroup, ELoop>::handle{};
 
-template <util::I_EventGroup EGroup, I_DftEventLoop ELoop>
+template <util::I_EventGroup EGroup, DftEventLoopHandle ELoop>
 ProvReason ProvEventHandler<EGroup, ELoop>::reason = ProvReason::OK;
 
-template <util::I_EventGroup EGroup, I_DftEventLoop ELoop>
+template <util::I_EventGroup EGroup, DftEventLoopHandle ELoop>
 ProvEventHandler<EGroup, ELoop>::ProvEventHandler(EGroup &event_group,
                                                   uint8_t retries) {
     this->retries = retries;
@@ -37,7 +37,7 @@ ProvEventHandler<EGroup, ELoop>::ProvEventHandler(EGroup &event_group,
     ESP_LOGI(PEH_TAG, "init");
 }
 
-template <util::I_EventGroup EGroup, I_DftEventLoop ELoop>
+template <util::I_EventGroup EGroup, DftEventLoopHandle ELoop>
 ProvEventHandler<EGroup, ELoop>::~ProvEventHandler() {
     ELoop::get().handler_unregister(WIFI_EVENT, WIFI_EVENT_STA_DISCONNECTED,
                                     disconnect_handle);
@@ -47,7 +47,7 @@ ProvEventHandler<EGroup, ELoop>::~ProvEventHandler() {
     ESP_LOGI(PEH_TAG, "deinit");
 }
 
-template <util::I_EventGroup EGroup, I_DftEventLoop ELoop>
+template <util::I_EventGroup EGroup, DftEventLoopHandle ELoop>
 esp_err_t ProvEventHandler<EGroup, ELoop>::register_self() {
     UTIL_RETURN(ELoop::get().handler_register(
         NETWORK_PROV_EVENT, ESP_EVENT_ANY_ID, &handler, NULL, &handle));
@@ -57,12 +57,12 @@ esp_err_t ProvEventHandler<EGroup, ELoop>::register_self() {
     return ESP_OK;
 }
 
-template <util::I_EventGroup EGroup, I_DftEventLoop ELoop>
+template <util::I_EventGroup EGroup, DftEventLoopHandle ELoop>
 ProvReason ProvEventHandler<EGroup, ELoop>::get_reason() const noexcept {
     return reason;
 }
 
-template <util::I_EventGroup EGroup, I_DftEventLoop ELoop>
+template <util::I_EventGroup EGroup, DftEventLoopHandle ELoop>
 void ProvEventHandler<EGroup, ELoop>::handler(void *arg,
                                               esp_event_base_t event_base,
                                               int32_t event_id,
@@ -105,7 +105,7 @@ void ProvEventHandler<EGroup, ELoop>::handler(void *arg,
     }
 }
 
-template <util::I_EventGroup EGroup, I_DftEventLoop ELoop>
+template <util::I_EventGroup EGroup, DftEventLoopHandle ELoop>
 void ProvEventHandler<EGroup, ELoop>::disconnect_handler(
     void *arg, esp_event_base_t event_base, int32_t event_id,
     void *event_data) {

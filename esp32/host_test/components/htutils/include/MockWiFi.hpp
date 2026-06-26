@@ -14,12 +14,6 @@ class MockWiFi {
     MOCK_METHOD(esp_err_t, set_ps, (WiFiPSType pstype), (noexcept));
     MOCK_METHOD(esp_err_t, connect, (), (noexcept));
     MOCK_METHOD(esp_err_t, get_mac, (WiFiIF ifx, uint8_t mac[6]), (noexcept));
-
-    static MockWiFi &get() { return *instance; };
-
-    static void create() { instance = std::make_unique<MockWiFi>(); };
-    static void cleanup() { instance = nullptr; };
-    static std::unique_ptr<MockWiFi> instance;
 };
 
 static_assert(I_WiFi<MockWiFi>);

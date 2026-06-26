@@ -1,4 +1,4 @@
-#include "BaseTest.hpp"
+#include "Handle.hpp"
 #include "MockEventGroup.hpp"
 #include "MockTime.hpp"
 #include "time_aux.hpp"
@@ -6,21 +6,16 @@
 #include <gtest/gtest.h>
 
 using namespace util;
+using namespace testing;
 using namespace std;
 
-class ThreadTest : public BaseTest {
+class ThreadTest : public Test {
   protected:
-    ThreadTest()
-        : egroup{mkuptr<MockEventGroup>()}, real{mkuptr<EventGroup>()},
-          params{.name = "test",
-                 .join_group{*this->egroup},
-                 .join_bit = join_bit} {}
-    ~ThreadTest() {}
-
     EventBits_t join_bit = 1 << 0;
-    u_ptr<MockEventGroup> egroup{};
-    u_ptr<EventGroup> real{};
-    thread_params params;
+    MockEventGroup mock_egroup{};
+    EventGroup real_egroup{};
+    thread_params params{
+        .name = "test", .join_group{mock_egroup}, .join_bit = join_bit};
 
     MockTime timer{};
 
@@ -35,7 +30,7 @@ void ThreadTest::stub(void *params) {
 TEST_F(ThreadTest, join_real) {
     params.fun = ThreadTest::stub;
     params.fun_parameters = this;
-    params.join_group = *real;
+    params.join_group = real_egroup;
     EXPECT_CALL(timer, delay_ms(1000));
     auto thread = mkuptr<Thread>(move(params));
     thread->join();
@@ -45,11 +40,11 @@ TEST_F(ThreadTest, join_real) {
 TEST_F(ThreadTest, join) {
     params.fun = ThreadTest::stub;
     params.fun_parameters = this;
-    params.join_group = *egroup;
+    params.join_group = mock_egroup;
     EXPECT_CALL(timer, delay_ms(1000));
-    EXPECT_CALL(*egroup, set(join_bit));
+    EXPECT_CALL(mock_egroup, set(join_bit));
     auto thread = mkuptr<Thread>(move(params));
-    EXPECT_CALL(*egroup, wait(join_bit));
+    EXPECT_CALL(mock_egroup, wait(join_bit));
     thread->join();
     time_aux_delay_ms(50);
 }

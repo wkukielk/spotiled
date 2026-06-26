@@ -9,22 +9,10 @@
 
 using namespace testing;
 
-class InitTimeTest : public Test {
+class ProvisioningTest : public Test {
   protected:
-    InitTimeTest() {
-        auto &global = Global::get_global();
-        global.set_time(std::make_unique<MockTime>());
-    }
-    ~InitTimeTest() {
-        auto &global = Global::get_global();
-        global.set_time(nullptr);
-        Global::deinit();
-    }
-};
-
-class ProvisioningTest : public InitTimeTest {
-  protected:
-    MockTime *time_m{};
+    TimeHandle time_handle{mkuptr<MockTime>()};
+    MockTime &time = (MockTime &)(Global::get_time());
     const char *service_name = "TEST_PROV";
     MockEventGroup event_group{};
     TestableProvisioning prov{event_group, service_name};

@@ -24,7 +24,7 @@ uint8_t custom_service_uuid[16] = {
 namespace wifi {
 int await_connection(util::EventGroupBase &event_group) {
     auto bits = event_group.wait(success_bit | fail_bit);
-    time().delay_ms(100); // let other event handlers run
+    time_().delay_ms(100); // let other event handlers run
     return bits & success_bit ? ESP_OK : ESP_FAIL;
 }
 

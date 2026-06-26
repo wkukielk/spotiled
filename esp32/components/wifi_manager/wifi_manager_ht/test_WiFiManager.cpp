@@ -1,4 +1,3 @@
-#include "BaseTest.hpp"
 #include "MockEventGroup.hpp"
 #include "MockEventHandler.hpp"
 #include "MockProvisioning.hpp"

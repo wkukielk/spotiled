@@ -1,4 +1,3 @@
-#include "BaseTest.hpp"
 #include "HandlerAdapter.hpp"
 #include "I_WiFiProv.hpp"
 #include "MockDftEventLoop.hpp"
@@ -10,17 +9,19 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-using ::testing::_;
-using ::testing::Return;
-using util::EventGroup;
 using namespace std::ranges;
+using namespace testing;
+using namespace util;
 
-class ProvEventHandlerTest : public BaseTest {
+class ProvEventHandlerTest : public Test {
+    using ELoop = Handle<MockDftEventLoop>;
+
   protected:
-    DftEventLoopConfigurer dft_eloop{};
-    MockDftEventLoop &eloop{MockDftEventLoop::reset_and_get()};
+    Handle<MockDftEventLoop> eloop_handle{};
+    MockDftEventLoop &eloop = eloop_handle.get();
+
     EventGroup event_group{};
-    ProvEventHandler<EventGroup, MockDftEventLoop> handler{event_group, 2};
+    ProvEventHandler<EventGroup, ELoop> handler{event_group, 2};
 
     wifi_event_sta_disconnected_t disc_unrec{.reason = WIFI_REASON_AUTH_FAIL};
     wifi_event_sta_disconnected_t disc_rec{.reason =

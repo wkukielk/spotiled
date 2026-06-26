@@ -36,7 +36,8 @@ fn main() -> Result<()> {
     let connector = WsLedSocketConnector {
         url: LED_SOCKET_URL.to_string(),
     };
-    let mut pipeline = SongPipeline::new(connector, move || player.get_player_event_channel());
+    let get_channel = move || player.get_player_event_channel();
+    let mut pipeline = SongPipeline::new(connector, get_channel);
 
     rt.block_on(async {
         let listener = TcpListener::bind(CONTROL_SERVER_ADDR).await?;

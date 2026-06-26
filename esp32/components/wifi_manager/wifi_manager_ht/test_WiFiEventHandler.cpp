@@ -1,6 +1,5 @@
-#include "BaseTest.hpp"
+#include "Handle.hpp"
 #include "I_WiFi.hpp"
-#include "Initializer.hpp"
 #include "MockDftEventLoop.hpp"
 #include "MockWiFi.hpp"
 #include "WiFiEventHandler.hpp"
@@ -14,16 +13,18 @@ using namespace testing;
 
 struct MockWiFiEventHandlerTypes {
     using EventGroup = util::EventGroup;
-    using EventLoop = MockDftEventLoop;
-    using WiFi = MockWiFi;
+    using EventLoop = Handle<MockDftEventLoop>;
+    using WiFi = Handle<MockWiFi>;
 };
 
 class WiFiEventHandlerTest : public Test {
   protected:
-    DftEventLoopConfigurer dft_eloop{};
-    MockDftEventLoop &eloop{MockDftEventLoop::reset_and_get()};
+    Handle<MockDftEventLoop> eloop_handle{};
+    MockDftEventLoop &eloop = eloop_handle.get();
+
     util::EventGroup event_group{};
-    Initializer<MockWiFi> wifi_{};
+    Handle<MockWiFi> wifi_handle{};
+    MockWiFi &wifi_ = wifi_handle.get();
     WiFiEventHandler<MockWiFiEventHandlerTypes> handler{event_group, 2};
 
     wifi_event_sta_disconnected_t disc_unrec{.reason = WIFI_REASON_AUTH_FAIL};

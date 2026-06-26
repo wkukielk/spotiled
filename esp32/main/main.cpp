@@ -4,9 +4,8 @@
 
 extern "C" void app_main(void) {
     try {
-        auto *app = App::create();
-        app->run();
-        delete app;
+        auto app = App::create();
+        app.run();
     } catch (const std::runtime_error &e) {
         ESP_LOGE("MAIN", "%s", e.what());
         ESP_LOGE("MAIN", "App init failed.");

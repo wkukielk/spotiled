@@ -10,8 +10,6 @@ static void proxy_callback(cbdata &cbd, esp_event_base_t base, int32_t id,
     (*cbd.handler)(cbd.handler_arg, base, id, data);
 }
 
-std::unique_ptr<MockDftEventLoop> MockDftEventLoop::instance{};
-
 static bool is_matched(cbdata &cbd, esp_event_base_t base, int32_t id) {
     if (cbd.base == ESP_EVENT_ANY_BASE)
         return true;
@@ -31,7 +29,7 @@ esp_err_t MockDftEventLoop::handler_register(
                                    .eloop = *this,
                                    .cnt = 0}));
     auto adapter = MockDftEventLoop::handler_adapter;
-    auto err = DftEventLoop::get().handler_register(
+    auto err = Handle<DftEventLoop>::get().handler_register(
         event_base, event_id, adapter, cbd.get(), instance);
     if (err != ESP_OK)
         handlers_data.pop_back();
@@ -46,8 +44,7 @@ esp_err_t MockDftEventLoop::handler_unregister(
     auto p = ranges::find_if(
         handlers_data, [=](auto &cbd) { return cbd->instance == instance; });
     assert(p != handlers_data.end());
-    UTIL_RETURN(
-        DftEventLoop::get().handler_unregister(event_base, event_id, instance));
+    UTIL_RETURN(eloop.handler_unregister(event_base, event_id, instance));
     erase(handlers_data, *p);
     return ESP_OK;
 }
@@ -62,8 +59,8 @@ esp_err_t MockDftEventLoop::post(esp_event_base_t event_base, int32_t event_id,
         return ESP_OK;
 
     cbd->get()->cnt = ++counter;
-    UTIL_RETURN(DftEventLoop::get().post(event_base, event_id, event_data,
-                                         event_data_size, ticks_to_wait));
+    UTIL_RETURN(eloop.post(event_base, event_id, event_data, event_data_size,
+                           ticks_to_wait));
     cbd->get()->eloop.get().mutex.take();
     return ESP_OK;
 }

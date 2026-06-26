@@ -12,7 +12,7 @@
 #include <memory>
 
 // only one per program
-template <util::I_EventGroup EGroup, I_DftEventLoop ELoop>
+template <util::I_EventGroup EGroup, DftEventLoopHandle ELoop>
 class ProvEventHandler {
   public:
     ProvEventHandler(EGroup &event_group, uint8_t retries);

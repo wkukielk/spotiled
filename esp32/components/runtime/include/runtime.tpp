@@ -4,7 +4,7 @@
 #include "global.hpp"
 #include "util.hpp"
 
-template <typename T> u_ptr<Runnable> Runtime<T>::create(RuntimeConfig &&cfg) {
+template <typename T> Runtime<T> Runtime<T>::create(RuntimeConfig &&cfg) {
     using T_OTAClient = typename T_OTAThread::Client;
 
     UTIL_THROW(cfg.wifi_mgr->init(), InitError, "failed to init wifi mgr");
@@ -23,7 +23,7 @@ template <typename T> u_ptr<Runnable> Runtime<T>::create(RuntimeConfig &&cfg) {
     auto icfg =
         InnerConfig<T_OTAClient>{.ota_client = T_OTAClient{move(otacfg)},
                                  .wifi_mgr = move(cfg.wifi_mgr)};
-    return u_ptr<Runnable>{new Runtime{move(icfg)}};
+    return Runtime{move(icfg)};
     // NOLINTNEXTLINE(clang-analyzer-cplusplus.NewDeleteLeaks)
 }
 

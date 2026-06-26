@@ -11,24 +11,25 @@ using namespace testing;
 // No Channel is pre-built; each test controls the mock setup.
 class ChannelConstructTest : public testing::Test {
   protected:
+    using ELoop = Handle<MockDftEventLoop>;
     const ledc_channel_t channel = led::PWM::channel::RED;
     const gpio_num_t pin = led::pin::RED;
-    DftEventLoopConfigurer dft_eloop{};
+
+    ELoop dft_eloop{};
+    MockDftEventLoop &eloop = dft_eloop.get();
+
     MockLED &led_{MockLED::reset_and_get()};
-    MockDftEventLoop &eloop{MockDftEventLoop::reset_and_get()};
 };
 
 TEST_F(ChannelConstructTest, configFail) {
     EXPECT_CALL(led_, configure_channel(_)).WillOnce(Return(ESP_FAIL));
-    ASSERT_THROW((led::Channel<MockLED, MockDftEventLoop>{channel, pin}),
-                 InitError);
+    ASSERT_THROW((led::Channel<MockLED, ELoop>{channel, pin}), InitError);
 }
 
 TEST_F(ChannelConstructTest, callbackRegisterFail) {
     EXPECT_CALL(led_, cb_register(_, channel, &led::fade_cb_s, _))
         .WillOnce(Return(ESP_FAIL));
-    ASSERT_THROW((led::Channel<MockLED, MockDftEventLoop>{channel, pin}),
-                 InitError);
+    ASSERT_THROW((led::Channel<MockLED, ELoop>{channel, pin}), InitError);
 }
 
 // Tests that assume construction succeeded and exercise Channel methods.
@@ -47,11 +48,13 @@ class ChannelTest : public testing::Test {
   protected:
     const ledc_channel_t channel = led::PWM::channel::RED;
     const gpio_num_t pin = led::pin::RED;
-    DftEventLoopConfigurer dft_eloop{};
+
+    Handle<MockDftEventLoop> eloop_handle{};
+    MockDftEventLoop &eloop{eloop_handle.get()};
+
     MockLED &led_{MockLED::reset_and_get()};
-    MockDftEventLoop &eloop{MockDftEventLoop::reset_and_get()};
     led::PendingFade *pen_{};
-    std::optional<led::Channel<MockLED, MockDftEventLoop>> ch_;
+    std::optional<led::Channel<MockLED, Handle<MockDftEventLoop>>> ch_;
 };
 
 TEST_F(ChannelTest, getDutySuccess) {
