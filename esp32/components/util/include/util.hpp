@@ -102,6 +102,7 @@ concept I_EventGroup = requires(T t, const EventBits_t bits, const BaseType_t b,
 class EventGroup : public EventGroupBase {
   public:
     EventGroup();
+    EventGroup(EventGroup &&other) noexcept;
     ~EventGroup() noexcept override;
     EventBits_t clear(const EventBits_t uxBitsToClear) override;
     EventBits_t get() override;

@@ -25,7 +25,7 @@ struct AppHandles {
     NVSHandle nvs;
     TimeHandle time;
     MDNSHandle mdns;
-    runtime_t runtime;
+    u_ptr<runtime_t> runtime;
 };
 
 class App {

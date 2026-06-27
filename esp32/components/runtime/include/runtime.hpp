@@ -33,7 +33,7 @@ template <typename T> class Runtime : public util::Notifiable<master::Data> {
     using T_ServerThread = typename T::T_ServerThread;
 
   public:
-    static Runtime create(RuntimeConfig &&cfg);
+    static u_ptr<Runtime> create(RuntimeConfig &&cfg);
     void run();
     void notify(u_ptr<master::Data> &&data) override { queue.send(move(data)); }
 

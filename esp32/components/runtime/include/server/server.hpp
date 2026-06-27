@@ -17,6 +17,7 @@ class ServerThread : public util::PostponedThread,
     std::unique_ptr<server::Data> pop_queue();
     int perform();
 
+    I_WSServer::Message receive_from_ws_server();
     static void server_thread_fun(void *server_ptr);
 
     I_WSServer ws_server;

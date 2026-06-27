@@ -38,4 +38,4 @@ App App::create() {
     return App{move(handles)};
 }
 
-void App::run() { handles.runtime.run(); }
+void App::run() { handles.runtime->run(); }

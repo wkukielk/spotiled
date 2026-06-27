@@ -13,6 +13,7 @@ namespace util {
 template <typename T> class Queue {
   public:
     Queue(uint8_t length);
+    Queue(Queue &&) noexcept;
     ~Queue() noexcept;
     void receive(T *data);
     int receive(T *data, TickType_t wait);

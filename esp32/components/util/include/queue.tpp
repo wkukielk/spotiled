@@ -11,7 +11,15 @@ Queue<T>::Queue(uint8_t length) : handle(xQueueCreate(length, sizeof(T))) {
     UTIL_THROW(handle == nullptr, InitError, "queue");
 }
 
-template <typename T> Queue<T>::~Queue() noexcept { vQueueDelete(handle); }
+template <typename T>
+Queue<T>::Queue(Queue &&other) noexcept : handle{other.handle} {
+    other.handle = nullptr;
+}
+
+template <typename T> Queue<T>::~Queue() noexcept {
+    if (handle)
+        vQueueDelete(handle);
+}
 
 template <typename T> inline void Queue<T>::receive(T *data) {
     receive(data, portMAX_DELAY);

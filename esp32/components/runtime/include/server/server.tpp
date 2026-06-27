@@ -37,16 +37,24 @@ esp_err_t ServerThread<I_WSServer, I_Queue>::close() noexcept {
 
 template <typename I_WSServer, typename I_Queue>
 int ServerThread<I_WSServer, I_Queue>::perform() {
-    const auto delay_ms = 1000;
     auto ret = ESP_OK;
-
     auto data = pop_queue();
+
+    auto [ws_data, len] = receive_from_ws_server();
+    return ret;
+}
+
+template <typename I_WSServer, typename I_Queue>
+I_WSServer::Message
+ServerThread<I_WSServer, I_Queue>::receive_from_ws_server() {
+    const auto delay_ms = 1000;
     ESP_LOGI("Server", "%s", "Waiting for data");
-    auto [ws_data, len] = ws_server.receive(delay_ms);
+    auto message = ws_server.receive(delay_ms);
+    auto &ws_data = message.first;
     if (ws_data) {
         ESP_LOGI("Server", "%s", (const char *)ws_data.get());
     }
-    return ret;
+    return message;
 }
 
 template <typename I_WSServer, typename I_Queue>

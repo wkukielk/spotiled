@@ -44,20 +44,26 @@ template <typename T> class GlobalHandle {
             throw InitError(ESP_FAIL, "GlobalHandle already initialized");
         GlobalHandle::setter = std::move(setter);
         GlobalHandle::setter.value()(std::move(instance));
+        ref_cnt = 1;
     }
-    GlobalHandle(GlobalHandle &&) = default;
+    GlobalHandle(GlobalHandle &&) { ++ref_cnt; }
     ~GlobalHandle() noexcept {
-        GlobalHandle::setter.value()(nullptr);
-        GlobalHandle::setter.reset();
+        if (--ref_cnt == 0) {
+            GlobalHandle::setter.value()(nullptr);
+            GlobalHandle::setter.reset();
+        }
     }
 
   private:
     static std::optional<Fun> setter;
+    static uint8_t ref_cnt;
 };
 
 template <typename T>
 std::optional<std::function<void(std::unique_ptr<T> &&)>>
     GlobalHandle<T>::setter{};
+
+template <typename T> uint8_t GlobalHandle<T>::ref_cnt{};
 
 class TimeHandle {
   public:

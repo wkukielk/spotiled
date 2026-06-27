@@ -9,7 +9,14 @@ EventGroup::EventGroup() {
     UTIL_THROW(handle == nullptr, InitError, "event group not created");
 };
 
-EventGroup::~EventGroup() noexcept { vEventGroupDelete(handle); }
+EventGroup::EventGroup(EventGroup &&other) noexcept : handle{other.handle} {
+    other.handle = nullptr;
+}
+
+EventGroup::~EventGroup() noexcept {
+    if (handle)
+        vEventGroupDelete(handle);
+}
 
 EventBits_t EventGroup::clear(const EventBits_t uxBitsToClear) {
     return xEventGroupClearBits(handle, uxBitsToClear);
