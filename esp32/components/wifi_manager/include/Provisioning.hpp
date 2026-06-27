@@ -12,7 +12,7 @@ template <typename T>
 concept I_Provisioning = requires(T t, const T ct) {
     { ct.is_provisioned() } -> std::same_as<bool>;
     { t.connect() } -> std::same_as<int>;
-};
+} && std::is_constructible_v<T, typename T::EventGroup &, std::string_view>;
 
 template <typename T>
 concept ProvisioningTypes =
@@ -28,11 +28,12 @@ concept ProvHandlerFactory =
 
 template <ProvisioningTypes T> class Provisioning {
     using WiFiProv = typename T::WiFiProv;
-    using EGroup = typename T::EventGroup;
     using Handler = typename T::EventHandler;
 
   public:
-    Provisioning(EGroup &event_group, const char *prov_name);
+    using EventGroup = typename T::EventGroup;
+
+    Provisioning(EventGroup &event_group, std::string_view prov_name);
     bool is_provisioned() const;
     int connect();
 
@@ -42,7 +43,7 @@ template <ProvisioningTypes T> class Provisioning {
     int reset();
 
     WiFiProv wifi_prov{};
-    EGroup *event_group;
+    EventGroup *event_group;
     Handler handler;
     std::string service_name;
     const WiFiProvSecurity security = WiFiProvSecurity::S1;

@@ -13,7 +13,7 @@
 class I_WiFiManager {
   public:
     virtual ~I_WiFiManager() noexcept {};
-    virtual int init() = 0;
+    virtual void init() = 0;
     virtual int connect() = 0;
     virtual int disconnect() = 0;
     virtual bool is_connected() = 0;
@@ -25,6 +25,7 @@ concept WiFiManagerTypes =
     WiFiHandle<typename T::WiFi> && I_Provisioning<typename T::Provisioning>;
 
 template <WiFiManagerTypes T> class WiFiManager : public I_WiFiManager {
+  protected:
     using WiFi = typename T::WiFi;
     using EGroup = typename T::EventGroup;
     using Handler = typename T::EventHandler;
@@ -36,21 +37,21 @@ template <WiFiManagerTypes T> class WiFiManager : public I_WiFiManager {
     WiFiManager(HandlerFactory handler_factory) noexcept;
 
     ~WiFiManager();
-    int init() override;
+    void init() override;
     int connect() override;
     int disconnect() override;
     bool is_connected() override;
 
-  private:
+  protected:
     int connect_without_prov();
     int connect_with_prov();
     void switch_to_prov();
     void switch_to_no_prov();
 
     EGroup event_group;
-    WiFi wifi_;
+    WiFi wifi_{};
     Toggle<Handler> handler;
-    std::optional<Provisioning> provisioning;
+    std::optional<Provisioning> provisioning{};
 };
 
 #include "WiFiManager.tpp"

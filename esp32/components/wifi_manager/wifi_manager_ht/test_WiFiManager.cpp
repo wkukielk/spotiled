@@ -1,68 +1,107 @@
-#include "MockEventGroup.hpp"
-#include "MockEventHandler.hpp"
-#include "MockProvisioning.hpp"
-#include "MockWiFi.hpp"
-#include "MockWiFiProv.hpp"
-#include "WiFiManager.hpp"
+#include "MockTime.hpp"
+#include "TestableWiFiManager.hpp"
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-using ::testing::_;
-using ::testing::Return;
+using namespace std;
+using namespace testing;
 
-// namespace {
-// enum class Provisioned { True, False };
-// }
+namespace {
+enum class Provisioned { True, False };
+}
 
-// class WiFiManagerTest : public BaseTest {
-//   protected:
-//     WiFiManagerTest() {}
+using namespace wifi;
 
-//     void init(Provisioned provisioned) {
-//         auto event_group = std::make_unique<MockEventGroup>();
-//         auto handler = std::make_unique<MockToggleEventHandler>();
-//         auto provisioning = std::make_unique<MockProvisioning>();
-//         this->event_group = event_group.get();
-//         this->handler = handler.get();
-//         this->provisioning = provisioning.get();
-//         manager = std::make_unique<WiFiManager>(std::move(event_group),
-//                                                 std::move(handler),
-//                                                 std::move(provisioning));
-//         bool is_prov = provisioned == Provisioned::True;
-//         EXPECT_CALL(*this->provisioning, is_provisioned())
-//             .WillOnce(Return(is_prov));
-//         UTIL_THROW(manager->init(), InitError, "WifiManager init fail");
-//     }
+class ProvisionedWiFiManagerTest : public Test {
+  protected:
+    TimeHandle time_handle{mkuptr<MockTime>()};
+    MockHandlerFactory factory{};
+    TestableProvisionedWiFiManager manager{
+        [&](auto &egroup) { return factory.call(egroup); }};
+    MockWiFi &wifi_ = manager.get_wifi();
+    optional<MockProvisioningIsProvisioned> &provisioning =
+        manager.get_provisioning();
+    MockEventGroup &egroup = manager.get_event_group();
+};
 
-//     MockEventGroup *event_group{};
-//     MockToggleEventHandler *handler{};
-//     MockProvisioning *provisioning{};
-//     std::unique_ptr<WiFiManager> manager;
-//     const char *service_name = "MAC_HERE";
-// };
+TEST_F(ProvisionedWiFiManagerTest, constructDestruct) {
+    EXPECT_CALL(egroup, wait(end_bit)).WillOnce(Return(end_bit));
+    EXPECT_CALL(wifi_, stop()).WillOnce(Return(0));
+}
 
-// using util::end_bit;
-// using util::fail_bit;
-// using util::success_bit;
+TEST_F(ProvisionedWiFiManagerTest, initSuccess) {
+    EXPECT_CALL(wifi_, set_mode(WiFiMode::STA)).WillOnce(Return(0));
+    manager.init();
+    ASSERT_FALSE(provisioning.has_value());
+}
 
-// TEST_F(WiFiManagerTest, init) {
-//     init(Provisioned::False);
-//     EXPECT_CALL(*event_group, get()).WillOnce(Return(end_bit));
-//     EXPECT_FALSE(manager->is_connected());
-// }
+TEST_F(ProvisionedWiFiManagerTest, initFail) {
+    EXPECT_CALL(wifi_, set_mode(WiFiMode::STA)).WillOnce(Return(-1));
+    ASSERT_THROW(manager.init(), InitError);
+}
 
-// TEST_F(WiFiManagerTest, connectWithProvSuccess) {
-//     init(Provisioned::False);
-//     EXPECT_CALL(*provisioning, is_on()).WillOnce(Return(true));
-//     EXPECT_CALL(*provisioning, connect()).WillOnce(Return(ESP_OK));
-//     EXPECT_CALL(*handler, on());
-//     EXPECT_CALL(*provisioning, off());
-//     EXPECT_EQ(manager->connect(), ESP_OK);
-// }
+TEST_F(ProvisionedWiFiManagerTest, notConnectedBeforeInit) {
+    EXPECT_FALSE(manager.is_connected());
+}
 
-// TEST_F(WiFiManagerTest, connectWithProvFail) {
-//     init(Provisioned::False);
-//     EXPECT_CALL(*provisioning, is_on()).WillOnce(Return(true));
-//     EXPECT_CALL(*provisioning, connect()).WillOnce(Return(ESP_FAIL));
-//     EXPECT_EQ(manager->connect(), ESP_FAIL);
-// }
+TEST_F(ProvisionedWiFiManagerTest, notConnectedAfterInit) {
+    manager.init();
+    EXPECT_FALSE(manager.is_connected());
+}
+
+TEST_F(ProvisionedWiFiManagerTest, connectSuccess) {
+    manager.init();
+    EXPECT_CALL(wifi_, start()).WillOnce(Return(ESP_OK));
+    EXPECT_CALL(egroup, wait(success_bit | fail_bit))
+        .WillOnce(Return(success_bit));
+    EXPECT_CALL(egroup, wait(end_bit)).WillOnce(Return(end_bit));
+    ASSERT_EQ(manager.connect(), ESP_OK);
+    ASSERT_FALSE(provisioning.has_value());
+}
+
+TEST_F(ProvisionedWiFiManagerTest, connectFailWiFiStart) {
+    manager.init();
+    EXPECT_CALL(wifi_, start()).WillOnce(Return(ESP_FAIL));
+    ASSERT_THROW(manager.connect(), WiFiManagerError);
+}
+
+TEST_F(ProvisionedWiFiManagerTest, connectFail) {
+    manager.init();
+    EXPECT_CALL(wifi_, start()).WillOnce(Return(ESP_OK));
+    EXPECT_CALL(egroup, wait(success_bit | fail_bit))
+        .WillOnce(Return(fail_bit));
+    EXPECT_CALL(egroup, wait(end_bit)).WillOnce(Return(end_bit));
+    ASSERT_EQ(manager.connect(), ESP_FAIL);
+}
+
+class NotProvisionedWiFiManagerTest : public Test {
+  protected:
+    TimeHandle time_handle{mkuptr<MockTime>()};
+    MockHandlerFactory factory{};
+    TestableNotProvisionedWiFiManager manager{
+        [&](auto &egroup) { return factory.call(egroup); }};
+    MockWiFi &wifi_ = manager.get_wifi();
+    optional<MockProvisioningNotProvisioned> &provisioning =
+        manager.get_provisioning();
+    MockEventGroup &egroup = manager.get_event_group();
+};
+
+TEST_F(NotProvisionedWiFiManagerTest, initSuccess) {
+    EXPECT_CALL(wifi_, set_mode(WiFiMode::STA)).WillOnce(Return(0));
+    manager.init();
+    ASSERT_TRUE(provisioning.has_value());
+}
+
+TEST_F(NotProvisionedWiFiManagerTest, connectSuccess) {
+    manager.init();
+    EXPECT_CALL(*provisioning, connect()).WillOnce(Return(ESP_OK));
+    ASSERT_EQ(manager.connect(), ESP_OK);
+    ASSERT_FALSE(provisioning.has_value());
+}
+
+TEST_F(NotProvisionedWiFiManagerTest, connectFail) {
+    manager.init();
+    EXPECT_CALL(*provisioning, connect()).WillOnce(Return(ESP_FAIL));
+    ASSERT_EQ(manager.connect(), ESP_FAIL);
+    ASSERT_TRUE(provisioning.has_value());
+}

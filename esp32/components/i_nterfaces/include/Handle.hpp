@@ -7,12 +7,13 @@
 
 template <typename T> class Handle {
   public:
+    using Held = T;
     template <typename... Args> Handle(Args... args) {
         if (instance.has_value())
             throw InitError(ESP_FAIL, "Handle already initialized");
         instance.emplace(args...);
     }
-    Handle(Handle&&) = default;
+    Handle(Handle &&) = default;
     ~Handle() noexcept { instance.reset(); }
     static T &get() { return *instance; }
 

@@ -7,7 +7,7 @@
 template <typename T> Runtime<T> Runtime<T>::create(RuntimeConfig &&cfg) {
     using T_OTAClient = typename T_OTAThread::Client;
 
-    UTIL_THROW(cfg.wifi_mgr->init(), InitError, "failed to init wifi mgr");
+    cfg.wifi_mgr->init();
     UTIL_THROW(cfg.wifi_mgr->connect(), InitError, "Failed to connect to WiFi");
 
     auto base = resolve_base(cfg.backend_cfg.base_url);

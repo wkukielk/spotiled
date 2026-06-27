@@ -12,18 +12,20 @@ template <typename HandlerFactory>
     requires util::Returns<HandlerFactory, typename T::EventHandler,
                            typename T::EventGroup &>
 WiFiManager<T>::WiFiManager(HandlerFactory handler_factory) noexcept
-    : event_group{EGroup{}}, wifi_{},
+    : event_group{EGroup{}},
       handler{[this, ftry = std::move(handler_factory)]() {
           return ftry(event_group);
-      }},
-      provisioning{Provisioning{event_group, "ESP_PROV"}} {}
+      }} {
+    ESP_LOGI("WiFiManager", "%s", "init");
+}
 
 template <WiFiManagerTypes T> WiFiManager<T>::~WiFiManager() {
-    WiFi::get().stop();
+    auto err = WiFi::get().stop();
+    ESP_LOGI("WiFiManager", "wifi stop: %d", err);
     event_group.wait(wifi::end_bit);
 }
 
-template <WiFiManagerTypes T> int WiFiManager<T>::init() {
+template <WiFiManagerTypes T> void WiFiManager<T>::init() {
     UTIL_THROW(WiFi::get().set_mode(WiFiMode::STA), InitError,
                "Failed to set STA mode");
     switch_to_prov();
@@ -32,7 +34,6 @@ template <WiFiManagerTypes T> int WiFiManager<T>::init() {
         switch_to_no_prov();
     } else
         ESP_LOGI("WiFiManager", "ESP isn't provisioned");
-    return ESP_OK;
 }
 
 template <WiFiManagerTypes T> int WiFiManager<T>::connect() {

@@ -19,7 +19,7 @@ class CredentialsWiFiManager : public I_WiFiManager {
 
   public:
     CredentialsWiFiManager(std::string_view ssid, std::string_view passwd);
-    int init() override;
+    void init() override;
     int connect() override;
     int disconnect() override;
     bool is_connected() override;

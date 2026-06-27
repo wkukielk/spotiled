@@ -4,12 +4,23 @@
 #include "Provisioning.hpp"
 #include <gmock/gmock.h>
 
-class MockProvisioning {
+class MockProvisioningIsProvisioned {
   public:
-    MOCK_METHOD(bool, is_provisioned, (), (const));
+    using EventGroup = MockEventGroup;
+    MockProvisioningIsProvisioned(MockEventGroup &, std::string_view) {};
+    bool is_provisioned() const { return true; }
     MOCK_METHOD(int, connect, ());
 };
 
-static_assert(I_Provisioning<MockProvisioning>);
+class MockProvisioningNotProvisioned {
+  public:
+    using EventGroup = MockEventGroup;
+    MockProvisioningNotProvisioned(MockEventGroup &, std::string_view) {};
+    bool is_provisioned() const { return false; }
+    MOCK_METHOD(int, connect, ());
+};
+
+static_assert(I_Provisioning<MockProvisioningIsProvisioned>);
+static_assert(I_Provisioning<MockProvisioningNotProvisioned>);
 
 #endif

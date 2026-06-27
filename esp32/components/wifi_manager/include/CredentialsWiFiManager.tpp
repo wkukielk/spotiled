@@ -9,7 +9,8 @@ CredentialsWiFiManager<T>::CredentialsWiFiManager(std::string_view ssid,
                                                   std::string_view passwd)
     : ssid{ssid}, passwd{passwd}, event_group{}, handler{event_group, 3} {}
 
-template <CredentialsWiFiManagerTypes T> int CredentialsWiFiManager<T>::init() {
+template <CredentialsWiFiManagerTypes T>
+void CredentialsWiFiManager<T>::init() {
     UTIL_THROW(WiFi::get().set_mode(WiFiMode::STA), InitError,
                "Failed to set STA mode");
     auto cfg = wifi_config_t{};
@@ -17,7 +18,6 @@ template <CredentialsWiFiManagerTypes T> int CredentialsWiFiManager<T>::init() {
     straux::strtoarr(cfg.sta.password, passwd, sizeof(cfg.sta.password));
     UTIL_THROW(WiFi::get().set_config(WiFiIF::STA, &cfg), InitError,
                "WiFi config fail");
-    return ESP_OK;
 }
 
 template <CredentialsWiFiManagerTypes T>

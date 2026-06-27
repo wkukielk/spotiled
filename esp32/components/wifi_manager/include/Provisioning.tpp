@@ -8,7 +8,8 @@
 #include <stdexcept>
 
 template <ProvisioningTypes T>
-Provisioning<T>::Provisioning(EGroup &event_group, const char *prov_name)
+Provisioning<T>::Provisioning(EventGroup &event_group,
+                              std::string_view prov_name)
     : event_group{&event_group}, handler{event_group, 3},
       service_name{prov_name} {
     wifi_prov.set_service_uuid(provisioning::custom_service_uuid);
