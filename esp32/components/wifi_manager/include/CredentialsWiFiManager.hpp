@@ -19,6 +19,7 @@ class CredentialsWiFiManager : public I_WiFiManager {
 
   public:
     CredentialsWiFiManager(std::string_view ssid, std::string_view passwd);
+    ~CredentialsWiFiManager() noexcept;
     void init() override;
     int connect() override;
     int disconnect() override;
@@ -27,6 +28,7 @@ class CredentialsWiFiManager : public I_WiFiManager {
   private:
     std::string ssid{};
     std::string passwd{};
+    WiFi wifi_{};
     EGroup event_group{};
     Handler handler;
 };

@@ -21,7 +21,8 @@ WiFiManager<T>::WiFiManager(HandlerFactory handler_factory) noexcept
 
 template <WiFiManagerTypes T> WiFiManager<T>::~WiFiManager() {
     auto err = WiFi::get().stop();
-    ESP_LOGI("WiFiManager", "wifi stop: %d", err);
+    if (err != ESP_OK)
+        ESP_LOGI("WiFiManager", "wifi stop: %d", err);
     event_group.wait(wifi::end_bit);
 }
 

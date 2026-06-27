@@ -7,7 +7,15 @@
 template <CredentialsWiFiManagerTypes T>
 CredentialsWiFiManager<T>::CredentialsWiFiManager(std::string_view ssid,
                                                   std::string_view passwd)
-    : ssid{ssid}, passwd{passwd}, event_group{}, handler{event_group, 3} {}
+    : ssid{ssid}, passwd{passwd}, handler{event_group, 3} {}
+
+template <CredentialsWiFiManagerTypes T>
+CredentialsWiFiManager<T>::~CredentialsWiFiManager() noexcept {
+    auto err = WiFi::get().stop();
+    if (err != ESP_OK)
+        ESP_LOGI("WiFiManager", "wifi stop: %d", err);
+    event_group.wait(wifi::end_bit);
+};
 
 template <CredentialsWiFiManagerTypes T>
 void CredentialsWiFiManager<T>::init() {

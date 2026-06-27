@@ -20,7 +20,6 @@ App App::create() {
     auto netif = Netif{};
     auto nvs = NVSHandle{mkuptr<NVS>()};
     auto time = TimeHandle{mkuptr<Time>()};
-    auto wifi_ = Handle<WiFi>{};
 
     auto cfg = cfg_reader.get_config();
     auto mdns = MDNSHandle{move(cfg.mdns)};
@@ -33,7 +32,6 @@ App App::create() {
         .netif{move(netif)},
         .nvs{move(nvs)},
         .time{move(time)},
-        .wifi_{move(wifi_)},
         .mdns{move(mdns)},
         .runtime{move(runtime)},
     };

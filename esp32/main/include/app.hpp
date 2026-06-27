@@ -24,7 +24,6 @@ struct AppHandles {
     Netif netif;
     NVSHandle nvs;
     TimeHandle time;
-    Handle<WiFi> wifi_;
     MDNSHandle mdns;
     runtime_t runtime;
 };

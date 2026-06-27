@@ -3,7 +3,6 @@
 
 #include "WSServer.hpp"
 #include "queue.hpp"
-#include "server/states.hpp"
 
 template <typename I_WSServer, typename I_Queue>
 class ServerThread : public util::PostponedThread,
@@ -16,15 +15,12 @@ class ServerThread : public util::PostponedThread,
 
   private:
     std::unique_ptr<server::Data> pop_queue();
-    void change_state(server::StateData &&next_state_data);
     int perform();
 
     static void server_thread_fun(void *server_ptr);
 
     I_WSServer ws_server;
     I_Queue queue;
-    u_ptr<server::BaseState> state{};
-    server::StateFactory<I_WSServer, I_Queue> state_factory;
 };
 
 namespace server {

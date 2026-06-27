@@ -1,6 +1,5 @@
 idf_component_register(
-    SRCS "server/states.cpp"
-         "runtime_data.cpp"
+    SRCS "runtime_data.cpp"
          "master/runtime_helpers.cpp"
     INCLUDE_DIRS "include"
     REQUIRES wifi_manager
