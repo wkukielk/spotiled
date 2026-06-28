@@ -61,8 +61,11 @@ impl<S: LedSocket> CoverColorExtractor<S> {
         let cover = cover_opt.ok_or(SongPipelineError::NoCover)?;
 
         let jpg = self.fetch_cover(&cover.url).await?;
-        let pixels = CoverColorExtractor::<S>::decode_jpg_to_rgb565(&jpg)?;
-        let color = get_dominating_color(&pixels);
+        let color = tokio::task::spawn_blocking(move || {
+            let pixels = CoverColorExtractor::<S>::decode_jpg_to_rgb565(&jpg)?;
+            Ok::<_, anyhow::Error>(get_dominating_color(&pixels))
+        })
+        .await??;
         log::error!("{:?}", color);
 
         let mut socket = self.socket.lock().await;
@@ -85,7 +88,7 @@ impl<S: LedSocket> CoverColorExtractor<S> {
 
 impl<S: LedSocket> SongChangeHandler for CoverColorExtractor<S> {
     async fn on_song_changed(&self, audio_item: AudioItem) {
-        log::error!("song changed: {}", audio_item.name);
+        log::info!("song changed: {}", audio_item.name);
         log_on_error(&self.on_song_changed_impl(audio_item).await);
     }
 }

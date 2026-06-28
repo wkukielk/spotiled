@@ -5,13 +5,8 @@ use librespot::{
         Error, authentication::Credentials, cache::Cache, config::SessionConfig, session::Session,
     },
     playback::{
-        audio_backend,
-        config::PlayerConfig,
-        convert::Converter,
-        decoder::AudioPacket,
-        mixer,
-        mixer::MixerConfig,
-        player::Player,
+        audio_backend, config::PlayerConfig, convert::Converter, decoder::AudioPacket, mixer,
+        mixer::MixerConfig, player::Player,
     },
 };
 use std::sync::Arc;
@@ -25,7 +20,12 @@ impl MySink {
 }
 
 impl audio_backend::Sink for MySink {
-    fn write(&mut self, _: AudioPacket, _: &mut Converter) -> audio_backend::SinkResult<()> {
+    fn write(&mut self, packet: AudioPacket, _: &mut Converter) -> audio_backend::SinkResult<()> {
+        if let AudioPacket::Samples(samples) = packet {
+            // 2 channels at 44100 Hz — sleep to match real-time playback speed
+            let duration = std::time::Duration::from_secs_f64(samples.len() as f64 / 2.0 / 44100.0);
+            std::thread::sleep(duration);
+        }
         Ok(())
     }
 }

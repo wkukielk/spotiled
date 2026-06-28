@@ -23,9 +23,11 @@ impl WsLedSocket {
 
 impl LedSocket for WsLedSocket {
     async fn send_rgb(&mut self, rgb: &Rgb) -> Result<()> {
-        self.stream
-            .send(Message::binary(vec![rgb.r, rgb.g, rgb.b]))
-            .await?;
+        let msg = format!(
+            r#"{{"cmd":"fade","r":{},"g":{},"b":{}}}"#,
+            rgb.r, rgb.g, rgb.b
+        );
+        self.stream.send(Message::text(msg)).await?;
         Ok(())
     }
 }

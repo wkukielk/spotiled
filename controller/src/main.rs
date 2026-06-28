@@ -32,7 +32,7 @@ fn get_service_bind_address() -> Result<String, Box<dyn Error>> {
     Ok(address)
 }
 
-const LED_SOCKET_URL: &str = "ws://spotiled-esp32.local:8000";
+const LED_SOCKET_URL: &str = "ws://spotiled-esp32.local:8000/ws";
 
 fn create_tokio_runtime() -> tokio::runtime::Runtime {
     tokio::runtime::Builder::new_multi_thread()
@@ -43,6 +43,7 @@ fn create_tokio_runtime() -> tokio::runtime::Runtime {
 
 fn main() -> Result<(), Box<dyn Error>> {
     env_logger::builder()
+        .filter_level(LevelFilter::Info)
         .filter_module("librespot", LevelFilter::Debug)
         .init();
 
