@@ -222,9 +222,31 @@ template <typename T> class SingletonRef {
     uint8_t client_cnt = 0;
 };
 
+template <typename T> constexpr std::string_view type_name() {
+    std::string_view name = __PRETTY_FUNCTION__;
+    auto start = name.find("T = ");
+    if (start == std::string_view::npos)
+        return name;
+    start += 4;
+    return name.substr(start, name.find(']', start) - start);
+}
+
 template <typename Data> class Notifiable {
   public:
     virtual void notify(std::unique_ptr<Data> &&data) = 0;
+};
+
+template <typename Tag> struct MoveSafe {
+    MoveSafe() { ++refs; }
+    MoveSafe(MoveSafe &&) { ++refs; }
+    MoveSafe(const MoveSafe &) = delete;
+
+  protected:
+    ~MoveSafe() { --refs; }
+    static bool last() { return refs == 1; }
+
+  private:
+    inline static uint8_t refs = 0;
 };
 
 template <class T> constexpr inline bool in_between(T x, T a, T b) {

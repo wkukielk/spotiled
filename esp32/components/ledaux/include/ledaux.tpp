@@ -112,8 +112,7 @@ template <I_LED LED> LEDCConfigurer<LED>::LEDCConfigurer() {
 template <I_LED LED> LEDCConfigurer<LED>::~LEDCConfigurer() {
     if (this->configure_timer(Mode::deconfig) != ESP_OK)
         ESP_LOGW("LEDC", "timer deconfig fail");
-    if (LED::get().fade_func_uninstall() != ESP_OK)
-        ESP_LOGW("LEDC", "fade func uninstall fail");
+    LED::get().fade_func_uninstall();
 }
 
 template <I_LED LED> bool is_timer_configured_ = false;

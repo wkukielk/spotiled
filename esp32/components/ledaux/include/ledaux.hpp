@@ -119,10 +119,11 @@ template <I_LED LED> class LEDCConfigurer {
 };
 
 template <typename T>
-concept I_LEDC = std::default_initializable<T> && requires(T t, const T &ct, RGB rgb) {
-    { t.set_color(rgb) } noexcept -> std::same_as<esp_err_t>;
-    { ct.get_current_color() } noexcept -> std::same_as<RGB>;
-};
+concept I_LEDC =
+    std::default_initializable<T> && requires(T t, const T &ct, RGB rgb) {
+        { t.set_color(rgb) } noexcept -> std::same_as<esp_err_t>;
+        { ct.get_current_color() } noexcept -> std::same_as<RGB>;
+    };
 
 template <I_LED LED, DftEventLoopHandle DEL> class LEDC {
   public:
@@ -130,6 +131,7 @@ template <I_LED LED, DftEventLoopHandle DEL> class LEDC {
     esp_err_t set_color(RGB rgb) noexcept;
     RGB get_current_color() const noexcept;
 
+    LEDCConfigurer<LED> configurer{};
     led::Channel<LED, DEL> red_;
     led::Channel<LED, DEL> green_;
     led::Channel<LED, DEL> blue_;

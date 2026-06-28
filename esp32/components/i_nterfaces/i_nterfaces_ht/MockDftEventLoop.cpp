@@ -26,8 +26,7 @@ esp_err_t MockDftEventLoop::handler_register(
                                    .handler = event_handler,
                                    .handler_arg = event_handler_arg,
                                    .instance{},
-                                   .eloop = *this,
-                                   .cnt = 0}));
+                                   .eloop = *this}));
     auto adapter = MockDftEventLoop::handler_adapter;
     auto err = Handle<DftEventLoop>::get().handler_register(
         event_base, event_id, adapter, cbd.get(), instance);
@@ -44,7 +43,7 @@ esp_err_t MockDftEventLoop::handler_unregister(
     auto p = ranges::find_if(
         handlers_data, [=](auto &cbd) { return cbd->instance == instance; });
     assert(p != handlers_data.end());
-    UTIL_RETURN(eloop.handler_unregister(event_base, event_id, instance));
+    UTIL_RETURN(eloop.get().handler_unregister(event_base, event_id, instance));
     erase(handlers_data, *p);
     return ESP_OK;
 }
@@ -52,15 +51,13 @@ esp_err_t MockDftEventLoop::handler_unregister(
 esp_err_t MockDftEventLoop::post(esp_event_base_t event_base, int32_t event_id,
                                  const void *event_data, size_t event_data_size,
                                  TickType_t ticks_to_wait) noexcept {
-    static int counter = 0;
     auto pd = [=](auto &cbd) { return is_matched(*cbd, event_base, event_id); };
     auto cbd = ranges::find_if(handlers_data, pd);
     if (cbd == handlers_data.end())
         return ESP_OK;
 
-    cbd->get()->cnt = ++counter;
-    UTIL_RETURN(eloop.post(event_base, event_id, event_data, event_data_size,
-                           ticks_to_wait));
+    UTIL_RETURN(eloop.get().post(event_base, event_id, event_data,
+                                 event_data_size, ticks_to_wait));
     cbd->get()->eloop.get().mutex.take();
     return ESP_OK;
 }
@@ -70,12 +67,6 @@ void MockDftEventLoop::handler_adapter(void *event_handler_arg,
                                        int32_t event_id, void *event_data) {
     static atomic<int> curr_counter{0};
     auto &cbd = *(cbdata *)event_handler_arg;
-    // if (cbd.cnt == 0) {
-    //     // Posted directly via esp_event_isr_post (not through mock::post)
     proxy_callback(cbd, event_base, event_id, event_data);
     cbd.eloop.get().mutex.give();
-    // } else if (cbd.cnt > curr_counter.exchange(cbd.cnt)) {
-    //     proxy_callback(cbd, event_base, event_id, event_data);
-    //     cbd.eloop.get().mutex.give();
-    // }
 }

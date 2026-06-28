@@ -33,8 +33,8 @@ concept DftEventLoopHandle = requires(T t) {
 
 class DftEventLoop {
   public:
-    DftEventLoop();
-    ~DftEventLoop() noexcept;
+    esp_err_t init() noexcept { return esp_event_loop_create_default(); }
+    esp_err_t deinit() noexcept { return esp_event_loop_delete_default(); }
 
     esp_err_t
     handler_register(esp_event_base_t event_base, int32_t event_id,

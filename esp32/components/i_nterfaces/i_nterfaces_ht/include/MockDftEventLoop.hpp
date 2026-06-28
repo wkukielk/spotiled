@@ -15,11 +15,12 @@ struct cbdata {
     void *handler_arg;
     esp_event_handler_instance_t instance;
     std::reference_wrapper<MockDftEventLoop> eloop;
-    int cnt;
 };
 
 class MockDftEventLoop {
   public:
+    esp_err_t init() noexcept { return ESP_OK; }
+    esp_err_t deinit() noexcept { return ESP_OK; }
     esp_err_t handler_register(esp_event_base_t event_base, int32_t event_id,
                                esp_event_handler_t event_handler,
                                void *event_handler_arg,
@@ -43,7 +44,7 @@ class MockDftEventLoop {
                                 esp_event_base_t event_base, int32_t event_id,
                                 void *event_data);
 
-    DftEventLoop eloop{};
+    Handle<DftEventLoop> eloop{};
     util::Mutex mutex{};
     std::vector<std::unique_ptr<cbdata>> handlers_data{};
 };

@@ -35,7 +35,7 @@ class Netif {
     ~Netif();
 };
 
-template <typename T> class GlobalHandle {
+template <typename T> class GlobalHandle : public util::MoveSafe<T> {
     using Fun = std::function<void(std::unique_ptr<T> &&)>;
 
   public:
@@ -44,11 +44,10 @@ template <typename T> class GlobalHandle {
             throw InitError(ESP_FAIL, "GlobalHandle already initialized");
         GlobalHandle::setter = std::move(setter);
         GlobalHandle::setter.value()(std::move(instance));
-        ref_cnt = 1;
     }
-    GlobalHandle(GlobalHandle &&) { ++ref_cnt; }
+    GlobalHandle(GlobalHandle &&) = default;
     ~GlobalHandle() noexcept {
-        if (--ref_cnt == 0) {
+        if (this->last()) {
             GlobalHandle::setter.value()(nullptr);
             GlobalHandle::setter.reset();
         }
@@ -56,14 +55,11 @@ template <typename T> class GlobalHandle {
 
   private:
     static std::optional<Fun> setter;
-    static uint8_t ref_cnt;
 };
 
 template <typename T>
 std::optional<std::function<void(std::unique_ptr<T> &&)>>
     GlobalHandle<T>::setter{};
-
-template <typename T> uint8_t GlobalHandle<T>::ref_cnt{};
 
 class TimeHandle {
   public:
