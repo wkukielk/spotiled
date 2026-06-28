@@ -118,6 +118,12 @@ template <I_LED LED> class LEDCConfigurer {
     static esp_err_t configure_timer(Mode mode) noexcept;
 };
 
+template <typename T>
+concept I_LEDC = std::default_initializable<T> && requires(T t, const T &ct, RGB rgb) {
+    { t.set_color(rgb) } noexcept -> std::same_as<esp_err_t>;
+    { ct.get_current_color() } noexcept -> std::same_as<RGB>;
+};
+
 template <I_LED LED, DftEventLoopHandle DEL> class LEDC {
   public:
     LEDC() noexcept;

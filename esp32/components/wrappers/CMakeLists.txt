@@ -12,6 +12,7 @@ idf_component_register(
     PRIV_REQUIRES esp_https_ota
                   app_update
                   esp_http_server
+                  esp_driver_ledc
 )
 
 target_compile_options(${COMPONENT_LIB} PRIVATE "SHELL:-Wno-unused-parameter")

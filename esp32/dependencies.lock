@@ -6,7 +6,7 @@ dependencies:
       require: private
       version: '>=5.0'
     source:
-      registry_url: https://components.espressif.com
+      registry_url: https://components.espressif.com/
       type: service
     version: 1.7.19~2
   espressif/mdns:
@@ -40,9 +40,10 @@ dependencies:
       type: idf
     version: 6.0.1
 direct_dependencies:
+- espressif/cjson
 - espressif/mdns
 - espressif/network_provisioning
 - idf
-manifest_hash: 819f0d0e50e9ebbe845332215c7c325a2c568a7deda3daad2b8a65132ff17176
+manifest_hash: d86f8cf87e854fcb21401dfd4e05fd2604f2b4f6ba7e3db8cd39f0cb1ae17d24
 target: esp32s3
 version: 3.0.0
