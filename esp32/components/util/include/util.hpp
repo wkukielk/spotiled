@@ -32,6 +32,13 @@ IGNORE_UNUSED_POP
             return err_rc_;                                                    \
     } while (0)
 
+#define NEW_UTIL_RETURN(ret)                                                   \
+    do {                                                                       \
+        auto err_rc_ = (ret);                                                  \
+        if (unlikely(err_rc_ != ESP_OK))                                       \
+            return std::unexpected(err_rc_);                                   \
+    } while (0)
+
 #define UTIL_THROW(ret, extype, ...)                                           \
     do {                                                                       \
         auto err_rc_ = (ret);                                                  \

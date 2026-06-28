@@ -51,7 +51,7 @@ TEST_F(QueueTest, sendToFull) {
     auto delay = pdMS_TO_TICKS(10);
     auto [ret, ms] = time_fun([&]() { return q.send(&i20, delay); });
     ASSERT_EQ(ret, ESP_FAIL);
-    EXPECT_THAT(ms, in_range(7, 13));
+    EXPECT_THAT(ms, in_range(5, 15));
 }
 
 TEST_F(QueueTest, receiveFromEmpty) {

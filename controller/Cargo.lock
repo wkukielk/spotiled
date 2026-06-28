@@ -310,6 +310,7 @@ dependencies = [
  "cxx-build",
  "env_logger",
  "futures-util",
+ "hostname",
  "image",
  "librespot",
  "log",

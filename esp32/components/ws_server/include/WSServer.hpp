@@ -5,6 +5,10 @@
 #include "queue.hpp"
 #include "util.hpp"
 
+namespace _wsserver {
+enum class ClientNr { FirstClient, SecondClient };
+};
+
 template <I_HTTPD HTTPD> class WSServer {
   public:
     WSServer();
@@ -20,11 +24,13 @@ template <I_HTTPD HTTPD> class WSServer {
     Message receive_nowait() { return queue.receive_nowait(); };
 
   protected:
-    static esp_err_t handler(httpd_req_t *req);
+    static esp_err_t handler(httpd_req_t *req) noexcept;
+    static esp_err_t ensure_single_client(httpd_req_t *req) noexcept;
     inline static util::SingletonRef<WSServer<HTTPD> *> _server_ref{};
 
     HTTPD httpd;
     util::ArrayQueue<uint8_t> queue;
+    int _client_fd = -1;
 };
 
 namespace ws_server {

@@ -22,6 +22,14 @@ class HTTPD {
                                    size_t max_len) {
         return httpd_ws_recv_frame(req, pkt, max_len);
     }
+    int req_to_sockfd(httpd_req_t *req) { return httpd_req_to_sockfd(req); }
+    httpd_ws_client_info_t ws_get_fd_info(int fd) {
+        return httpd_ws_get_fd_info(httpd, fd);
+    }
+    esp_err_t send_status_response(httpd_req_t *req, const char *status) {
+        httpd_resp_set_status(req, status);
+        return httpd_resp_send(req, nullptr, 0);
+    }
     static Config get_default_config() noexcept {
         return HTTPD_DEFAULT_CONFIG();
     }

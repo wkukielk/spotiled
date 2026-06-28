@@ -10,6 +10,8 @@ u_ptr<I_mDNS> mDNSConfig::get() const {
     auto instance = cfgnvs->read(key::MDNS_INSTANCE);
 
     mdns->set_hostname(hostname.data());
-    mdns->set_instance_name(instance.data());
+    auto txt = nullptr;
+    auto txt_len = 0;
+    mdns->add_service(instance.data(), "_ws", "_tcp", 8000, txt, txt_len);
     return mdns;
 }
