@@ -7,7 +7,7 @@ use crate::dom_color::Rgb;
 
 #[cfg_attr(test, mockall::automock)]
 pub trait LedSocket: Send + Sync {
-    fn send_rgb(&mut self, rgb: &Rgb) -> impl Future<Output = Result<()>> + Send;
+    fn send_rgb(&mut self, rgb: &Rgb) -> impl Future<Output = Result<(), std::io::Error>> + Send;
 }
 
 pub struct WsLedSocket {
@@ -22,12 +22,15 @@ impl WsLedSocket {
 }
 
 impl LedSocket for WsLedSocket {
-    async fn send_rgb(&mut self, rgb: &Rgb) -> Result<()> {
+    async fn send_rgb(&mut self, rgb: &Rgb) -> Result<(), std::io::Error> {
         let msg = format!(
             r#"{{"cmd":"fade","r":{},"g":{},"b":{}}}"#,
             rgb.r, rgb.g, rgb.b
         );
-        self.stream.send(Message::text(msg)).await?;
+        self.stream
+            .send(Message::text(msg))
+            .await
+            .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
         Ok(())
     }
 }

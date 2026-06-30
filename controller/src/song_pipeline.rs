@@ -2,6 +2,8 @@ use anyhow::Result;
 use std::fmt::Debug;
 use std::sync::Arc;
 
+use super::dom_color::Rgb;
+
 use futures_util::{SinkExt, StreamExt};
 use librespot::core::dealer::protocol::{Message, PayloadValue};
 use librespot::metadata::audio::AudioItem;
@@ -36,12 +38,22 @@ fn extract_track_uri(bytes: &[u8]) -> Option<String> {
 enum SongPipelineError {
     #[error("Track has no cover")]
     NoCover,
-    #[error("Failed to connect")]
-    ConnectionError,
+    #[error("Failed to connect to LED")]
+    LEDConnectionError,
+    #[error("Failed to send to LED")]
+    LEDSendError,
+    #[error("Failed to fetch url")]
+    HTTPClientError(#[from] reqwest::Error),
+    #[error("Unexpected dealer message")]
+    UnexpectedDealerMessage,
     #[error("Spotify error")]
     SpotifyError(#[from] SpotifyError),
+    #[error("Failed to decode jpg")]
+    JPGError(#[from] image::ImageError),
     #[error("Unknown command")]
     UnknownCommand,
+    #[error("Other")]
+    Other,
 }
 
 enum LoopStatus {
@@ -55,6 +67,11 @@ struct CoverColorExtractor<S: LedSocket> {
     socket: S,
 }
 
+fn get_jpg_dominating_color(jpg: bytes::Bytes) -> Result<Rgb, SongPipelineError> {
+    let pixels = decode_jpg_to_rgb565(&jpg)?;
+    Ok(get_dominating_color(&pixels))
+}
+
 impl<S: LedSocket> CoverColorExtractor<S> {
     fn new(spotify: Arc<Spotify>, socket: S) -> Self {
         Self {
@@ -65,38 +82,50 @@ impl<S: LedSocket> CoverColorExtractor<S> {
     }
 
     async fn fetch_cover(&self, url: &str) -> Result<bytes::Bytes, reqwest::Error> {
-        self.http.get(url).send().await?.error_for_status()?.bytes().await
+        self.http
+            .get(url)
+            .send()
+            .await?
+            .error_for_status()?
+            .bytes()
+            .await
     }
 
-    async fn on_track_changed(&mut self, audio_item: AudioItem) -> Result<()> {
+    async fn on_track_changed(&mut self, audio_item: AudioItem) -> Result<(), SongPipelineError> {
         let cover = audio_item
             .covers
             .first()
             .ok_or(SongPipelineError::NoCover)?;
         let jpg = self.fetch_cover(&cover.url).await?;
-        let color = tokio::task::spawn_blocking(move || {
-            let pixels = decode_jpg_to_rgb565(&jpg)?;
-            Ok::<_, anyhow::Error>(get_dominating_color(&pixels))
-        })
-        .await??;
-        self.socket.send_rgb(&color).await?;
+        let color = tokio::task::spawn_blocking(|| get_jpg_dominating_color(jpg))
+            .await
+            .map_err(|_e| SongPipelineError::Other)??;
+        self.socket
+            .send_rgb(&color)
+            .await
+            .map_err(|_e| SongPipelineError::LEDSendError)?;
         Ok(())
+    }
+
+    async fn on_song_changed_impl(
+        &mut self,
+        message: Result<Message, SpotifyError>,
+    ) -> Result<(), SongPipelineError> {
+        let msg = message?;
+        let PayloadValue::Raw(ref bytes) = msg.payload else {
+            return Err(SongPipelineError::UnexpectedDealerMessage);
+        };
+        let Some(uri) = extract_track_uri(bytes) else {
+            return Err(SongPipelineError::UnexpectedDealerMessage);
+        };
+        let audio_item = self.spotify.get_audio_item(&uri).await?;
+        self.on_track_changed(audio_item).await
     }
 }
 
 impl<S: LedSocket> SongChangeHandler for CoverColorExtractor<S> {
     async fn on_song_changed(&mut self, msg: Result<Message, SpotifyError>) {
-        let Ok(msg) = msg else { return };
-        let PayloadValue::Raw(ref bytes) = msg.payload else {
-            return;
-        };
-        let Some(uri) = extract_track_uri(bytes) else {
-            return;
-        };
-        match self.spotify.get_audio_item(&uri).await {
-            Ok(item) => log_on_error(&self.on_track_changed(item).await),
-            Err(e) => log::error!("Metadata error: {e}"),
-        }
+        log_on_error(&self.on_song_changed_impl(msg).await)
     }
 }
 
@@ -179,7 +208,7 @@ where
             .connector
             .connect()
             .await
-            .map_err(|_| SongPipelineError::ConnectionError)?;
+            .map_err(|_| SongPipelineError::LEDConnectionError)?;
         let extractor = CoverColorExtractor::new(Arc::clone(&self.spotify), socket);
         let stream = self.spotify.get_stream()?;
         let event_listener = PlayerEventListener::new(stream);
