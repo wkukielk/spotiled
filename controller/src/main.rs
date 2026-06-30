@@ -51,12 +51,12 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut spotify = Spotify::new();
     spotify.init(&rt)?;
 
-    let player = spotify.player();
     let connector = WsLedSocketConnector {
         url: LED_SOCKET_URL.to_string(),
     };
-    let get_channel = move || player.get_player_event_channel();
-    let mut pipeline = SongPipeline::new(connector, get_channel);
+    let mut pipeline = SongPipeline::new(spotify, connector);
+
+    rt.block_on(std::future::pending::<()>());
 
     let address = get_service_bind_address()?;
     rt.block_on(async {

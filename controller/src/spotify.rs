@@ -1,33 +1,25 @@
 use anyhow::Result;
+use librespot::core::Error as LibrespotError;
 use librespot::{
-    connect::{ConnectConfig, Spirc},
     core::{
-        Error, authentication::Credentials, cache::Cache, config::SessionConfig, session::Session,
+        SpotifyUri,
+        authentication::Credentials,
+        cache::Cache,
+        config::SessionConfig,
+        dealer::{manager::BoxedStreamResult, protocol::Message},
+        session::Session,
     },
-    playback::{
-        audio_backend, config::PlayerConfig, convert::Converter, decoder::AudioPacket, mixer,
-        mixer::MixerConfig, player::Player,
-    },
+    metadata::audio::AudioItem,
 };
-use std::sync::Arc;
+use thiserror::Error;
 
-struct MySink;
+#[derive(Error, Debug)]
+pub enum SpotifyError {
+    #[error("Need to init Spotify before")]
+    NotInit,
 
-impl MySink {
-    fn new() -> Self {
-        MySink
-    }
-}
-
-impl audio_backend::Sink for MySink {
-    fn write(&mut self, packet: AudioPacket, _: &mut Converter) -> audio_backend::SinkResult<()> {
-        if let AudioPacket::Samples(samples) = packet {
-            // 2 channels at 44100 Hz — sleep to match real-time playback speed
-            let duration = std::time::Duration::from_secs_f64(samples.len() as f64 / 2.0 / 44100.0);
-            std::thread::sleep(duration);
-        }
-        Ok(())
-    }
+    #[error("Spotify internal error: {0}")]
+    Librespot(#[from] LibrespotError),
 }
 
 const CACHE_PATH: &str = ".cache";
@@ -57,14 +49,14 @@ impl OAuthCredentialsProvider for LibrespotOAuthProvider {
 
 pub struct Spotify {
     cache: Option<Cache>,
-    player: Option<Arc<Player>>,
+    session: Option<Session>,
 }
 
 impl Spotify {
     pub fn new() -> Self {
         Spotify {
             cache: Spotify::create_cache(),
-            player: None,
+            session: None,
         }
     }
 
@@ -106,43 +98,33 @@ impl Spotify {
     async fn connect(
         cache: Option<Cache>,
         credentials: Credentials,
-    ) -> Result<(Arc<Player>, impl std::future::Future<Output = ()>), Error> {
-        let mixer = mixer::find(None).unwrap()(MixerConfig::default())?;
+    ) -> Result<Session, SpotifyError> {
         let session = Session::new(SessionConfig::default(), cache);
-        let player = Player::new(
-            PlayerConfig::default(),
-            session.clone(),
-            mixer.get_soft_volume(),
-            || Box::new(MySink::new()),
-        );
-
-        let (spirc, spirc_task) = Spirc::new(
-            ConnectConfig::default(),
-            session.clone(),
-            credentials,
-            player.clone(),
-            mixer,
-        )
-        .await?;
-
-        spirc.activate()?;
-
-        Ok((player, spirc_task))
+        session.connect(credentials, true).await?;
+        session.dealer().start().await?;
+        Ok(session)
     }
 
     pub fn init(&mut self, rt: &tokio::runtime::Runtime) -> Result<()> {
         let credentials = self.get_credentials()?;
-        let (player, spirc_task) =
-            rt.block_on(Spotify::connect(self.cache.clone(), credentials))?;
-        self.player = Some(player);
-        rt.spawn(spirc_task);
+        let session = rt.block_on(Spotify::connect(self.cache.clone(), credentials))?;
+        self.session = Some(session);
         Ok(())
     }
 
-    pub fn player(&self) -> Arc<Player> {
-        self.player
-            .clone()
-            .expect("Spotify::init must be called before player")
+    pub fn get_stream(&self) -> Result<BoxedStreamResult<Message>, SpotifyError> {
+        let session = self.session.as_ref().ok_or(SpotifyError::NotInit)?;
+        let stream = session.dealer().listen_for(
+            "hm://herodotus/uri/spotify:list:play-history:v1/resume-point-revision",
+            |msg| Ok(msg),
+        )?;
+        Ok(stream)
+    }
+
+    pub async fn get_audio_item(&self, uri: &str) -> Result<AudioItem, SpotifyError> {
+        let session = self.session.as_ref().ok_or(SpotifyError::NotInit)?;
+        let spotify_uri = SpotifyUri::from_uri(uri)?;
+        Ok(AudioItem::get_file(session, spotify_uri).await?)
     }
 }
 

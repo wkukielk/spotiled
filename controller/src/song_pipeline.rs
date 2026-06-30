@@ -2,20 +2,18 @@ use anyhow::Result;
 use std::fmt::Debug;
 use std::sync::Arc;
 
-use futures_util::SinkExt;
-use futures_util::StreamExt;
-use image::GenericImageView;
+use futures_util::{SinkExt, StreamExt};
+use librespot::core::dealer::protocol::{Message, PayloadValue};
 use librespot::metadata::audio::AudioItem;
-use librespot::playback::player::PlayerEventChannel;
 use tokio::net::{TcpListener, TcpStream};
-use tokio::sync::Mutex;
 use tokio::task::JoinHandle;
 use tokio_tungstenite::WebSocketStream;
-use tokio_tungstenite::tungstenite::Message;
+use tokio_tungstenite::tungstenite::Message as WsMessage;
 
-use crate::dom_color::get_dominating_color;
+use crate::dom_color::{decode_jpg_to_rgb565, get_dominating_color};
 use crate::led_socket::{LedSocket, LedSocketConnector};
 use crate::player_event_listener::{PlayerEventListener, SongChangeHandler};
+use crate::spotify::{Spotify, SpotifyError};
 
 fn log_on_error<T, E: Debug>(result: &Result<T, E>) {
     if let Err(err) = result {
@@ -23,12 +21,25 @@ fn log_on_error<T, E: Debug>(result: &Result<T, E>) {
     }
 }
 
+fn extract_track_uri(bytes: &[u8]) -> Option<String> {
+    let prefix = b"spotify:track:";
+    let pos = bytes.windows(prefix.len()).position(|w| w == prefix)?;
+    let rest = &bytes[pos..];
+    let end = rest
+        .iter()
+        .position(|&b| !matches!(b, b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b':'))
+        .unwrap_or(rest.len());
+    String::from_utf8(rest[..end].to_vec()).ok()
+}
+
 #[derive(thiserror::Error, Debug)]
 enum SongPipelineError {
-    #[error("Song has no cover")]
+    #[error("Track has no cover")]
     NoCover,
     #[error("Failed to connect")]
     ConnectionError,
+    #[error("Spotify error")]
+    SpotifyError(#[from] SpotifyError),
     #[error("Unknown command")]
     UnknownCommand,
 }
@@ -40,77 +51,71 @@ enum LoopStatus {
 
 struct CoverColorExtractor<S: LedSocket> {
     http: reqwest::Client,
-    socket: Arc<Mutex<S>>,
+    spotify: Arc<Spotify>,
+    socket: S,
 }
 
 impl<S: LedSocket> CoverColorExtractor<S> {
-    fn new(socket: Arc<Mutex<S>>) -> Self {
+    fn new(spotify: Arc<Spotify>, socket: S) -> Self {
         Self {
             http: reqwest::Client::new(),
+            spotify,
             socket,
         }
     }
 
     async fn fetch_cover(&self, url: &str) -> Result<bytes::Bytes, reqwest::Error> {
-        let res = self.http.get(url).send().await?;
-        res.error_for_status()?.bytes().await
+        self.http.get(url).send().await?.error_for_status()?.bytes().await
     }
 
-    async fn on_song_changed_impl(&self, audio_item: AudioItem) -> Result<()> {
-        let cover_opt = audio_item.covers.first();
-        let cover = cover_opt.ok_or(SongPipelineError::NoCover)?;
-
+    async fn on_track_changed(&mut self, audio_item: AudioItem) -> Result<()> {
+        let cover = audio_item
+            .covers
+            .first()
+            .ok_or(SongPipelineError::NoCover)?;
         let jpg = self.fetch_cover(&cover.url).await?;
         let color = tokio::task::spawn_blocking(move || {
-            let pixels = CoverColorExtractor::<S>::decode_jpg_to_rgb565(&jpg)?;
+            let pixels = decode_jpg_to_rgb565(&jpg)?;
             Ok::<_, anyhow::Error>(get_dominating_color(&pixels))
         })
         .await??;
-        log::error!("{:?}", color);
-
-        let mut socket = self.socket.lock().await;
-        socket.send_rgb(&color).await?;
+        self.socket.send_rgb(&color).await?;
         Ok(())
-    }
-
-    fn rgb565(r: u8, g: u8, b: u8) -> u16 {
-        ((r as u16 & 0xf8) << 8) | ((g as u16 & 0xfc) << 3) | (b as u16 >> 3)
-    }
-
-    fn decode_jpg_to_rgb565(jpg: &[u8]) -> Result<Vec<u16>, image::ImageError> {
-        let image = image::load_from_memory_with_format(jpg, image::ImageFormat::Jpeg)?;
-        Ok(image
-            .pixels()
-            .map(|(_, _, px)| CoverColorExtractor::<S>::rgb565(px[0], px[1], px[2]))
-            .collect())
     }
 }
 
 impl<S: LedSocket> SongChangeHandler for CoverColorExtractor<S> {
-    async fn on_song_changed(&self, audio_item: AudioItem) {
-        log::info!("song changed: {}", audio_item.name);
-        log_on_error(&self.on_song_changed_impl(audio_item).await);
+    async fn on_song_changed(&mut self, msg: Result<Message, SpotifyError>) {
+        let Ok(msg) = msg else { return };
+        let PayloadValue::Raw(ref bytes) = msg.payload else {
+            return;
+        };
+        let Some(uri) = extract_track_uri(bytes) else {
+            return;
+        };
+        match self.spotify.get_audio_item(&uri).await {
+            Ok(item) => log_on_error(&self.on_track_changed(item).await),
+            Err(e) => log::error!("Metadata error: {e}"),
+        }
     }
 }
 
-pub struct SongPipeline<C, F>
+pub struct SongPipeline<C>
 where
     C: LedSocketConnector,
-    F: Fn() -> PlayerEventChannel + Send + Sync,
 {
-    subscribe: F,
+    spotify: Arc<Spotify>,
     connector: C,
     active: Option<JoinHandle<()>>,
 }
 
-impl<C, F> SongPipeline<C, F>
+impl<C> SongPipeline<C>
 where
     C: LedSocketConnector,
-    F: Fn() -> PlayerEventChannel + Send + Sync,
 {
-    pub fn new(connector: C, subscribe: F) -> Self {
+    pub fn new(spotify: Spotify, connector: C) -> Self {
         Self {
-            subscribe,
+            spotify: Arc::new(spotify),
             connector,
             active: None,
         }
@@ -132,7 +137,7 @@ where
                         break;
                     }
                 }
-                Err(_err) => {
+                Err(_) => {
                     log::warn!("Error message");
                     break;
                 }
@@ -142,18 +147,18 @@ where
 
     async fn handle_message(
         &mut self,
-        msg: Message,
+        msg: WsMessage,
         ws: &mut WebSocketStream<TcpStream>,
     ) -> LoopStatus {
         match msg {
-            Message::Text(command) => match self.handle_command(&command).await {
+            WsMessage::Text(command) => match self.handle_command(&command).await {
                 Ok(_) => LoopStatus::Continue,
                 Err(err) => {
-                    let _ = ws.send(Message::Text(err.to_string().into())).await;
+                    let _ = ws.send(WsMessage::Text(err.to_string().into())).await;
                     LoopStatus::Break
                 }
             },
-            Message::Close(_) => LoopStatus::Break,
+            WsMessage::Close(_) => LoopStatus::Break,
             _ => LoopStatus::Continue,
         }
     }
@@ -174,12 +179,12 @@ where
             .connector
             .connect()
             .await
-            .map_err(|_e| SongPipelineError::ConnectionError)?;
-        let extractor = CoverColorExtractor::new(Arc::new(Mutex::new(socket)));
-        let mut listener = PlayerEventListener::new((self.subscribe)());
-
+            .map_err(|_| SongPipelineError::ConnectionError)?;
+        let extractor = CoverColorExtractor::new(Arc::clone(&self.spotify), socket);
+        let stream = self.spotify.get_stream()?;
+        let event_listener = PlayerEventListener::new(stream);
         self.active = Some(tokio::spawn(async move {
-            listener.run(&extractor).await;
+            event_listener.run(extractor).await;
         }));
         Ok(())
     }
@@ -187,7 +192,7 @@ where
     fn disconnect(&mut self) -> Result<(), SongPipelineError> {
         if let Some(task) = self.active.take() {
             task.abort();
-        };
+        }
         Ok(())
     }
 }

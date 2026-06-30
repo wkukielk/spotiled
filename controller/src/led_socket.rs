@@ -6,7 +6,7 @@ use tokio_tungstenite::{MaybeTlsStream, WebSocketStream, connect_async, tungsten
 use crate::dom_color::Rgb;
 
 #[cfg_attr(test, mockall::automock)]
-pub trait LedSocket: Send {
+pub trait LedSocket: Send + Sync {
     fn send_rgb(&mut self, rgb: &Rgb) -> impl Future<Output = Result<()>> + Send;
 }
 

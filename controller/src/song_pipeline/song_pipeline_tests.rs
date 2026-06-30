@@ -1,23 +1,24 @@
 use std::collections::HashMap;
+use std::sync::Arc;
 
 use librespot::core::{SpotifyId, SpotifyUri};
 use librespot::metadata::artist::ArtistsWithRole;
-use librespot::metadata::audio::{AudioFiles, UniqueFields};
 use librespot::metadata::audio::item::CoverImage;
+use librespot::metadata::audio::{AudioFiles, UniqueFields};
 use librespot::metadata::image::ImageSize;
 use wiremock::matchers::{method, path};
 use wiremock::{Mock, MockServer, ResponseTemplate};
 
 use super::*;
 use crate::led_socket::MockLedSocket;
+use crate::spotify::Spotify;
 
 fn extractor() -> CoverColorExtractor<MockLedSocket> {
-    let socket = Arc::new(Mutex::new(MockLedSocket::new()));
-    CoverColorExtractor::new(socket)
+    CoverColorExtractor::new(Arc::new(Spotify::new()), MockLedSocket::new())
 }
 
 fn extractor_with(socket: MockLedSocket) -> CoverColorExtractor<MockLedSocket> {
-    CoverColorExtractor::new(Arc::new(Mutex::new(socket)))
+    CoverColorExtractor::new(Arc::new(Spotify::new()), socket)
 }
 
 fn test_audio_item(covers: Vec<CoverImage>) -> AudioItem {
@@ -39,8 +40,8 @@ fn test_audio_item(covers: Vec<CoverImage>) -> AudioItem {
             album: String::new(),
             album_artists: vec![],
             popularity: 0,
-            number: 0,
             disc_number: 0,
+            number: 0,
         },
     }
 }
@@ -89,7 +90,7 @@ async fn fetch_cover_errors_on_http_error_status() {
 }
 
 #[tokio::test]
-async fn on_song_changed_impl_sends_dominant_color_when_cover_present() {
+async fn on_track_changed_sends_dominant_color_when_cover_present() {
     let server = MockServer::start().await;
     Mock::given(method("GET"))
         .and(path("/cover.jpg"))
@@ -102,7 +103,7 @@ async fn on_song_changed_impl_sends_dominant_color_when_cover_present() {
         .expect_send_rgb()
         .times(1)
         .returning(|_| Box::pin(async { Ok(()) }));
-    let extractor = extractor_with(socket);
+    let mut extractor = extractor_with(socket);
 
     let audio_item = test_audio_item(vec![CoverImage {
         url: format!("{}/cover.jpg", server.uri()),
@@ -111,17 +112,17 @@ async fn on_song_changed_impl_sends_dominant_color_when_cover_present() {
         height: 2,
     }]);
 
-    let result = extractor.on_song_changed_impl(audio_item).await;
+    let result = extractor.on_track_changed(audio_item).await;
 
     assert!(result.is_ok());
 }
 
 #[tokio::test]
-async fn on_song_changed_impl_errors_without_cover() {
-    let extractor = extractor();
+async fn on_track_changed_errors_without_cover() {
+    let mut extractor = extractor();
     let audio_item = test_audio_item(vec![]);
 
-    let result = extractor.on_song_changed_impl(audio_item).await;
+    let result = extractor.on_track_changed(audio_item).await;
 
     assert!(result.is_err());
 }

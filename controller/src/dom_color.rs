@@ -23,3 +23,12 @@ mod ffi {
 }
 
 pub use ffi::get_dominating_color;
+
+pub fn decode_jpg_to_rgb565(jpg: &[u8]) -> Result<Vec<u16>, image::ImageError> {
+    use image::GenericImageView;
+    let img = image::load_from_memory_with_format(jpg, image::ImageFormat::Jpeg)?;
+    Ok(img
+        .pixels()
+        .map(|(_, _, px)| ((px[0] as u16 & 0xf8) << 8) | ((px[1] as u16 & 0xfc) << 3) | (px[2] as u16 >> 3))
+        .collect())
+}

@@ -1,26 +1,28 @@
-use librespot::{
-    metadata::audio::AudioItem,
-    playback::player::{PlayerEvent, PlayerEventChannel},
-};
+use super::spotify::SpotifyError;
+use futures_util::StreamExt;
+use librespot::core::dealer::manager::BoxedStreamResult;
+use librespot::core::dealer::protocol::Message;
 
 pub trait SongChangeHandler {
-    fn on_song_changed(&self, audio_item: AudioItem) -> impl Future<Output = ()> + Send;
+    fn on_song_changed(
+        &mut self,
+        msg: Result<Message, SpotifyError>,
+    ) -> impl Future<Output = ()> + Send;
 }
 
 pub struct PlayerEventListener {
-    events: PlayerEventChannel,
+    stream: BoxedStreamResult<Message>,
 }
 
 impl PlayerEventListener {
-    pub fn new(events: PlayerEventChannel) -> Self {
-        Self { events }
+    pub fn new(stream: BoxedStreamResult<Message>) -> Self {
+        Self { stream }
     }
 
-    pub async fn run(&mut self, handler: &impl SongChangeHandler) {
-        while let Some(event) = self.events.recv().await {
-            if let PlayerEvent::TrackChanged { audio_item } = event {
-                handler.on_song_changed(*audio_item).await;
-            }
+    pub async fn run(mut self, mut handler: impl SongChangeHandler) {
+        while let Some(msg) = self.stream.next().await {
+            let mapped_msg = msg.map_err(SpotifyError::Librespot);
+            handler.on_song_changed(mapped_msg).await;
         }
     }
 }
