@@ -1,10 +1,11 @@
 mod dom_color;
 mod led_socket;
-mod player_event_listener;
 mod song_pipeline;
 mod spotify;
 
 use anyhow::Result;
+use dom_color::Rgb;
+use led_socket::LedSocket;
 use led_socket::WsLedSocketConnector;
 use song_pipeline::SongPipeline;
 
@@ -13,6 +14,19 @@ use log::LevelFilter;
 use spotify::Spotify;
 use std::error::Error;
 use tokio::net::TcpListener;
+
+pub struct LogSocket {}
+
+impl LedSocket for LogSocket {
+    async fn send_rgb(&mut self, rgb: &Rgb) -> Result<(), std::io::Error> {
+        let msg = format!(
+            r#"{{"cmd":"fade","r":{},"g":{},"b":{}}}"#,
+            rgb.r, rgb.g, rgb.b
+        );
+        log::info!("{}", msg);
+        Ok(())
+    }
+}
 
 fn get_mdns_hostname() -> Result<String, Box<dyn Error>> {
     let os_hostname = hostname::get()?;
@@ -55,8 +69,6 @@ fn main() -> Result<(), Box<dyn Error>> {
         url: LED_SOCKET_URL.to_string(),
     };
     let mut pipeline = SongPipeline::new(spotify, connector);
-
-    rt.block_on(std::future::pending::<()>());
 
     let address = get_service_bind_address()?;
     rt.block_on(async {

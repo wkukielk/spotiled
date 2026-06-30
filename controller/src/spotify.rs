@@ -1,3 +1,5 @@
+pub mod playback_event_listener;
+
 use anyhow::Result;
 use librespot::core::Error as LibrespotError;
 use librespot::{
@@ -112,7 +114,7 @@ impl Spotify {
         Ok(())
     }
 
-    pub fn get_stream(&self) -> Result<BoxedStreamResult<Message>, SpotifyError> {
+    pub fn get_playback_event_stream(&self) -> Result<BoxedStreamResult<Message>, SpotifyError> {
         let session = self.session.as_ref().ok_or(SpotifyError::NotInit)?;
         let stream = session.dealer().listen_for(
             "hm://herodotus/uri/spotify:list:play-history:v1/resume-point-revision",

@@ -12,10 +12,10 @@ use tokio::task::JoinHandle;
 use tokio_tungstenite::WebSocketStream;
 use tokio_tungstenite::tungstenite::Message as WsMessage;
 
-use crate::dom_color::{decode_jpg_to_rgb565, get_dominating_color};
-use crate::led_socket::{LedSocket, LedSocketConnector};
-use crate::player_event_listener::{PlayerEventListener, SongChangeHandler};
-use crate::spotify::{Spotify, SpotifyError};
+use super::dom_color::{decode_jpg_to_rgb565, get_dominating_color};
+use super::led_socket::{LedSocket, LedSocketConnector};
+use super::spotify::playback_event_listener::{PlaybackEventHandler, PlaybackEventListener};
+use super::spotify::{Spotify, SpotifyError};
 
 fn log_on_error<T, E: Debug>(result: &Result<T, E>) {
     if let Err(err) = result {
@@ -82,13 +82,8 @@ impl<S: LedSocket> CoverColorExtractor<S> {
     }
 
     async fn fetch_cover(&self, url: &str) -> Result<bytes::Bytes, reqwest::Error> {
-        self.http
-            .get(url)
-            .send()
-            .await?
-            .error_for_status()?
-            .bytes()
-            .await
+        let response = self.http.get(url).send().await?;
+        response.error_for_status()?.bytes().await
     }
 
     async fn on_track_changed(&mut self, audio_item: AudioItem) -> Result<(), SongPipelineError> {
@@ -123,7 +118,7 @@ impl<S: LedSocket> CoverColorExtractor<S> {
     }
 }
 
-impl<S: LedSocket> SongChangeHandler for CoverColorExtractor<S> {
+impl<S: LedSocket> PlaybackEventHandler for CoverColorExtractor<S> {
     async fn on_song_changed(&mut self, msg: Result<Message, SpotifyError>) {
         log_on_error(&self.on_song_changed_impl(msg).await)
     }
@@ -204,14 +199,12 @@ where
         if self.active.is_some() {
             return Ok(());
         }
-        let socket = self
-            .connector
-            .connect()
-            .await
-            .map_err(|_| SongPipelineError::LEDConnectionError)?;
+        let socket_result = self.connector.connect().await;
+        let socket = socket_result.map_err(|_| SongPipelineError::LEDConnectionError)?;
+
         let extractor = CoverColorExtractor::new(Arc::clone(&self.spotify), socket);
-        let stream = self.spotify.get_stream()?;
-        let event_listener = PlayerEventListener::new(stream);
+        let stream = self.spotify.get_playback_event_stream()?;
+        let event_listener = PlaybackEventListener::new(stream);
         self.active = Some(tokio::spawn(async move {
             event_listener.run(extractor).await;
         }));
