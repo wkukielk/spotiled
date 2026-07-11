@@ -50,6 +50,7 @@ enum LoopStatus {
     Break,
 }
 
+#[cfg_attr(test, mockall::automock)]
 trait CoverFetcher: Sync + Send {
     fn new(spotify: Arc<dyn ISpotify>) -> Self;
     fn fetch(

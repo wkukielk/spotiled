@@ -1,5 +1,5 @@
 #[repr(C)]
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct Rgb {
     pub r: u8,
     pub g: u8,
@@ -24,6 +24,7 @@ mod ffi {
 
 pub use ffi::get_dominating_color;
 
+#[cfg_attr(test, mockall::automock)]
 pub trait JPEGDecoder: Send + Sync {
     fn decode_jpg_to_rgb565(jpg: &[u8]) -> Result<Vec<u16>, image::ImageError>;
 }

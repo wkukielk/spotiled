@@ -6,7 +6,11 @@ use librespot::metadata::image::ImageSize;
 use wiremock::matchers::{method, path};
 use wiremock::{Mock, MockServer, ResponseTemplate};
 
+use mockall::predicate::eq;
+
 use super::*;
+use crate::dom_color::{MockJPEGDecoder, Rgb};
+use crate::led_socket::MockLedSocket;
 use crate::spotify::{AudioItem, MockISpotify, SpotifyError};
 
 fn raw_message(uri: &str) -> Result<Message, SpotifyError> {
@@ -176,4 +180,56 @@ async fn fetch_errors_on_malformed_dealer_message() {
         result,
         Err(SongPipelineError::UnexpectedDealerMessage)
     ));
+}
+
+fn solid_rgb565_pixels(r: u8, g: u8, b: u8) -> Vec<u16> {
+    let pixel = ((r as u16 & 0xf8) << 8) | ((g as u16 & 0xfc) << 3) | (b as u16 >> 3);
+    vec![pixel; 4]
+}
+
+fn tiny_jpeg() -> bytes::Bytes {
+    let image = image::RgbImage::from_pixel(2, 2, image::Rgb([10, 20, 30]));
+    let mut jpg = Vec::new();
+    image::codecs::jpeg::JpegEncoder::new(&mut jpg)
+        .encode_image(&image)
+        .unwrap();
+    bytes::Bytes::from(jpg)
+}
+
+#[tokio::test]
+async fn test_song_handler() {
+    let spotify = MockISpotify::new();
+    let mut socket = MockLedSocket::new();
+    socket
+        .expect_send_rgb()
+        .with(eq(Rgb { r: 8, g: 20, b: 24 }))
+        .times(1)
+        .returning(|_| Box::pin(async { Ok(()) }));
+    let new_ctx = MockCoverFetcher::new_context();
+    new_ctx.expect().returning(|_| MockCoverFetcher::default());
+    let decode_ctx = MockJPEGDecoder::decode_jpg_to_rgb565_context();
+    decode_ctx
+        .expect()
+        .returning(|_| Ok(solid_rgb565_pixels(10, 20, 30)));
+    let mut handler = SongHandler::<MockCoverFetcher, MockLedSocket, MockJPEGDecoder>::new(
+        Arc::new(spotify),
+        socket,
+    );
+
+    let PayloadValue::Raw(exp_bytes) = raw_message("message").unwrap().payload else {
+        unreachable!()
+    };
+    handler
+        .cover_fetcher
+        .expect_fetch()
+        .withf(move |message| {
+            matches!(
+                message,
+                Ok(Message { payload: PayloadValue::Raw(bytes), .. }) if *bytes == exp_bytes
+            )
+        })
+        .times(1)
+        .return_once(|_| Box::pin(async { Ok(tiny_jpeg()) }));
+    let result = handler.on_song_changed_impl(raw_message("message")).await;
+    assert!(matches!(result, Ok(())))
 }
