@@ -1,8 +1,7 @@
 use anyhow::Result;
 use std::fmt::Debug;
+use std::marker::PhantomData;
 use std::sync::Arc;
-
-use super::dom_color::Rgb;
 
 use futures_util::{SinkExt, StreamExt};
 use librespot::core::dealer::protocol::{Message, PayloadValue};
@@ -12,7 +11,9 @@ use tokio::task::JoinHandle;
 use tokio_tungstenite::WebSocketStream;
 use tokio_tungstenite::tungstenite::Message as WsMessage;
 
-use super::dom_color::{decode_jpg_to_rgb565, get_dominating_color};
+use crate::dom_color::{JPEGDecoder, StdJPEGDecoder};
+
+use super::dom_color::get_jpg_dominating_color;
 use super::led_socket::{LedSocket, LedSocketConnector};
 use super::spotify::playback_event_listener::{PlaybackEventHandler, PlaybackEventListener};
 use super::spotify::{Spotify, SpotifyError};
@@ -61,23 +62,20 @@ enum LoopStatus {
     Break,
 }
 
-struct CoverColorExtractor<S: LedSocket> {
+struct CoverColorExtractor<S: LedSocket, D: JPEGDecoder> {
     http: reqwest::Client,
     spotify: Arc<Spotify>,
     socket: S,
+    decoder: PhantomData<D>,
 }
 
-fn get_jpg_dominating_color(jpg: bytes::Bytes) -> Result<Rgb, SongPipelineError> {
-    let pixels = decode_jpg_to_rgb565(&jpg)?;
-    Ok(get_dominating_color(&pixels))
-}
-
-impl<S: LedSocket> CoverColorExtractor<S> {
+impl<S: LedSocket, D: JPEGDecoder> CoverColorExtractor<S, D> {
     fn new(spotify: Arc<Spotify>, socket: S) -> Self {
         Self {
             http: reqwest::Client::new(),
             spotify,
             socket,
+            decoder: PhantomData,
         }
     }
 
@@ -89,7 +87,7 @@ impl<S: LedSocket> CoverColorExtractor<S> {
     async fn on_track_changed(&mut self, audio_item: AudioItem) -> Result<(), SongPipelineError> {
         let cover = audio_item.covers.last().ok_or(SongPipelineError::NoCover)?;
         let jpg = self.fetch_cover(&cover.url).await?;
-        let color = tokio::task::spawn_blocking(|| get_jpg_dominating_color(jpg))
+        let color = tokio::task::spawn_blocking(|| get_jpg_dominating_color::<D>(jpg))
             .await
             .map_err(|_e| SongPipelineError::Other)??;
         self.socket
@@ -115,7 +113,7 @@ impl<S: LedSocket> CoverColorExtractor<S> {
     }
 }
 
-impl<S: LedSocket> PlaybackEventHandler for CoverColorExtractor<S> {
+impl<S: LedSocket, D: JPEGDecoder> PlaybackEventHandler for CoverColorExtractor<S, D> {
     async fn on_song_changed(&mut self, msg: Result<Message, SpotifyError>) {
         log_on_error(&self.on_song_changed_impl(msg).await)
     }
@@ -200,7 +198,8 @@ where
         let socket_result = self.connector.connect().await;
         let socket = socket_result.map_err(|_| SongPipelineError::LEDConnectionError)?;
 
-        let extractor = CoverColorExtractor::new(Arc::clone(&self.spotify), socket);
+        let extractor =
+            CoverColorExtractor::<S, StdJPEGDecoder>::new(Arc::clone(&self.spotify), socket);
         let stream = self.spotify.get_playback_event_stream()?;
         let event_listener = PlaybackEventListener::new(stream);
         self.active = Some(tokio::spawn(async move {
