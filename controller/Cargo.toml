@@ -20,6 +20,8 @@ image = { version = "0.25.6", default-features = false, features = ["jpeg"] }
 thiserror = "2.0.18"
 anyhow = "1.0.102"
 hostname = "0.4.2"
+serde = { version = "1", features = ["derive"] }
+toml = "0.8"
 
 [build-dependencies]
 cmake = "0.1.58"
