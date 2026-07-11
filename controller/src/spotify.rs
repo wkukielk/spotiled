@@ -1,6 +1,7 @@
 pub mod playback_event_listener;
 
 use anyhow::Result;
+use async_trait::async_trait;
 use librespot::core::Error as LibrespotError;
 use librespot::{
     core::{
@@ -11,7 +12,8 @@ use librespot::{
         dealer::{manager::BoxedStreamResult, protocol::Message},
         session::Session,
     },
-    metadata::audio::AudioItem,
+    metadata::audio::AudioItem as LibrespotAudioItem,
+    metadata::audio::item::CoverImage,
 };
 use thiserror::Error;
 
@@ -47,6 +49,18 @@ impl OAuthCredentialsProvider for LibrespotOAuthProvider {
 
         Ok(Credentials::with_access_token(token.access_token))
     }
+}
+
+pub struct AudioItem {
+    pub covers: Vec<CoverImage>,
+}
+
+#[cfg_attr(test, mockall::automock)]
+#[async_trait]
+pub trait ISpotify: Send + Sync {
+    fn init(&mut self, rt: &tokio::runtime::Runtime) -> Result<()>;
+    fn get_playback_event_stream(&self) -> Result<BoxedStreamResult<Message>, SpotifyError>;
+    async fn get_audio_item(&self, uri: &str) -> Result<AudioItem, SpotifyError>;
 }
 
 pub struct Spotify {
@@ -109,15 +123,18 @@ impl Spotify {
         session.dealer().start().await?;
         Ok(session)
     }
+}
 
-    pub fn init(&mut self, rt: &tokio::runtime::Runtime) -> Result<()> {
+#[async_trait]
+impl ISpotify for Spotify {
+    fn init(&mut self, rt: &tokio::runtime::Runtime) -> Result<()> {
         let credentials = self.get_credentials()?;
         let session = rt.block_on(Spotify::connect(self.cache.clone(), credentials))?;
         self.session = Some(session);
         Ok(())
     }
 
-    pub fn get_playback_event_stream(&self) -> Result<BoxedStreamResult<Message>, SpotifyError> {
+    fn get_playback_event_stream(&self) -> Result<BoxedStreamResult<Message>, SpotifyError> {
         let session = self.session.as_ref().ok_or(SpotifyError::NotInit)?;
         let stream = session
             .dealer()
@@ -125,10 +142,13 @@ impl Spotify {
         Ok(stream)
     }
 
-    pub async fn get_audio_item(&self, uri: &str) -> Result<AudioItem, SpotifyError> {
+    async fn get_audio_item(&self, uri: &str) -> Result<AudioItem, SpotifyError> {
         let session = self.session.as_ref().ok_or(SpotifyError::NotInit)?;
         let spotify_uri = SpotifyUri::from_uri(uri)?;
-        Ok(AudioItem::get_file(session, spotify_uri).await?)
+        let audio_item = LibrespotAudioItem::get_file(session, spotify_uri).await?;
+        Ok(AudioItem {
+            covers: audio_item.covers,
+        })
     }
 }
 

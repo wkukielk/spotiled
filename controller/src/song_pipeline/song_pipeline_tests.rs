@@ -1,128 +1,179 @@
-use std::collections::HashMap;
 use std::sync::Arc;
 
-use librespot::core::{SpotifyId, SpotifyUri};
-use librespot::metadata::artist::ArtistsWithRole;
+use librespot::core::dealer::protocol::{Message, PayloadValue};
 use librespot::metadata::audio::item::CoverImage;
-use librespot::metadata::audio::{AudioFiles, UniqueFields};
 use librespot::metadata::image::ImageSize;
 use wiremock::matchers::{method, path};
 use wiremock::{Mock, MockServer, ResponseTemplate};
 
 use super::*;
-use crate::led_socket::MockLedSocket;
-use crate::spotify::Spotify;
+use crate::spotify::{AudioItem, MockISpotify, SpotifyError};
 
-fn extractor() -> CoverColorExtractor<MockLedSocket> {
-    CoverColorExtractor::new(Arc::new(Spotify::new()), MockLedSocket::new())
+fn raw_message(uri: &str) -> Result<Message, SpotifyError> {
+    Ok(Message {
+        headers: Default::default(),
+        payload: PayloadValue::Raw(format!("junk {} junk", uri).into_bytes()),
+        uri: String::new(),
+    })
 }
 
-fn extractor_with(socket: MockLedSocket) -> CoverColorExtractor<MockLedSocket> {
-    CoverColorExtractor::new(Arc::new(Spotify::new()), socket)
-}
-
-fn test_audio_item(covers: Vec<CoverImage>) -> AudioItem {
-    AudioItem {
-        track_id: SpotifyUri::Track {
-            id: SpotifyId { id: 0 },
-        },
-        uri: "spotify:track:test".to_string(),
-        files: AudioFiles(HashMap::new()),
-        name: "Test Song".to_string(),
-        covers,
-        language: vec![],
-        duration_ms: 0,
-        is_explicit: false,
-        availability: Ok(()),
-        alternatives: None,
-        unique_fields: UniqueFields::Track {
-            artists: ArtistsWithRole(vec![]),
-            album: String::new(),
-            album_artists: vec![],
-            popularity: 0,
-            disc_number: 0,
-            number: 0,
-        },
+fn cover(url: String) -> CoverImage {
+    CoverImage {
+        url,
+        size: ImageSize::DEFAULT,
+        width: 2,
+        height: 2,
     }
 }
 
-fn tiny_jpeg() -> Vec<u8> {
-    let image = image::RgbImage::from_pixel(2, 2, image::Rgb([10, 20, 30]));
-    let mut jpg = Vec::new();
-    image::codecs::jpeg::JpegEncoder::new(&mut jpg)
-        .encode_image(&image)
-        .unwrap();
-    jpg
+#[test]
+fn extract_track_uri_finds_uri_within_surrounding_bytes() {
+    let bytes = b"garbage spotify:track:abc123XYZ trailing garbage";
+
+    let uri = DftCoverFetcher::extract_track_uri(bytes);
+
+    assert_eq!(uri.as_deref(), Some("spotify:track:abc123XYZ"));
+}
+
+#[test]
+fn extract_track_uri_returns_none_without_a_track_uri() {
+    let uri = DftCoverFetcher::extract_track_uri(b"no track uri here");
+
+    assert!(uri.is_none());
+}
+
+#[test]
+fn extract_cover_uri_returns_uri_from_raw_payload() {
+    let uri = DftCoverFetcher::extract_cover_uri(raw_message("spotify:track:abc123")).unwrap();
+
+    assert_eq!(uri, "spotify:track:abc123");
+}
+
+#[test]
+fn extract_cover_uri_errors_on_non_raw_payload() {
+    let message = Ok(Message {
+        headers: Default::default(),
+        payload: PayloadValue::Json("{}".to_string()),
+        uri: String::new(),
+    });
+
+    let result = DftCoverFetcher::extract_cover_uri(message);
+
+    assert!(matches!(
+        result,
+        Err(SongPipelineError::UnexpectedDealerMessage)
+    ));
+}
+
+#[test]
+fn extract_cover_uri_propagates_dealer_error() {
+    let result = DftCoverFetcher::extract_cover_uri(Err(SpotifyError::NotInit));
+
+    assert!(matches!(result, Err(SongPipelineError::SpotifyError(_))));
 }
 
 #[tokio::test]
-async fn fetch_cover_returns_body_bytes_on_success() {
+async fn fetch_returns_cover_bytes_on_success() {
     let server = MockServer::start().await;
     Mock::given(method("GET"))
         .and(path("/cover.jpg"))
         .respond_with(ResponseTemplate::new(200).set_body_bytes(b"jpeg-bytes".to_vec()))
         .mount(&server)
         .await;
+    let cover_url = format!("{}/cover.jpg", server.uri());
 
-    let extractor = extractor();
-    let url = format!("{}/cover.jpg", server.uri());
+    let mut spotify = MockISpotify::new();
+    spotify
+        .expect_get_audio_item()
+        .withf(|uri| uri == "spotify:track:abc123")
+        .times(1)
+        .return_once(move |_| {
+            Ok(AudioItem {
+                covers: vec![cover(cover_url)],
+            })
+        });
 
-    let bytes = extractor.fetch_cover(&url).await.unwrap();
+    let fetcher = DftCoverFetcher::new(Arc::new(spotify));
+
+    let bytes = fetcher
+        .fetch(raw_message("spotify:track:abc123"))
+        .await
+        .unwrap();
 
     assert_eq!(bytes.as_ref(), b"jpeg-bytes");
 }
 
 #[tokio::test]
-async fn fetch_cover_errors_on_http_error_status() {
+async fn fetch_errors_when_track_has_no_cover() {
+    let mut spotify = MockISpotify::new();
+    spotify
+        .expect_get_audio_item()
+        .times(1)
+        .return_once(|_| Ok(AudioItem { covers: vec![] }));
+
+    let fetcher = DftCoverFetcher::new(Arc::new(spotify));
+
+    let result = fetcher.fetch(raw_message("spotify:track:abc123")).await;
+
+    assert!(matches!(result, Err(SongPipelineError::NoCover)));
+}
+
+#[tokio::test]
+async fn fetch_errors_when_spotify_lookup_fails() {
+    let mut spotify = MockISpotify::new();
+    spotify
+        .expect_get_audio_item()
+        .times(1)
+        .return_once(|_| Err(SpotifyError::NotInit));
+
+    let fetcher = DftCoverFetcher::new(Arc::new(spotify));
+
+    let result = fetcher.fetch(raw_message("spotify:track:abc123")).await;
+
+    assert!(matches!(result, Err(SongPipelineError::SpotifyError(_))));
+}
+
+#[tokio::test]
+async fn fetch_errors_when_cover_download_fails() {
     let server = MockServer::start().await;
     Mock::given(method("GET"))
         .and(path("/missing.jpg"))
         .respond_with(ResponseTemplate::new(404))
         .mount(&server)
         .await;
+    let cover_url = format!("{}/missing.jpg", server.uri());
 
-    let extractor = extractor();
-    let url = format!("{}/missing.jpg", server.uri());
-
-    let result = extractor.fetch_cover(&url).await;
-
-    assert!(result.is_err());
-}
-
-#[tokio::test]
-async fn on_track_changed_sends_dominant_color_when_cover_present() {
-    let server = MockServer::start().await;
-    Mock::given(method("GET"))
-        .and(path("/cover.jpg"))
-        .respond_with(ResponseTemplate::new(200).set_body_bytes(tiny_jpeg()))
-        .mount(&server)
-        .await;
-
-    let mut socket = MockLedSocket::new();
-    socket
-        .expect_send_rgb()
+    let mut spotify = MockISpotify::new();
+    spotify
+        .expect_get_audio_item()
         .times(1)
-        .returning(|_| Box::pin(async { Ok(()) }));
-    let mut extractor = extractor_with(socket);
+        .return_once(move |_| {
+            Ok(AudioItem {
+                covers: vec![cover(cover_url)],
+            })
+        });
 
-    let audio_item = test_audio_item(vec![CoverImage {
-        url: format!("{}/cover.jpg", server.uri()),
-        size: ImageSize::DEFAULT,
-        width: 2,
-        height: 2,
-    }]);
+    let fetcher = DftCoverFetcher::new(Arc::new(spotify));
 
-    let result = extractor.on_track_changed(audio_item).await;
+    let result = fetcher.fetch(raw_message("spotify:track:abc123")).await;
 
-    assert!(result.is_ok());
+    assert!(matches!(result, Err(SongPipelineError::HTTPClientError(_))));
 }
 
 #[tokio::test]
-async fn on_track_changed_errors_without_cover() {
-    let mut extractor = extractor();
-    let audio_item = test_audio_item(vec![]);
+async fn fetch_errors_on_malformed_dealer_message() {
+    let spotify = MockISpotify::new();
+    let fetcher = DftCoverFetcher::new(Arc::new(spotify));
+    let message = Ok(Message {
+        headers: Default::default(),
+        payload: PayloadValue::Empty,
+        uri: String::new(),
+    });
 
-    let result = extractor.on_track_changed(audio_item).await;
+    let result = fetcher.fetch(message).await;
 
-    assert!(result.is_err());
+    assert!(matches!(
+        result,
+        Err(SongPipelineError::UnexpectedDealerMessage)
+    ));
 }

@@ -27,7 +27,5 @@ fn get_audio_item_fetches_real_track_metadata() {
         .block_on(spotify.get_audio_item(uri))
         .expect("failed to fetch audio item from Spotify");
 
-    assert_eq!(audio_item.uri, uri);
-    assert!(!audio_item.name.is_empty());
     assert!(!audio_item.covers.is_empty());
 }

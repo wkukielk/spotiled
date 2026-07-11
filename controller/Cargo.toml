@@ -22,6 +22,7 @@ anyhow = "1.0.102"
 hostname = "0.4.2"
 serde = { version = "1", features = ["derive"] }
 toml = "0.8"
+async-trait = "0.1.89"
 
 [build-dependencies]
 cmake = "0.1.58"

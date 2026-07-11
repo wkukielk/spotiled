@@ -11,8 +11,10 @@ use song_pipeline::SongPipeline;
 
 use log::LevelFilter;
 
+use spotify::ISpotify;
 use spotify::Spotify;
 use std::error::Error;
+use std::sync::Arc;
 use tokio::net::TcpListener;
 
 const LED_SOCKET_URL: &str = "ws://spotiled-esp32.local:8000/ws";
@@ -35,6 +37,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let rt = create_tokio_runtime();
     let mut spotify = Spotify::new();
     spotify.init(&rt)?;
+    let spotify: Arc<dyn ISpotify> = Arc::new(spotify);
 
     type Connector = LedSocketConnector<WsLedSocket>;
     let connector = Connector::new(LED_SOCKET_URL.to_string());
