@@ -3,6 +3,7 @@ mod song_handler;
 
 use self::pipeline_controller::PipelineController;
 use anyhow::Result;
+use async_trait::async_trait;
 use std::fmt::Debug;
 use std::sync::Arc;
 
@@ -15,7 +16,7 @@ use super::led_socket::{LedSocket, LedSocketConnector};
 use super::spotify::{ISpotify, SpotifyError};
 
 #[derive(thiserror::Error, Debug)]
-enum SongPipelineError {
+pub(crate) enum SongPipelineError {
     #[error("Track has no cover")]
     NoCover,
     #[error("Failed to connect to LED")]
@@ -41,14 +42,18 @@ enum LoopStatus {
     Break,
 }
 
-pub struct SongPipeline<S>
-where
-    S: LedSocket,
-{
-    controller: PipelineController<S>,
+#[cfg_attr(test, mockall::automock)]
+#[async_trait]
+pub(crate) trait Controller: Send + Sync {
+    async fn connect(&mut self) -> Result<(), SongPipelineError>;
+    fn disconnect(&mut self) -> Result<(), SongPipelineError>;
 }
 
-impl<S> SongPipeline<S>
+pub struct SongPipeline<C: Controller> {
+    controller: C,
+}
+
+impl<S> SongPipeline<PipelineController<S>>
 where
     S: LedSocket + 'static,
 {
@@ -57,7 +62,12 @@ where
             controller: PipelineController::new(spotify, connector),
         }
     }
+}
 
+impl<C> SongPipeline<C>
+where
+    C: Controller,
+{
     pub async fn serve(&mut self, listener: TcpListener) -> Result<()> {
         loop {
             let (stream, _) = listener.accept().await?;

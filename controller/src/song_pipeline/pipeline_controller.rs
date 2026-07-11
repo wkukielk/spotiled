@@ -1,7 +1,9 @@
 use std::sync::Arc;
 
+use async_trait::async_trait;
 use tokio::task::JoinHandle;
 
+use super::Controller;
 use super::SongPipelineError;
 use super::song_handler::{DftCoverFetcher, SongHandler};
 use crate::dom_color::StdJPEGDecoder;
@@ -9,7 +11,7 @@ use crate::led_socket::{LedSocket, LedSocketConnector};
 use crate::spotify::ISpotify;
 use crate::spotify::playback_event_listener::PlaybackEventListener;
 
-pub(super) struct PipelineController<S: LedSocket> {
+pub(crate) struct PipelineController<S: LedSocket> {
     spotify: Arc<dyn ISpotify>,
     connector: LedSocketConnector<S>,
     active: Option<JoinHandle<()>>,
@@ -21,7 +23,7 @@ impl<S> PipelineController<S>
 where
     S: LedSocket + 'static,
 {
-    pub(super) fn new(spotify: Arc<dyn ISpotify>, connector: LedSocketConnector<S>) -> Self {
+    pub(crate) fn new(spotify: Arc<dyn ISpotify>, connector: LedSocketConnector<S>) -> Self {
         Self {
             spotify,
             connector,
@@ -29,14 +31,20 @@ where
         }
     }
 
-    pub(super) async fn create_handler(&self) -> Result<Handler<S>, SongPipelineError> {
+    async fn create_handler(&self) -> Result<Handler<S>, SongPipelineError> {
         let socket_result = self.connector.connect().await;
         let socket = socket_result.map_err(|_| SongPipelineError::LEDConnectionError)?;
         let spoti = Arc::clone(&self.spotify);
         Ok(Handler::<S>::new(spoti, socket))
     }
+}
 
-    pub(super) async fn connect(&mut self) -> Result<(), SongPipelineError> {
+#[async_trait]
+impl<S> Controller for PipelineController<S>
+where
+    S: LedSocket + 'static,
+{
+    async fn connect(&mut self) -> Result<(), SongPipelineError> {
         if self.active.is_some() {
             return Ok(());
         }
@@ -52,7 +60,7 @@ where
         Ok(())
     }
 
-    pub(super) fn disconnect(&mut self) -> Result<(), SongPipelineError> {
+    fn disconnect(&mut self) -> Result<(), SongPipelineError> {
         if let Some(task) = self.active.take() {
             task.abort();
         }

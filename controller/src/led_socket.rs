@@ -1,4 +1,5 @@
 use anyhow::Result;
+use async_trait::async_trait;
 use futures_util::SinkExt;
 use std::marker::PhantomData;
 use tokio::net::TcpStream;
@@ -7,15 +8,17 @@ use tokio_tungstenite::{MaybeTlsStream, WebSocketStream, connect_async, tungsten
 use crate::dom_color::Rgb;
 
 #[cfg_attr(test, mockall::automock)]
+#[async_trait]
 pub trait LedSocket: Sized + Send + Sync {
     async fn connect(url: &str) -> Result<Self>;
-    fn send_rgb(&mut self, rgb: &Rgb) -> impl Future<Output = Result<(), std::io::Error>> + Send;
+    async fn send_rgb(&mut self, rgb: &Rgb) -> Result<(), std::io::Error>;
 }
 
 pub struct WsLedSocket {
     stream: WebSocketStream<MaybeTlsStream<TcpStream>>,
 }
 
+#[async_trait]
 impl LedSocket for WsLedSocket {
     async fn connect(url: &str) -> Result<Self> {
         let (stream, _) = connect_async(url).await?;
@@ -38,6 +41,7 @@ impl LedSocket for WsLedSocket {
 
 pub struct LogSocket {}
 
+#[async_trait]
 impl LedSocket for LogSocket {
     async fn connect(url: &str) -> Result<Self> {
         log::info!("connected to {}", url);

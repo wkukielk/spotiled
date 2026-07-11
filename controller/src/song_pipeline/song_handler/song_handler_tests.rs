@@ -202,7 +202,7 @@ async fn test_song_handler() {
         .expect_send_rgb()
         .with(eq(Rgb { r: 8, g: 20, b: 24 }))
         .times(1)
-        .returning(|_| Box::pin(async { Ok(()) }));
+        .returning(|_| Ok(()));
     let new_ctx = MockCoverFetcher::new_context();
     new_ctx.expect().returning(|_| MockCoverFetcher::default());
     let decode_ctx = MockJPEGDecoder::decode_jpg_to_rgb565_context();
