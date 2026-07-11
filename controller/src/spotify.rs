@@ -55,6 +55,8 @@ pub struct Spotify {
 }
 
 impl Spotify {
+    const HM_URL: &str = "hm://herodotus/uri/spotify:list:play-history:v1/resume-point-revision";
+
     pub fn new() -> Self {
         Spotify {
             cache: Spotify::create_cache(),
@@ -93,7 +95,7 @@ impl Spotify {
         Spotify::resolve_credentials(
             cached_credentials,
             &session_config.client_id,
-            &LibrespotOAuthProvider,
+            &LibrespotOAuthProvider {},
         )
     }
 
@@ -102,7 +104,8 @@ impl Spotify {
         credentials: Credentials,
     ) -> Result<Session, SpotifyError> {
         let session = Session::new(SessionConfig::default(), cache);
-        session.connect(credentials, true).await?;
+        let store_credentials = true;
+        session.connect(credentials, store_credentials).await?;
         session.dealer().start().await?;
         Ok(session)
     }
@@ -116,10 +119,9 @@ impl Spotify {
 
     pub fn get_playback_event_stream(&self) -> Result<BoxedStreamResult<Message>, SpotifyError> {
         let session = self.session.as_ref().ok_or(SpotifyError::NotInit)?;
-        let stream = session.dealer().listen_for(
-            "hm://herodotus/uri/spotify:list:play-history:v1/resume-point-revision",
-            |msg| Ok(msg),
-        )?;
+        let stream = session
+            .dealer()
+            .listen_for(Spotify::HM_URL, |msg| Ok(msg))?;
         Ok(stream)
     }
 
@@ -132,3 +134,6 @@ impl Spotify {
 
 #[cfg(test)]
 mod spotify_tests;
+
+#[cfg(test)]
+mod spotify_integration_tests;
