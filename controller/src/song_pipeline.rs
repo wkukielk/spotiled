@@ -1,20 +1,17 @@
+mod pipeline_controller;
 mod song_handler;
 
-use self::song_handler::{DftCoverFetcher, SongHandler};
+use self::pipeline_controller::PipelineController;
 use anyhow::Result;
 use std::fmt::Debug;
 use std::sync::Arc;
 
 use futures_util::{SinkExt, StreamExt};
 use tokio::net::{TcpListener, TcpStream};
-use tokio::task::JoinHandle;
 use tokio_tungstenite::WebSocketStream;
 use tokio_tungstenite::tungstenite::Message as WsMessage;
 
-use crate::dom_color::StdJPEGDecoder;
-
 use super::led_socket::{LedSocket, LedSocketConnector};
-use super::spotify::playback_event_listener::PlaybackEventListener;
 use super::spotify::{ISpotify, SpotifyError};
 
 #[derive(thiserror::Error, Debug)]
@@ -48,9 +45,7 @@ pub struct SongPipeline<S>
 where
     S: LedSocket,
 {
-    spotify: Arc<dyn ISpotify>,
-    connector: LedSocketConnector<S>,
-    active: Option<JoinHandle<()>>,
+    controller: PipelineController<S>,
 }
 
 impl<S> SongPipeline<S>
@@ -59,9 +54,7 @@ where
 {
     pub fn new(spotify: Arc<dyn ISpotify>, connector: LedSocketConnector<S>) -> Self {
         Self {
-            spotify: spotify,
-            connector,
-            active: None,
+            controller: PipelineController::new(spotify, connector),
         }
     }
 
@@ -109,36 +102,10 @@ where
 
     async fn handle_command(&mut self, command: &str) -> Result<(), SongPipelineError> {
         match command {
-            "connect" => self.connect().await,
-            "disconnect" => self.disconnect(),
+            "connect" => self.controller.connect().await,
+            "disconnect" => self.controller.disconnect(),
             _other => Err(SongPipelineError::UnknownCommand),
         }
-    }
-
-    async fn connect(&mut self) -> Result<(), SongPipelineError> {
-        log::info!("connect");
-        if self.active.is_some() {
-            return Ok(());
-        }
-        let socket_result = self.connector.connect().await;
-        let socket = socket_result.map_err(|_| SongPipelineError::LEDConnectionError)?;
-
-        let spoti = Arc::clone(&self.spotify);
-        let handler = SongHandler::<DftCoverFetcher, S, StdJPEGDecoder>::new(spoti, socket);
-
-        let stream = self.spotify.get_playback_event_stream()?;
-        let event_listener = PlaybackEventListener::new(stream);
-        self.active = Some(tokio::spawn(async move {
-            event_listener.run(handler).await;
-        }));
-        Ok(())
-    }
-
-    fn disconnect(&mut self) -> Result<(), SongPipelineError> {
-        if let Some(task) = self.active.take() {
-            task.abort();
-        }
-        Ok(())
     }
 }
 
