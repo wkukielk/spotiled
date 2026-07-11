@@ -87,10 +87,7 @@ impl<S: LedSocket> CoverColorExtractor<S> {
     }
 
     async fn on_track_changed(&mut self, audio_item: AudioItem) -> Result<(), SongPipelineError> {
-        let cover = audio_item
-            .covers
-            .first()
-            .ok_or(SongPipelineError::NoCover)?;
+        let cover = audio_item.covers.last().ok_or(SongPipelineError::NoCover)?;
         let jpg = self.fetch_cover(&cover.url).await?;
         let color = tokio::task::spawn_blocking(|| get_jpg_dominating_color(jpg))
             .await
@@ -124,20 +121,20 @@ impl<S: LedSocket> PlaybackEventHandler for CoverColorExtractor<S> {
     }
 }
 
-pub struct SongPipeline<C>
+pub struct SongPipeline<S>
 where
-    C: LedSocketConnector,
+    S: LedSocket,
 {
     spotify: Arc<Spotify>,
-    connector: C,
+    connector: LedSocketConnector<S>,
     active: Option<JoinHandle<()>>,
 }
 
-impl<C> SongPipeline<C>
+impl<S> SongPipeline<S>
 where
-    C: LedSocketConnector,
+    S: LedSocket + 'static,
 {
-    pub fn new(spotify: Spotify, connector: C) -> Self {
+    pub fn new(spotify: Spotify, connector: LedSocketConnector<S>) -> Self {
         Self {
             spotify: Arc::new(spotify),
             connector,
@@ -196,6 +193,7 @@ where
     }
 
     async fn connect(&mut self) -> Result<(), SongPipelineError> {
+        log::error!("connect");
         if self.active.is_some() {
             return Ok(());
         }

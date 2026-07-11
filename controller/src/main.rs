@@ -5,9 +5,8 @@ mod song_pipeline;
 mod spotify;
 
 use anyhow::Result;
-use dom_color::Rgb;
-use led_socket::LedSocket;
-use led_socket::WsLedSocketConnector;
+use led_socket::LedSocketConnector;
+use led_socket::WsLedSocket;
 use song_pipeline::SongPipeline;
 
 use log::LevelFilter;
@@ -15,19 +14,6 @@ use log::LevelFilter;
 use spotify::Spotify;
 use std::error::Error;
 use tokio::net::TcpListener;
-
-pub struct LogSocket {}
-
-impl LedSocket for LogSocket {
-    async fn send_rgb(&mut self, rgb: &Rgb) -> Result<(), std::io::Error> {
-        let msg = format!(
-            r#"{{"cmd":"fade","r":{},"g":{},"b":{}}}"#,
-            rgb.r, rgb.g, rgb.b
-        );
-        log::info!("{}", msg);
-        Ok(())
-    }
-}
 
 const LED_SOCKET_URL: &str = "ws://spotiled-esp32.local:8000/ws";
 
@@ -50,7 +36,8 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut spotify = Spotify::new();
     spotify.init(&rt)?;
 
-    let connector = WsLedSocketConnector::new(LED_SOCKET_URL.to_string());
+    type Connector = LedSocketConnector<WsLedSocket>;
+    let connector = Connector::new(LED_SOCKET_URL.to_string());
     let mut pipeline = SongPipeline::new(spotify, connector);
 
     rt.block_on(async {
