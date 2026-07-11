@@ -23,9 +23,9 @@ ledc_cbs_t fade_cb_s{&fade_callback};
 ledc_cbs_t fade_cb_null{nullptr};
 
 namespace pin {
-const gpio_num_t RED = GPIO_NUM_3;
-const gpio_num_t GREEN = GPIO_NUM_4;
-const gpio_num_t BLUE = GPIO_NUM_5;
+const gpio_num_t RED = GPIO_NUM_9;
+const gpio_num_t GREEN = GPIO_NUM_8;
+const gpio_num_t BLUE = GPIO_NUM_7;
 const gpio_num_t WW = GPIO_NUM_6;
 }; // namespace pin
 

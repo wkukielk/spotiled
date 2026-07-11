@@ -12,6 +12,8 @@ u_ptr<I_mDNS> mDNSConfig::get() const {
     mdns->set_hostname(hostname.data());
     auto txt = nullptr;
     auto txt_len = 0;
-    mdns->add_service(instance.data(), "_ws", "_tcp", 8000, txt, txt_len);
+    (void)txt;
+    (void)txt_len;
+    // mdns->add_service(instance.data(), "_ws", "_tcp", 8000, txt, txt_len);
     return mdns;
 }
