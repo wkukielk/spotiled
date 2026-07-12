@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.16)
 project(dom_color CXX)
 
 add_library(dom_color STATIC
+    dominant_color.cpp
+
     straux/straux.cpp
 
     colors/hsv.cpp
@@ -32,6 +34,7 @@ add_library(dom_color STATIC
 target_compile_features(dom_color PUBLIC cxx_std_20)
 
 target_include_directories(dom_color PUBLIC
+    .
     straux
     colors
     histograms2D

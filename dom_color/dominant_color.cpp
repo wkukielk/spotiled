@@ -1,9 +1,8 @@
-#include "bridge.hpp"
+#include "dominant_color.hpp"
 #include "color_aux.hpp"
 #include "hue_histogram.hpp"
 #include "sv_histogram.hpp"
 #include "v_cluster.hpp"
-#include <span>
 #include <algorithm>
 #include <ranges>
 
@@ -61,7 +60,7 @@ namespace
 
 } // namespace
 
-RGB get_dominating_color(rust::Slice<const uint16_t> pixels)
+RGB get_dominating_color(std::span<const uint16_t> pixels)
 {
-    return RGB{avg_hsv(std::span<const uint16_t>{pixels.data(), pixels.size()})};
+    return RGB{avg_hsv(pixels)};
 }

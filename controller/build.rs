@@ -10,7 +10,8 @@ fn main() {
     println!("cargo:rustc-link-lib=static=dom_color");
 
     cxx_build::bridge("src/dom_color.rs")
-        .file("../dom_color/bridge.cpp")
+        .file("cxx/bridge.cpp")
+        .include("cxx")
         .include("../dom_color")
         .include("../dom_color/straux")
         .include("../dom_color/colors")
@@ -23,7 +24,7 @@ fn main() {
         .compile("dom_color_bridge");
 
     println!("cargo:rerun-if-changed=src/dom_color.rs");
-    println!("cargo:rerun-if-changed=../dom_color/bridge.hpp");
-    println!("cargo:rerun-if-changed=../dom_color/bridge.cpp");
+    println!("cargo:rerun-if-changed=cxx/bridge.hpp");
+    println!("cargo:rerun-if-changed=cxx/bridge.cpp");
     println!("cargo:rerun-if-changed=../dom_color/CMakeLists.txt");
 }

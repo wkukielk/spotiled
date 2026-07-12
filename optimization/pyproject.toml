@@ -16,3 +16,6 @@ members = [
 
 [tool.uv.sources]
 dom_color = { workspace = true } # <-- Tells uv to find it locally
+
+[dependency-groups]
+dev = ["pytest>=9.0.2"]
