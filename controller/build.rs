@@ -1,5 +1,5 @@
 fn main() {
-    let dom_color = cmake::Config::new("dom_color")
+    let dom_color = cmake::Config::new("../dom_color")
         .build_target("dom_color")
         .build();
 
@@ -10,20 +10,20 @@ fn main() {
     println!("cargo:rustc-link-lib=static=dom_color");
 
     cxx_build::bridge("src/dom_color.rs")
-        .file("dom_color/bridge.cpp")
-        .include("dom_color")
-        .include("dom_color/straux")
-        .include("dom_color/colors")
-        .include("dom_color/histograms2D")
-        .include("dom_color/histograms")
-        .include("dom_color/histograms/histogram")
-        .include("dom_color/histograms/histogram_common")
-        .include("dom_color/hsv_histograms")
+        .file("../dom_color/bridge.cpp")
+        .include("../dom_color")
+        .include("../dom_color/straux")
+        .include("../dom_color/colors")
+        .include("../dom_color/histograms2D")
+        .include("../dom_color/histograms")
+        .include("../dom_color/histograms/histogram")
+        .include("../dom_color/histograms/histogram_common")
+        .include("../dom_color/hsv_histograms")
         .std("c++20")
         .compile("dom_color_bridge");
 
-    println!("cargo:rerun-if-changed=src/led_manager.rs");
-    println!("cargo:rerun-if-changed=dom_color/led_manager/bridge.hpp");
-    println!("cargo:rerun-if-changed=dom_color/led_manager/bridge.cpp");
-    println!("cargo:rerun-if-changed=dom_color/CMakeLists.txt");
+    println!("cargo:rerun-if-changed=src/dom_color.rs");
+    println!("cargo:rerun-if-changed=../dom_color/bridge.hpp");
+    println!("cargo:rerun-if-changed=../dom_color/bridge.cpp");
+    println!("cargo:rerun-if-changed=../dom_color/CMakeLists.txt");
 }
