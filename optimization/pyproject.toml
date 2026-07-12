@@ -1,0 +1,18 @@
+[project]
+name = "optimization"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "dom_color",
+    "matplotlib>=3.11.0",
+]
+
+[tool.uv.workspace]
+members = [
+    "dom_color",
+]
+
+[tool.uv.sources]
+dom_color = { workspace = true } # <-- Tells uv to find it locally
