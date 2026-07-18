@@ -11,7 +11,7 @@ void OTAThread<T_OTAClient>::ota_thread_fun(void *ota_thread_ptr) {
 template <typename T_OTAClient>
 OTAThread<T_OTAClient>::OTAThread(T_OTAClient &&ota_client,
                                   const util::JoinEventGroup &join_group)
-    : PostponedThread{join_group}, ota_client{move(ota_client)} {}
+    : PostponedThread{join_group}, ota_client{std::move(ota_client)} {}
 
 template <typename T_OTAClient> void OTAThread<T_OTAClient>::start() {
     thread.emplace(util::thread_params{.fun = ota_thread_fun,

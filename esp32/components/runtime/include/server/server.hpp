@@ -1,14 +1,19 @@
 #ifndef SERVER_SERVER_HPP
 #define SERVER_SERVER_HPP
 
-#include "WSServer.hpp"
+// #include "WSServer.hpp"
 #include "queue.hpp"
 #include "runtime_data.hpp"
 #include "server/command_handler.hpp"
 
 template <typename T>
+concept I_WSServer = requires(T t) {
+    { t.receive(int{}) } -> std::same_as<server::Message>;
+};
+
+template <typename T>
 concept ServerThreadTypes = requires {
-    typename T::WSServer;
+    requires I_WSServer<typename T::WSServer>;
     typename T::Queue;
     requires I_CommandHandler<typename T::Handler>;
 };
@@ -18,10 +23,12 @@ class ServerThread : public util::PostponedThread,
                      public util::Notifiable<server::Data> {
     using I_WSServer = typename T::WSServer;
     using I_Queue = typename T::Queue;
-    using I_Handler = typename T::Handler;
 
   public:
-    ServerThread(const util::JoinEventGroup &join_group);
+    using Handler = typename T::Handler;
+
+    ServerThread(std::unique_ptr<Handler> &&handler,
+                const util::JoinEventGroup &join_group);
     esp_err_t start() noexcept;
     esp_err_t close() noexcept;
     void notify(u_ptr<server::Data> &&data) override { queue.send(move(data)); }
@@ -31,7 +38,7 @@ class ServerThread : public util::PostponedThread,
 
     I_WSServer ws_server;
     I_Queue queue;
-    I_Handler handler;
+    std::unique_ptr<Handler> handler;
 
   private:
     std::unique_ptr<server::Data> pop_queue();

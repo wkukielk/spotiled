@@ -8,6 +8,7 @@ const char *runtime_tag = "Runtime";
 const char *server_tag = "Server";
 const EventBits_t OTA_BIT = 1 << 0;
 const EventBits_t SERVER_BIT = 1 << 1;
+const EventBits_t UDP_BIT = 1 << 2;
 
 URL resolve_base(const URL &base_url) {
     auto base = optional<URL>{};

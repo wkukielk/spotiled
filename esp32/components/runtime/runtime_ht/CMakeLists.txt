@@ -1,6 +1,7 @@
 idf_component_register(
     SRCS "test_runtime.cpp"
          "test_server.cpp"
+         "test_udp_thread.cpp"
     INCLUDE_DIRS "include"
     REQUIRES runtime
              i_nterfaces_ht

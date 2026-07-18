@@ -4,6 +4,7 @@ idf_component_register(
          "WiFi.cpp"
          "WiFiProv.cpp"
          "HTTPD.cpp"
+         "UDPSocket.cpp"
     INCLUDE_DIRS "include"
     REQUIRES i_nterfaces
              util
@@ -13,6 +14,7 @@ idf_component_register(
                   app_update
                   esp_http_server
                   esp_driver_ledc
+                  lwip
 )
 
 target_compile_options(${COMPONENT_LIB} PRIVATE "SHELL:-Wno-unused-parameter")

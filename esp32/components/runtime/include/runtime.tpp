@@ -22,9 +22,9 @@ u_ptr<Runtime<T>> Runtime<T>::create(RuntimeConfig &&cfg) {
                          .cert_len = cfg.backend_cfg.cert_len,
                          .skip_cn_check = cfg.backend_cfg.skip_cn_check};
     auto icfg =
-        InnerConfig<T_OTAClient>{.ota_client = T_OTAClient{move(otacfg)},
+        InnerConfig<T_OTAClient>{.ota_client = T_OTAClient{std::move(otacfg)},
                                  .wifi_mgr = move(cfg.wifi_mgr)};
-    return u_ptr<Runtime<T>>(new Runtime<T>(move(icfg)));
+    return u_ptr<Runtime<T>>(new Runtime<T>(std::move(icfg)));
 }
 
 template <typename EGroup>
@@ -37,11 +37,20 @@ util::JoinEventGroup get_server_join_group(EGroup &egroup) {
     return util::JoinEventGroup{.egroup = egroup, .join_bit = SERVER_BIT};
 }
 
+template <typename EGroup>
+util::JoinEventGroup get_udp_join_group(EGroup &egroup) {
+    return util::JoinEventGroup{.egroup = egroup, .join_bit = UDP_BIT};
+}
+
 template <typename T>
 Runtime<T>::Runtime(InnerConfig<T_OTAClient> &&cfg)
-    : wifi_mgr{move(cfg.wifi_mgr)}, egroup{},
-      ota_thread{move(cfg.ota_client), get_ota_join_group(egroup)},
-      server_thread{get_server_join_group(egroup)}, queue{4} {}
+    : wifi_mgr{std::move(cfg.wifi_mgr)}, egroup{},
+      ota_thread{std::move(cfg.ota_client), get_ota_join_group(egroup)},
+      ledc{},
+      server_thread{mkuptr<T_ServerHandler>(ledc),
+                    get_server_join_group(egroup)},
+      udp_thread{mkuptr<T_UDPHandler>(ledc), get_udp_join_group(egroup)},
+      queue{4} {}
 
 template <typename T> void Runtime<T>::run() {
     int ret = setup();
@@ -61,7 +70,8 @@ template <typename T> void Runtime<T>::run() {
 
 template <typename T> esp_err_t Runtime<T>::setup() {
     ota_thread.start();
-    return server_thread.start();
+    UTIL_RETURN(server_thread.start());
+    return udp_thread.start();
 }
 
 template <typename T> int Runtime<T>::perform() {
@@ -73,6 +83,7 @@ template <typename T> int Runtime<T>::perform() {
 template <typename T> void Runtime<T>::cleanup() {
     ota_thread.join();
     server_thread.join();
+    udp_thread.join();
 }
 
 template <typename T> std::unique_ptr<master::Data> Runtime<T>::pop_queue() {

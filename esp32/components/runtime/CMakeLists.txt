@@ -7,6 +7,7 @@ idf_component_register(
              util
              ota_client
              ws_server
+             udp_server
              colors
              ledaux
 )

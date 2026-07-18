@@ -1,12 +1,14 @@
 #ifndef TESTABLE_COMMAND_HANDLER_HPP
 #define TESTABLE_COMMAND_HANDLER_HPP
 
-#include "MockLEDC.hpp"
+#include "MockLEDCHolder.hpp"
 #include "server/command_handler.hpp"
 
-class TestableCommandHandler : public CommandHandler<MockLEDC> {
+class TestableCommandHandler : private detail::MockLEDCHolder,
+                               public CommandHandler<MockLEDC> {
   public:
-    MockLEDC &get_ledc() { return ledc; }
+    TestableCommandHandler() : CommandHandler{mock_ledc} {}
+    MockLEDC &get_ledc() { return mock_ledc; }
 };
 
 #endif

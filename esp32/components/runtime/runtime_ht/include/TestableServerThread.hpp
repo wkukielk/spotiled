@@ -15,11 +15,12 @@ struct TestServerTypes {
 
 class TestableServerThread : public ServerThread<TestServerTypes> {
   public:
-    TestableServerThread(const util::JoinEventGroup &jg) : ServerThread{jg} {}
+    TestableServerThread(const util::JoinEventGroup &jg)
+        : ServerThread{std::make_unique<MockCommandHandler>(), jg} {}
 
     using ServerThread::perform;
     MockWSServer &get_ws_server() { return ws_server; }
-    MockCommandHandler &get_handler() { return handler; }
+    MockCommandHandler &get_handler() { return *handler; }
     MockQueue &get_queue() { return queue; }
 };
 

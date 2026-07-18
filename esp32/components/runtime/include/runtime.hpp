@@ -31,6 +31,10 @@ template <typename T> class Runtime : public util::Notifiable<master::Data> {
     using T_OTAThread = typename T::T_OTAThread;
     using T_OTAClient = typename T::T_OTAThread::Client;
     using T_ServerThread = typename T::T_ServerThread;
+    using T_UDPThread = typename T::T_UDPThread;
+    using T_LEDC = typename T::T_LEDC;
+    using T_ServerHandler = typename T_ServerThread::Handler;
+    using T_UDPHandler = typename T_UDPThread::Handler;
 
   public:
     virtual ~Runtime() noexcept {};
@@ -50,7 +54,9 @@ template <typename T> class Runtime : public util::Notifiable<master::Data> {
     u_ptr<I_WiFiManager> wifi_mgr{};
     EGroup egroup{};
     T_OTAThread ota_thread;
+    T_LEDC ledc{};
     T_ServerThread server_thread;
+    T_UDPThread udp_thread;
     util::PointerQueue<master::Data> queue;
 };
 

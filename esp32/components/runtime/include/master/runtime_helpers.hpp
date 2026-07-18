@@ -12,6 +12,7 @@ extern const char *runtime_tag;
 extern const char *server_tag;
 extern const EventBits_t OTA_BIT;
 extern const EventBits_t SERVER_BIT;
+extern const EventBits_t UDP_BIT;
 
 template <typename T_OTAClient> class OTAThread : public util::PostponedThread {
   public:

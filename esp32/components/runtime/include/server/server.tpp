@@ -16,8 +16,10 @@ void ServerThread<T>::server_thread_fun(void *server_ptr) {
 }
 
 template <ServerThreadTypes T>
-ServerThread<T>::ServerThread(const util::JoinEventGroup &join_group)
-    : util::PostponedThread{join_group}, ws_server{}, queue{4}, handler{} {}
+ServerThread<T>::ServerThread(std::unique_ptr<Handler> &&handler,
+                              const util::JoinEventGroup &join_group)
+    : util::PostponedThread{join_group}, ws_server{}, queue{4},
+      handler{std::move(handler)} {}
 
 template <ServerThreadTypes T> esp_err_t ServerThread<T>::start() noexcept {
     thread.emplace(util::thread_params{.fun = server_thread_fun,
@@ -35,7 +37,8 @@ template <ServerThreadTypes T> esp_err_t ServerThread<T>::close() noexcept {
 template <ServerThreadTypes T> int ServerThread<T>::perform() {
     auto ret = ESP_OK;
     auto data = pop_queue();
-    auto res = handler.process(receive_from_ws_server());
+    auto ws_message = receive_from_ws_server();
+    auto res = handler->process(std::move(ws_message));
     ESP_LOGI("ServerThread", "response: %d", (int)res);
     return ret;
 }
