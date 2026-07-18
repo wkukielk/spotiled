@@ -2,7 +2,8 @@
 #include "server/udp_thread.hpp"
 #endif
 
-template <UDPThreadTypes T> void UDPThread<T>::udp_thread_fun(void *thread_ptr) {
+template <UDPThreadTypes T>
+void UDPThread<T>::udp_thread_fun(void *thread_ptr) {
     auto thread = (UDPThread<T> *)thread_ptr;
     int ret{};
     try {

@@ -45,8 +45,7 @@ util::JoinEventGroup get_udp_join_group(EGroup &egroup) {
 template <typename T>
 Runtime<T>::Runtime(InnerConfig<T_OTAClient> &&cfg)
     : wifi_mgr{std::move(cfg.wifi_mgr)}, egroup{},
-      ota_thread{std::move(cfg.ota_client), get_ota_join_group(egroup)},
-      ledc{},
+      ota_thread{std::move(cfg.ota_client), get_ota_join_group(egroup)}, ledc{},
       server_thread{mkuptr<T_ServerHandler>(ledc),
                     get_server_join_group(egroup)},
       udp_thread{mkuptr<T_UDPHandler>(ledc), get_udp_join_group(egroup)},
