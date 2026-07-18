@@ -1,15 +1,10 @@
 #ifndef LEDAUX_HPP
 #define LEDAUX_HPP
 
-#include "I_DftEventLoop.hpp"
 #include "I_LED.hpp"
 #include "errors.hpp"
-#include "esp_event.h"
 #include "rgb.hpp"
 #include "util.hpp"
-#include <atomic>
-
-ESP_EVENT_DECLARE_BASE(LEDC_FADE_EVENTS);
 
 template <int8_t n> constexpr uint32_t rshift(uint32_t x) {
     static_assert(n > -32 && n < 32, "Shift amount must be between -31 and 31");
@@ -32,11 +27,6 @@ struct RGBDuty {
 };
 
 namespace led {
-
-struct PendingFade {
-    std::atomic<int32_t> duty{-1};
-    std::atomic<bool> active{false};
-};
 
 namespace pin {
 extern const gpio_num_t RED;
@@ -66,8 +56,6 @@ extern const int MAX_DUTY;
 inline constexpr bool INVERT = false;
 inline constexpr int DEFAULT_FADE_TIME_MS = 1000;
 }; // namespace PWM
-extern ledc_cbs_t fade_cb_s;
-extern ledc_cbs_t fade_cb_null;
 
 template <I_LED LED> class ChannelConfig {
   public:
@@ -79,32 +67,18 @@ template <I_LED LED> class ChannelConfig {
     gpio_num_t pin_;
 };
 
-template <I_LED LED, DftEventLoopHandle DEL> class ChannelCallbacks {
-  public:
-    ChannelCallbacks(ledc_channel_t channel, PendingFade &pending);
-    ~ChannelCallbacks() noexcept;
-
-  private:
-    static void on_fade_event(void *handler_arg, esp_event_base_t base,
-                              int32_t id, void *event_data);
-
-    ledc_channel_t channel_;
-    esp_event_handler_instance_t event_instance_{};
-};
-
-template <I_LED LED, DftEventLoopHandle DEL> class Channel {
+template <I_LED LED> class Channel {
     using channel_t = ledc_channel_t;
 
   public:
     Channel(channel_t channel, gpio_num_t pin);
     esp_err_t fade(uint32_t target_duty) noexcept;
+    esp_err_t set_color(uint32_t target_duty) noexcept;
     uint32_t get_duty() const;
 
   private:
     channel_t channel_;
-    PendingFade pending_;
     ChannelConfig<LED> config_;
-    ChannelCallbacks<LED, DEL> callbacks_;
 };
 }; // namespace led
 
@@ -121,21 +95,23 @@ template <I_LED LED> class LEDCConfigurer {
 template <typename T>
 concept I_LEDC =
     std::default_initializable<T> && requires(T t, const T &ct, RGB rgb) {
+        { t.fade_to(rgb) } noexcept -> std::same_as<esp_err_t>;
         { t.set_color(rgb) } noexcept -> std::same_as<esp_err_t>;
         { ct.get_current_color() } noexcept -> std::same_as<RGB>;
     };
 
-template <I_LED LED, DftEventLoopHandle DEL> class LEDC {
+template <I_LED LED> class LEDC {
   public:
     LEDC() noexcept;
+    esp_err_t fade_to(RGB rgb) noexcept;
     esp_err_t set_color(RGB rgb) noexcept;
     RGB get_current_color() const noexcept;
 
     LEDCConfigurer<LED> configurer{};
-    led::Channel<LED, DEL> red_;
-    led::Channel<LED, DEL> green_;
-    led::Channel<LED, DEL> blue_;
-    led::Channel<LED, DEL> ww_;
+    led::Channel<LED> red_;
+    led::Channel<LED> green_;
+    led::Channel<LED> blue_;
+    led::Channel<LED> ww_;
 };
 
 #include "ledaux.tpp"

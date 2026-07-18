@@ -9,7 +9,8 @@
 UDPSocket::~UDPSocket() noexcept {
     if (fd >= 0) {
         close(fd);
-        ESP_LOGW("UDPSocket", "Call UDPSocket::stop() before destructing UDPSocket");
+        ESP_LOGW("UDPSocket",
+                 "Call UDPSocket::stop() before destructing UDPSocket");
     }
 }
 

@@ -22,10 +22,14 @@ class MockLED {
                  uint32_t target_duty, uint32_t desired_fade_time_ms,
                  ledc_fade_mode_t fade_mode),
                 (noexcept));
-    MOCK_METHOD(esp_err_t, cb_register,
+    MOCK_METHOD(esp_err_t, stop_fade,
+                (ledc_mode_t speed_mode, ledc_channel_t channel), (noexcept));
+    MOCK_METHOD(esp_err_t, set_duty,
                 (ledc_mode_t speed_mode, ledc_channel_t channel,
-                 ledc_cbs_t *cbs, void *user_arg),
+                 uint32_t duty),
                 (noexcept));
+    MOCK_METHOD(esp_err_t, update_duty,
+                (ledc_mode_t speed_mode, ledc_channel_t channel), (noexcept));
     MOCK_METHOD(bool, is_timer_configured, (), (noexcept));
     MOCK_METHOD(bool, is_fade_func_installed, (), (noexcept));
 

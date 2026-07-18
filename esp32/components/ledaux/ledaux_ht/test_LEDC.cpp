@@ -1,4 +1,3 @@
-#include "MockDftEventLoop.hpp"
 #include "MockLED.hpp"
 #include "ledaux.hpp"
 #include <gmock/gmock.h>
@@ -10,14 +9,14 @@ using namespace led::PWM;
 
 class LEDCTest : public testing::Test {
   protected:
-    Handle<DftEventLoop> dft_eloop{};
     MockLED &led_{MockLED::reset_and_get()};
-    LEDC<MockLED, Handle<DftEventLoop>> ledc{};
+    LEDC<MockLED> ledc{};
 };
 
-TEST_F(LEDCTest, setColor) {
+TEST_F(LEDCTest, fadeTo) {
     RGB color{100, 150, 200};
 
+    EXPECT_CALL(led_, stop_fade(_, _)).WillRepeatedly(Return(ESP_OK));
     InSequence seq;
     EXPECT_CALL(led_, set_fade_time_and_start(MODE, channel::RED, 100, _, _))
         .WillOnce(Return(ESP_OK));
@@ -26,12 +25,13 @@ TEST_F(LEDCTest, setColor) {
     EXPECT_CALL(led_, set_fade_time_and_start(MODE, channel::BLUE, 200, _, _))
         .WillOnce(Return(ESP_OK));
 
-    ASSERT_EQ(ledc.set_color(color), ESP_OK);
+    ASSERT_EQ(ledc.fade_to(color), ESP_OK);
 }
 
-TEST_F(LEDCTest, setColorStopsOnFirstError) {
+TEST_F(LEDCTest, fadeToStopsOnFirstError) {
     RGB color{100, 150, 200};
 
+    EXPECT_CALL(led_, stop_fade(_, _)).WillRepeatedly(Return(ESP_OK));
     EXPECT_CALL(led_, set_fade_time_and_start(MODE, channel::RED, _, _, _))
         .WillOnce(Return(ESP_FAIL));
     EXPECT_CALL(led_, set_fade_time_and_start(MODE, channel::GREEN, _, _, _))
@@ -39,7 +39,29 @@ TEST_F(LEDCTest, setColorStopsOnFirstError) {
     EXPECT_CALL(led_, set_fade_time_and_start(MODE, channel::BLUE, _, _, _))
         .Times(0);
 
-    ASSERT_EQ(ledc.set_color(color), ESP_FAIL);
+    ASSERT_EQ(ledc.fade_to(color), ESP_FAIL);
+}
+
+TEST_F(LEDCTest, setColor) {
+    RGB color{100, 150, 200};
+
+    InSequence seq;
+    EXPECT_CALL(led_, stop_fade(MODE, channel::RED)).WillOnce(Return(ESP_OK));
+    EXPECT_CALL(led_, set_duty(MODE, channel::RED, 100))
+        .WillOnce(Return(ESP_OK));
+    EXPECT_CALL(led_, update_duty(MODE, channel::RED)).WillOnce(Return(ESP_OK));
+    EXPECT_CALL(led_, stop_fade(MODE, channel::GREEN)).WillOnce(Return(ESP_OK));
+    EXPECT_CALL(led_, set_duty(MODE, channel::GREEN, 150))
+        .WillOnce(Return(ESP_OK));
+    EXPECT_CALL(led_, update_duty(MODE, channel::GREEN))
+        .WillOnce(Return(ESP_OK));
+    EXPECT_CALL(led_, stop_fade(MODE, channel::BLUE)).WillOnce(Return(ESP_OK));
+    EXPECT_CALL(led_, set_duty(MODE, channel::BLUE, 200))
+        .WillOnce(Return(ESP_OK));
+    EXPECT_CALL(led_, update_duty(MODE, channel::BLUE))
+        .WillOnce(Return(ESP_OK));
+
+    ASSERT_EQ(ledc.set_color(color), ESP_OK);
 }
 
 TEST_F(LEDCTest, getCurrentColor) {

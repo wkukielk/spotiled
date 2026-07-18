@@ -8,6 +8,7 @@
 #include "UDPServer.hpp"
 #include "UDPSocket.hpp"
 #include "WSServer.hpp"
+#include "animator.hpp"
 #include "global.hpp"
 #include "nvs.hpp"
 #include "runtime.hpp"
@@ -16,17 +17,18 @@
 #include "util.hpp"
 #include <functional>
 
-using MyLEDC = LEDC<LED, Handle<DftEventLoop>>;
+using MyLEDC = LEDC<LED>;
+using MyAnimator = Animator<MyLEDC>;
 
 struct RuntimeServerThreadTypes {
     using WSServer = ::WSServer<HTTPD>;
     using Queue = util::PointerQueue<server::Data>;
-    using Handler = CommandHandler<MyLEDC>;
+    using Handler = CommandHandler<MyAnimator>;
 };
 
 struct RuntimeUDPThreadTypes {
     using UDPServer = ::UDPServer<UDPSocket>;
-    using Handler = LedColorHandler<MyLEDC>;
+    using Handler = LedColorHandler<MyAnimator>;
 };
 
 struct RuntimeTypes {
@@ -34,7 +36,7 @@ struct RuntimeTypes {
     using T_OTAThread = OTAThread<OTAClient<OTA>>;
     using T_ServerThread = ServerThread<RuntimeServerThreadTypes>;
     using T_UDPThread = UDPThread<RuntimeUDPThreadTypes>;
-    using T_LEDC = MyLEDC;
+    using T_LEDC = MyAnimator;
 };
 
 using runtime_t = Runtime<RuntimeTypes>;

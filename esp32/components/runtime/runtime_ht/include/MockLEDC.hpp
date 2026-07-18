@@ -7,6 +7,7 @@
 
 class MockLEDC {
   public:
+    MOCK_METHOD(esp_err_t, fade_to, (RGB rgb), (noexcept));
     MOCK_METHOD(esp_err_t, set_color, (RGB rgb), (noexcept));
     MOCK_METHOD(RGB, get_current_color, (), (const, noexcept));
 };

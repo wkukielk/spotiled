@@ -15,6 +15,6 @@ server::Response CommandHandler<LEDC>::process(server::Message msg) {
 
 template <I_LEDC LEDC>
 server::Response CommandHandler<LEDC>::handle(const server::FadeLed &cmd) {
-    return ledc.set_color(cmd.target) == ESP_OK ? server::Response::ok
-                                                : server::Response::fail;
+    return ledc.fade_to(cmd.target) == ESP_OK ? server::Response::ok
+                                              : server::Response::fail;
 }

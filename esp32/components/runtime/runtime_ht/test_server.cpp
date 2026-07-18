@@ -35,27 +35,27 @@ class CommandHandlerTest : public Test {
 };
 
 TEST_F(CommandHandlerTest, FadeLedOk) {
-    EXPECT_CALL(ledc, set_color(RGB{255, 0, 128})).WillOnce(Return(ESP_OK));
+    EXPECT_CALL(ledc, fade_to(RGB{255, 0, 128})).WillOnce(Return(ESP_OK));
     auto response = handler.process(
         MockWSServer::make_message(R"({"cmd":"fade","r":255,"g":0,"b":128})"));
     EXPECT_EQ(response, server::Response::ok);
 }
 
 TEST_F(CommandHandlerTest, FadeLedFail) {
-    EXPECT_CALL(ledc, set_color(_)).WillOnce(Return(ESP_FAIL));
+    EXPECT_CALL(ledc, fade_to(_)).WillOnce(Return(ESP_FAIL));
     auto response = handler.process(
         MockWSServer::make_message(R"({"cmd":"fade","r":255,"g":0,"b":128})"));
     EXPECT_EQ(response, server::Response::fail);
 }
 
 TEST_F(CommandHandlerTest, InvalidJson) {
-    EXPECT_CALL(ledc, set_color(_)).Times(0);
+    EXPECT_CALL(ledc, fade_to(_)).Times(0);
     auto response = handler.process(MockWSServer::make_message("bad json"));
     EXPECT_EQ(response, server::Response::invalid_command);
 }
 
 TEST_F(CommandHandlerTest, NullBuffer) {
-    EXPECT_CALL(ledc, set_color(_)).Times(0);
+    EXPECT_CALL(ledc, fade_to(_)).Times(0);
     auto response = handler.process({nullptr, 0});
     EXPECT_EQ(response, server::Response::invalid_command);
 }

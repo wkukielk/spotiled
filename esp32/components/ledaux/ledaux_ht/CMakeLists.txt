@@ -1,10 +1,10 @@
 idf_component_register(
     SRCS "MockLED.cpp"
+         "test_animator.cpp"
          "test_channel.cpp"
          "test_LEDC.cpp"
     INCLUDE_DIRS "include"
     REQUIRES ledaux
-             i_nterfaces_ht
     WHOLE_ARCHIVE
 )
 include("${CMAKE_CONFIG_DIR}/set_ht_gccoptions.cmake")

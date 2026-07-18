@@ -1,27 +1,8 @@
 #include "ledaux.hpp"
-#include "esp_attr.h"
-
-ESP_EVENT_DEFINE_BASE(LEDC_FADE_EVENTS);
 
 using namespace led;
 
 namespace led {
-bool IRAM_ATTR fade_callback(const ledc_cb_param_t *param, void *user_arg) {
-    auto *p = (PendingFade *)user_arg;
-    int32_t duty = p->duty.exchange(-1);
-    if (duty >= 0) {
-        auto d = (uint32_t)duty;
-        esp_event_isr_post(LEDC_FADE_EVENTS, (int32_t)param->channel, &d,
-                           sizeof(d), nullptr);
-        return true;
-    }
-    p->active.store(false);
-    return false;
-}
-
-ledc_cbs_t fade_cb_s{&fade_callback};
-ledc_cbs_t fade_cb_null{nullptr};
-
 namespace pin {
 const gpio_num_t RED = GPIO_NUM_9;
 const gpio_num_t GREEN = GPIO_NUM_8;

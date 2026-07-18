@@ -34,9 +34,17 @@ class LED {
         return ledc_set_fade_time_and_start(speed_mode, channel, target_duty,
                                             desired_fade_time_ms, fade_mode);
     }
-    esp_err_t cb_register(ledc_mode_t speed_mode, ledc_channel_t channel,
-                          ledc_cbs_t *cbs, void *user_arg) noexcept {
-        return ledc_cb_register(speed_mode, channel, cbs, user_arg);
+    esp_err_t stop_fade(ledc_mode_t speed_mode,
+                        ledc_channel_t channel) noexcept {
+        return ledc_fade_stop(speed_mode, channel);
+    }
+    esp_err_t set_duty(ledc_mode_t speed_mode, ledc_channel_t channel,
+                       uint32_t duty) noexcept {
+        return ledc_set_duty(speed_mode, channel, duty);
+    }
+    esp_err_t update_duty(ledc_mode_t speed_mode,
+                          ledc_channel_t channel) noexcept {
+        return ledc_update_duty(speed_mode, channel);
     }
 
     static LED &get() { return instance; }
