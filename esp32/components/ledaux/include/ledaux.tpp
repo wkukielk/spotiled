@@ -9,7 +9,6 @@ ChannelConfig<LED>::ChannelConfig(ledc_channel_t channel, gpio_num_t pin)
         ledc_channel_config_t{.gpio_num = pin_,
                               .speed_mode = led::PWM::MODE,
                               .channel = channel_,
-                              .intr_type = led::PWM::INTERRUPT_F,
                               .timer_sel = led::PWM::TIMER,
                               .duty = 0,
                               .hpoint = 0,

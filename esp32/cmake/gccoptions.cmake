@@ -11,6 +11,10 @@ set(COMPONENT_GCC_OPTIONS
     "-Wno-unqualified-std-cast-call"
 )
 
+if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    list(APPEND COMPONENT_GCC_OPTIONS "-Wsometimes-uninitialized")
+endif()
+
 set(HOST_TEST_GCC_OPTIONS
     ${COMPONENT_GCC_OPTIONS}
     "-Wno-write-strings"

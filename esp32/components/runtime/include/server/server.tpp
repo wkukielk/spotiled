@@ -44,7 +44,6 @@ template <ServerThreadTypes T>
 auto ServerThread<T>::receive_from_ws_server() ->
     typename T::WSServer::Message {
     const auto delay_ms = 1000;
-    ESP_LOGI("Server", "%s", "Waiting for data");
     auto message = ws_server.receive(delay_ms);
     if (message.first)
         ESP_LOGI("Server", "%s", (const char *)message.first.get());

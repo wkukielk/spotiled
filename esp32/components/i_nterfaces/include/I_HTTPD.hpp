@@ -42,9 +42,7 @@ concept I_HTTPD =
                              size_t{})
         } -> std::same_as<esp_err_t>;
         { httpd.req_to_sockfd((httpd_req_t *){}) } -> std::same_as<int>;
-        {
-            httpd.ws_get_fd_info(int{})
-        } -> std::same_as<httpd_ws_client_info_t>;
+        { httpd.ws_get_fd_info(int{}) } -> std::same_as<httpd_ws_client_info_t>;
         {
             httpd.send_status_response((httpd_req_t *){}, (const char *){})
         } -> std::same_as<esp_err_t>;

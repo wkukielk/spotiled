@@ -36,13 +36,15 @@ class CommandHandlerTest : public Test {
 
 TEST_F(CommandHandlerTest, FadeLedOk) {
     EXPECT_CALL(ledc, set_color(RGB{255, 0, 128})).WillOnce(Return(ESP_OK));
-    auto response = handler.process(MockWSServer::make_message(R"({"cmd":"fade","r":255,"g":0,"b":128})"));
+    auto response = handler.process(
+        MockWSServer::make_message(R"({"cmd":"fade","r":255,"g":0,"b":128})"));
     EXPECT_EQ(response, server::Response::ok);
 }
 
 TEST_F(CommandHandlerTest, FadeLedFail) {
     EXPECT_CALL(ledc, set_color(_)).WillOnce(Return(ESP_FAIL));
-    auto response = handler.process(MockWSServer::make_message(R"({"cmd":"fade","r":255,"g":0,"b":128})"));
+    auto response = handler.process(
+        MockWSServer::make_message(R"({"cmd":"fade","r":255,"g":0,"b":128})"));
     EXPECT_EQ(response, server::Response::fail);
 }
 
@@ -69,20 +71,23 @@ class ServerThreadTest : public Test {
     MockQueue &queue = server.get_queue();
 
     void SetUp() override {
-        ON_CALL(queue, receive(_)).WillByDefault(
-            [](uint32_t) { return nullptr; });
+        ON_CALL(queue, receive(_)).WillByDefault([](uint32_t) {
+            return nullptr;
+        });
     }
 };
 
 TEST_F(ServerThreadTest, PerformForwardsMessageToHandler) {
-    auto msg = MockWSServer::make_message(R"({"cmd":"fade","r":255,"g":0,"b":0})");
-    EXPECT_CALL(ws_server, receive(1000)).WillOnce(Return(ByMove(std::move(msg))));
+    auto msg =
+        MockWSServer::make_message(R"({"cmd":"fade","r":255,"g":0,"b":0})");
+    EXPECT_CALL(ws_server, receive(1000)).WillOnce(Return(std::move(msg)));
     EXPECT_CALL(handler, process(_));
     server.perform();
 }
 
 TEST_F(ServerThreadTest, PerformWithEmptyMessage) {
-    EXPECT_CALL(ws_server, receive(1000)).WillOnce(Return(ByMove(server::Message{nullptr, 0})));
+    EXPECT_CALL(ws_server, receive(1000))
+        .WillOnce(Return(ByMove(server::Message{nullptr, 0})));
     EXPECT_CALL(handler, process(_));
     server.perform();
 }

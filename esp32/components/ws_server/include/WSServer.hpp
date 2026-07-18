@@ -37,6 +37,10 @@ namespace ws_server {
 extern const char *url;
 }
 
+inline bool is_ws_handshake(httpd_req_t *req) {
+    return req->method == HTTP_GET;
+}
+
 #include "WSServer.tpp"
 
 #endif

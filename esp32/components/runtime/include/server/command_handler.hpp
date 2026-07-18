@@ -4,8 +4,7 @@
 #include "ledaux.hpp"
 #include "server/command.hpp"
 
-template <I_LEDC LEDC>
-class CommandHandler {
+template <I_LEDC LEDC> class CommandHandler {
   public:
     server::Response process(server::Message msg);
 
@@ -18,8 +17,7 @@ class CommandHandler {
 
 template <typename T>
 concept I_CommandHandler =
-    std::default_initializable<T> &&
-    requires(T t, server::Message msg) {
+    std::default_initializable<T> && requires(T t, server::Message msg) {
         { t.process(std::move(msg)) } -> std::same_as<server::Response>;
     };
 

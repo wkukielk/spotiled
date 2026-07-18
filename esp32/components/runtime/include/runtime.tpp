@@ -4,7 +4,8 @@
 #include "global.hpp"
 #include "util.hpp"
 
-template <typename T> u_ptr<Runtime<T>> Runtime<T>::create(RuntimeConfig &&cfg) {
+template <typename T>
+u_ptr<Runtime<T>> Runtime<T>::create(RuntimeConfig &&cfg) {
     using T_OTAClient = typename T_OTAThread::Client;
 
     cfg.wifi_mgr->init();
@@ -24,7 +25,6 @@ template <typename T> u_ptr<Runtime<T>> Runtime<T>::create(RuntimeConfig &&cfg) 
         InnerConfig<T_OTAClient>{.ota_client = T_OTAClient{move(otacfg)},
                                  .wifi_mgr = move(cfg.wifi_mgr)};
     return u_ptr<Runtime<T>>(new Runtime<T>(move(icfg)));
-    // NOLINTNEXTLINE(clang-analyzer-cplusplus.NewDeleteLeaks)
 }
 
 template <typename EGroup>

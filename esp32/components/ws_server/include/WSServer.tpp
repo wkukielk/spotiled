@@ -8,8 +8,6 @@
 using namespace std;
 
 namespace {
-bool is_ws_handshake(httpd_req_t *req) { return req->method == HTTP_GET; }
-
 template <I_HTTPD HTTPD> typename HTTPD::Config get_config() {
     auto config = HTTPD::get_default_config();
     config.server_port = 8000;

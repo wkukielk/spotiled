@@ -28,9 +28,10 @@ class MockHTTPD {
 
     MOCK_METHOD(esp_err_t, ws_recv_frame_impl,
                 (httpd_req_t * req, httpd_ws_frame_t *pkt, size_t max_len));
-    MOCK_METHOD(int, req_to_sockfd, (httpd_req_t *req));
+    MOCK_METHOD(int, req_to_sockfd, (httpd_req_t * req));
     MOCK_METHOD(httpd_ws_client_info_t, ws_get_fd_info, (int fd));
-    MOCK_METHOD(esp_err_t, send_status_response, (httpd_req_t *req, const char *status));
+    MOCK_METHOD(esp_err_t, send_status_response,
+                (httpd_req_t * req, const char *status));
 
     static esp_err_t ws_recv_frame(httpd_req_t *req, httpd_ws_frame_t *pkt,
                                    size_t max_len);

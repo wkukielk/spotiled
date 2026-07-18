@@ -15,8 +15,7 @@ struct TestServerTypes {
 
 class TestableServerThread : public ServerThread<TestServerTypes> {
   public:
-    TestableServerThread(const util::JoinEventGroup &jg)
-        : ServerThread{jg} {}
+    TestableServerThread(const util::JoinEventGroup &jg) : ServerThread{jg} {}
 
     using ServerThread::perform;
     MockWSServer &get_ws_server() { return ws_server; }

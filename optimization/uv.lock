@@ -345,6 +345,8 @@ source = { virtual = "." }
 dependencies = [
     { name = "dom-color" },
     { name = "matplotlib" },
+    { name = "numpy" },
+    { name = "pillow" },
 ]
 
 [package.dev-dependencies]
@@ -356,6 +358,8 @@ dev = [
 requires-dist = [
     { name = "dom-color", editable = "dom_color" },
     { name = "matplotlib", specifier = ">=3.11.0" },
+    { name = "numpy", specifier = ">=2.0" },
+    { name = "pillow", specifier = ">=11.0" },
 ]
 
 [package.metadata.requires-dev]

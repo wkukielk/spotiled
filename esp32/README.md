@@ -1,3 +1,10 @@
+#### Compile
+
+```
+idf.py set-target esp32s3
+idf.py build
+```
+
 #### Dev and Release
 
 App can be built in Release or Dev mode. To configure it, run:
