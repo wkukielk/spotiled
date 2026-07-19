@@ -4,46 +4,44 @@ project(dom_color CXX)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 add_library(dom_color STATIC
-    dominant_color.cpp
+    src/dominant_color.cpp
 
-    straux/straux.cpp
+    src/colors/hsv.cpp
+    src/colors/rgb.cpp
+    src/colors/v_cluster.cpp
+    src/colors/hsv_cluster.cpp
 
-    colors/hsv.cpp
-    colors/rgb.cpp
-    colors/v_cluster.cpp
-    colors/hsv_cluster.cpp
+    src/histograms/histogram_common/histogram_aux.cpp
+    src/histograms/histogram/histogram.cpp
+    src/histograms/analyzers/alpha_coefficient.cpp
+    src/histograms/analyzers/basic.cpp
+    src/histograms/analyzers/non_linear.cpp
+    src/histograms/analyzers/wrap_around.cpp
+    src/histograms/sumators/basic.cpp
+    src/histograms/sumators/non_linear.cpp
+    src/histograms/sumators/wrap_around.cpp
 
-    histograms/histogram_common/histogram_aux.cpp
-    histograms/histogram/histogram.cpp
-    histograms/analyzers/alpha_coefficient.cpp
-    histograms/analyzers/basic.cpp
-    histograms/analyzers/non_linear.cpp
-    histograms/analyzers/wrap_around.cpp
-    histograms/sumators/basic.cpp
-    histograms/sumators/non_linear.cpp
-    histograms/sumators/wrap_around.cpp
+    src/histograms2D/histogram2D.cpp
+    src/histograms2D/analyzers2D/basic.cpp
+    src/histograms2D/analyzers2D/non_linear.cpp
+    src/histograms2D/sumators2D/basic.cpp
+    src/histograms2D/sumators2D/non_linear.cpp
 
-    histograms2D/histogram2D.cpp
-    histograms2D/analyzers2D/basic.cpp
-    histograms2D/analyzers2D/non_linear.cpp
-    histograms2D/sumators2D/basic.cpp
-    histograms2D/sumators2D/non_linear.cpp
-
-    hsv_histograms/hue_histogram.cpp
-    hsv_histograms/sv_histogram.cpp
+    src/hsv_histograms/hue_histogram.cpp
+    src/hsv_histograms/sv_histogram.cpp
 )
 
 target_compile_features(dom_color PUBLIC cxx_std_20)
 
 target_include_directories(dom_color PUBLIC
-    .
-    straux
-    colors
-    histograms2D
-    histograms
-    histograms/histogram
-    histograms/histogram_common
-    hsv_histograms
+    src/
+    src/straux
+    src/colors
+    src/histograms2D
+    src/histograms
+    src/histograms/histogram
+    src/histograms/histogram_common
+    src/hsv_histograms
 )
 
 include(gccoptions.cmake)
