@@ -6,15 +6,16 @@
 //
 
 import SwiftUI
+import SpotiLEDKit
 
 struct ManualTab: View {
-    @State private var color = Color(.mint)
-    
+    @State private var controller = ManualColorController()
+
     var body: some View {
         VStack() {
-            Text("Provision device")
-                .navigationTitle("Provision device")
-            ColorPicker(/*@START_MENU_TOKEN@*/"Title"/*@END_MENU_TOKEN@*/, selection: $color, supportsOpacity: false)
+            Text("Manual mode")
+                .navigationTitle("Manual mode")
+            ColorPicker("Color", selection: $controller.color, supportsOpacity: false)
         }
         .padding(.horizontal)
     }

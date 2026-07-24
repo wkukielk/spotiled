@@ -1,13 +1,13 @@
 //
 //  ControllerBrowserTests.swift
-//  spotiled-connectTests
+//  SpotiLEDKitTests
 //
 //  Created by wkuki on 19/07/2026.
 //
 
 import Testing
 import Mockable
-@testable import spotiled_connect
+@testable import SpotiLEDKit
 
 struct ControllerBrowserTests {
 

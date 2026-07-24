@@ -1,0 +1,24 @@
+{
+  "configurations" : [
+    {
+      "id" : "C8FD29F5-1245-444A-B767-4FCD984497E1",
+      "name" : "Configuration 1",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "testTimeoutsEnabled" : true
+  },
+  "testTargets" : [
+    {
+      "target" : {
+        "containerPath" : "container:spotiled-connect.xcodeproj",
+        "identifier" : "82241714300CE2E2002D4F42",
+        "name" : "spotiled-connectTests"
+      }
+    }
+  ],
+  "version" : 1
+}

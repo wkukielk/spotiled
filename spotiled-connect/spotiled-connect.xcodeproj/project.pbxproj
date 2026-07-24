@@ -8,7 +8,10 @@
 
 /* Begin PBXBuildFile section */
 		288630D6B79DE91909A0CCDE /* Mockable in Frameworks */ = {isa = PBXBuildFile; productRef = 6A95EC16137A76A118AC6257 /* Mockable */; };
+		82F278AD3013D64C00B6CCFD /* integration.xctestplan in Resources */ = {isa = PBXBuildFile; fileRef = 82F278AC3013D64C00B6CCFD /* integration.xctestplan */; };
+		82F278AF3013D67300B6CCFD /* unit.xctestplan in Resources */ = {isa = PBXBuildFile; fileRef = 82F278AE3013D67300B6CCFD /* unit.xctestplan */; };
 		BC50EE4C62CB42A8D48494B7 /* Mockable in Frameworks */ = {isa = PBXBuildFile; productRef = 91C1629046E692B16D06E8CA /* Mockable */; };
+		E0CF3BDECBF9B2F12250F0E5 /* SpotiLEDKit in Frameworks */ = {isa = PBXBuildFile; productRef = 7EA9354E2E58DAF83F157EF8 /* SpotiLEDKit */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -32,6 +35,8 @@
 		82241708300CE2E1002D4F42 /* spotiled-connect.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "spotiled-connect.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		82241715300CE2E2002D4F42 /* spotiled-connectTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "spotiled-connectTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		8224171F300CE2E2002D4F42 /* spotiled-connectUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "spotiled-connectUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		82F278AC3013D64C00B6CCFD /* integration.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = integration.xctestplan; sourceTree = "<group>"; };
+		82F278AE3013D67300B6CCFD /* unit.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = unit.xctestplan; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -58,6 +63,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				288630D6B79DE91909A0CCDE /* Mockable in Frameworks */,
+				E0CF3BDECBF9B2F12250F0E5 /* SpotiLEDKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -82,6 +88,8 @@
 		822416FF300CE2E0002D4F42 = {
 			isa = PBXGroup;
 			children = (
+				82F278AE3013D67300B6CCFD /* unit.xctestplan */,
+				82F278AC3013D64C00B6CCFD /* integration.xctestplan */,
 				8224170A300CE2E1002D4F42 /* spotiled-connect */,
 				82241718300CE2E2002D4F42 /* spotiled-connectTests */,
 				82241722300CE2E2002D4F42 /* spotiled-connectUITests */,
@@ -120,6 +128,7 @@
 			name = "spotiled-connect";
 			packageProductDependencies = (
 				6A95EC16137A76A118AC6257 /* Mockable */,
+				7EA9354E2E58DAF83F157EF8 /* SpotiLEDKit */,
 			);
 			productName = "spotiled-connect";
 			productReference = 82241708300CE2E1002D4F42 /* spotiled-connect.app */;
@@ -187,7 +196,6 @@
 					};
 					82241714300CE2E2002D4F42 = {
 						CreatedOnToolsVersion = 26.6;
-						TestTargetID = 82241707300CE2E1002D4F42;
 					};
 					8224171E300CE2E2002D4F42 = {
 						CreatedOnToolsVersion = 26.6;
@@ -206,6 +214,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				4FDD1C1820A2A4CF34BC03EA /* XCRemoteSwiftPackageReference "Mockable" */,
+				3CD3E6ACF9DC1CB86AF9AAA4 /* XCLocalSwiftPackageReference "SpotiLEDKit" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 82241709300CE2E1002D4F42 /* Products */;
@@ -224,6 +233,8 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				82F278AF3013D67300B6CCFD /* unit.xctestplan in Resources */,
+				82F278AD3013D64C00B6CCFD /* integration.xctestplan in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -472,7 +483,6 @@
 		8224172D300CE2E2002D4F42 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -487,14 +497,12 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/spotiled-connect.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/spotiled-connect";
 			};
 			name = Debug;
 		};
 		8224172E300CE2E2002D4F42 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -508,7 +516,6 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/spotiled-connect.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/spotiled-connect";
 			};
 			name = Release;
 		};
@@ -602,6 +609,13 @@
 		};
 /* End XCRemoteSwiftPackageReference section */
 
+/* Begin XCLocalSwiftPackageReference section */
+		3CD3E6ACF9DC1CB86AF9AAA4 /* XCLocalSwiftPackageReference "SpotiLEDKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = SpotiLEDKit;
+		};
+/* End XCLocalSwiftPackageReference section */
+
 /* Begin XCSwiftPackageProductDependency section */
 		6A95EC16137A76A118AC6257 /* Mockable */ = {
 			isa = XCSwiftPackageProductDependency;
@@ -612,6 +626,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 4FDD1C1820A2A4CF34BC03EA /* XCRemoteSwiftPackageReference "Mockable" */;
 			productName = Mockable;
+		};
+		7EA9354E2E58DAF83F157EF8 /* SpotiLEDKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 3CD3E6ACF9DC1CB86AF9AAA4 /* XCLocalSwiftPackageReference "SpotiLEDKit" */;
+			productName = SpotiLEDKit;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
