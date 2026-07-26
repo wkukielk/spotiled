@@ -1,6 +1,8 @@
+mod command_processor;
 mod pipeline_controller;
 mod song_handler;
 
+use self::command_processor::CommandProcessor;
 use self::pipeline_controller::PipelineController;
 use anyhow::Result;
 use async_trait::async_trait;
@@ -12,7 +14,7 @@ use tokio::net::{TcpListener, TcpStream};
 use tokio_tungstenite::WebSocketStream;
 use tokio_tungstenite::tungstenite::Message as WsMessage;
 
-use super::led_socket::{LedSocket, LedSocketConnector};
+use super::led_socket::LedSocket;
 use super::spotify::{ISpotify, SpotifyError};
 
 #[derive(thiserror::Error, Debug)]
@@ -33,6 +35,8 @@ pub(crate) enum SongPipelineError {
     JPGError(#[from] image::ImageError),
     #[error("Unknown command")]
     UnknownCommand,
+    #[error("Missing hostname argument")]
+    MissingHostname,
     #[error("Other")]
     Other,
 }
@@ -45,21 +49,26 @@ enum LoopStatus {
 #[cfg_attr(test, mockall::automock)]
 #[async_trait]
 pub(crate) trait Controller: Send + Sync {
-    async fn connect(&mut self) -> Result<(), SongPipelineError>;
+    async fn connect(&mut self, hostname: &str) -> Result<(), SongPipelineError>;
     fn disconnect(&mut self) -> Result<(), SongPipelineError>;
 }
 
 pub struct SongPipeline<C: Controller> {
-    controller: C,
+    processor: CommandProcessor<C>,
 }
+
+/// Concrete pipeline type for a given `LedSocket` implementation, so callers
+/// outside this module can name it without reaching into the private
+/// `pipeline_controller` submodule.
+pub type Pipeline<S> = SongPipeline<PipelineController<S>>;
 
 impl<S> SongPipeline<PipelineController<S>>
 where
     S: LedSocket + 'static,
 {
-    pub fn new(spotify: Arc<dyn ISpotify>, connector: LedSocketConnector<S>) -> Self {
+    pub fn new(spotify: Arc<dyn ISpotify>) -> Self {
         Self {
-            controller: PipelineController::new(spotify, connector),
+            processor: CommandProcessor::new(PipelineController::new(spotify)),
         }
     }
 }
@@ -98,23 +107,16 @@ where
         ws: &mut WebSocketStream<TcpStream>,
     ) -> LoopStatus {
         match msg {
-            WsMessage::Text(command) => match self.handle_command(&command).await {
-                Ok(_) => LoopStatus::Continue,
-                Err(err) => {
-                    let _ = ws.send(WsMessage::Text(err.to_string().into())).await;
-                    LoopStatus::Break
-                }
-            },
+            WsMessage::Text(command) => {
+                let (reply, status) = match self.processor.process(&command).await {
+                    Ok(reply) => (reply, LoopStatus::Continue),
+                    Err(reply) => (reply, LoopStatus::Break),
+                };
+                let _ = ws.send(WsMessage::Text(reply.into())).await;
+                status
+            }
             WsMessage::Close(_) => LoopStatus::Break,
             _ => LoopStatus::Continue,
-        }
-    }
-
-    async fn handle_command(&mut self, command: &str) -> Result<(), SongPipelineError> {
-        match command {
-            "connect" => self.controller.connect().await,
-            "disconnect" => self.controller.disconnect(),
-            _other => Err(SongPipelineError::UnknownCommand),
         }
     }
 }

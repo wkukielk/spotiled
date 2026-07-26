@@ -16,8 +16,7 @@ fn lock_connect_context() -> std::sync::MutexGuard<'static, ()> {
 }
 
 fn controller_with(spotify: MockISpotify) -> PipelineController<MockLedSocket> {
-    let connector = LedSocketConnector::<MockLedSocket>::new("ws://example".to_string());
-    PipelineController::new(Arc::new(spotify), connector)
+    PipelineController::new(Arc::new(spotify))
 }
 
 fn controller() -> PipelineController<MockLedSocket> {
@@ -29,7 +28,7 @@ async fn connect_is_noop_when_already_active() {
     let mut controller = controller();
     controller.active = Some(tokio::spawn(async {}));
 
-    let result = controller.connect().await;
+    let result = controller.connect("example.local").await;
 
     assert!(result.is_ok());
 }
@@ -44,7 +43,7 @@ async fn connect_returns_led_connection_error_when_socket_fails() {
 
     let mut controller = controller();
 
-    let result = controller.connect().await;
+    let result = controller.connect("example.local").await;
 
     assert!(matches!(
         result,
@@ -68,7 +67,7 @@ async fn connect_propagates_error_when_playback_stream_unavailable() {
 
     let mut controller = controller_with(spotify);
 
-    let result = controller.connect().await;
+    let result = controller.connect("example.local").await;
 
     assert!(matches!(result, Err(SongPipelineError::SpotifyError(_))));
 }
@@ -89,7 +88,7 @@ async fn connect_spawns_listener_on_success() {
 
     let mut controller = controller_with(spotify);
 
-    let result = controller.connect().await;
+    let result = controller.connect("example.local").await;
 
     assert!(result.is_ok());
     assert!(controller.active.is_some());

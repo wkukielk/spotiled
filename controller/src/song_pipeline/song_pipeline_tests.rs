@@ -10,7 +10,9 @@ use super::*;
 async fn spawn_server(controller: MockController) -> SocketAddr {
     let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
     let addr = listener.local_addr().unwrap();
-    let mut pipeline = SongPipeline { controller };
+    let mut pipeline = SongPipeline {
+        processor: CommandProcessor::new(controller),
+    };
 
     tokio::spawn(async move {
         let _ = pipeline.serve(listener).await;
@@ -49,7 +51,7 @@ async fn expect_connection_closed(ws: &mut WebSocketStream<MaybeTlsStream<TcpStr
 async fn connect_command_invokes_controller_and_keeps_connection_open() {
     let (tx, mut rx) = mpsc::unbounded_channel();
     let mut controller = MockController::new();
-    controller.expect_connect().times(1).return_once(move || {
+    controller.expect_connect().times(1).return_once(move |_| {
         let _ = tx.send(());
         Ok(())
     });
@@ -57,17 +59,20 @@ async fn connect_command_invokes_controller_and_keeps_connection_open() {
     let addr = spawn_server(controller).await;
     let mut ws = connect_client(addr).await;
 
-    ws.send(WsMessage::Text("connect".into())).await.unwrap();
+    ws.send(WsMessage::Text("connect spotiled-esp32.local".into()))
+        .await
+        .unwrap();
     tokio::time::timeout(Duration::from_secs(1), rx.recv())
         .await
         .expect("timed out waiting for controller.connect() to be called")
         .expect("channel closed before signaling");
+    expect_text(&mut ws, r#"{"ack":"ok"}"#).await;
 
     // The connection should still be alive: the server keeps reading, so an
     // unknown command sent afterwards gets a normal error reply rather than
     // silence from an already-dropped connection.
     ws.send(WsMessage::Text("unknown".into())).await.unwrap();
-    expect_text(&mut ws, "Unknown command").await;
+    expect_text(&mut ws, r#"{"error":"Unknown command"}"#).await;
 }
 
 #[tokio::test]
@@ -76,13 +81,15 @@ async fn connect_failure_replies_with_error_and_closes_connection() {
     controller
         .expect_connect()
         .times(1)
-        .return_once(|| Err(SongPipelineError::LEDConnectionError));
+        .return_once(|_| Err(SongPipelineError::LEDConnectionError));
 
     let addr = spawn_server(controller).await;
     let mut ws = connect_client(addr).await;
 
-    ws.send(WsMessage::Text("connect".into())).await.unwrap();
-    expect_text(&mut ws, "Failed to connect to LED").await;
+    ws.send(WsMessage::Text("connect spotiled-esp32.local".into()))
+        .await
+        .unwrap();
+    expect_text(&mut ws, r#"{"error":"Failed to connect to LED"}"#).await;
     expect_connection_closed(&mut ws).await;
 }
 
@@ -106,9 +113,10 @@ async fn disconnect_command_invokes_controller_and_keeps_connection_open() {
         .await
         .expect("timed out waiting for controller.disconnect() to be called")
         .expect("channel closed before signaling");
+    expect_text(&mut ws, r#"{"ack":"ok"}"#).await;
 
     ws.send(WsMessage::Text("unknown".into())).await.unwrap();
-    expect_text(&mut ws, "Unknown command").await;
+    expect_text(&mut ws, r#"{"error":"Unknown command"}"#).await;
 }
 
 #[tokio::test]
@@ -121,6 +129,6 @@ async fn unknown_command_replies_with_error_and_closes_connection() {
     let mut ws = connect_client(addr).await;
 
     ws.send(WsMessage::Text("banana".into())).await.unwrap();
-    expect_text(&mut ws, "Unknown command").await;
+    expect_text(&mut ws, r#"{"error":"Unknown command"}"#).await;
     expect_connection_closed(&mut ws).await;
 }

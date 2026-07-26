@@ -15,7 +15,7 @@ fn log_on_error<T, E: Debug>(result: &Result<T, E>) {
 }
 
 #[cfg_attr(test, mockall::automock)]
-pub trait CoverFetcher: Sync + Send {
+pub(crate) trait CoverFetcher: Sync + Send {
     fn new(spotify: Arc<dyn ISpotify>) -> Self;
     fn fetch(
         &self,

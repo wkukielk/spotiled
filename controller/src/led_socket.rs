@@ -1,7 +1,6 @@
 use anyhow::Result;
 use async_trait::async_trait;
 use futures_util::SinkExt;
-use std::marker::PhantomData;
 use tokio::net::TcpStream;
 use tokio_tungstenite::{MaybeTlsStream, WebSocketStream, connect_async, tungstenite::Message};
 
@@ -55,23 +54,5 @@ impl LedSocket for LogSocket {
         );
         log::info!("{}", msg);
         Ok(())
-    }
-}
-
-pub struct LedSocketConnector<T: LedSocket> {
-    pub url: String,
-    pub _marker: PhantomData<T>,
-}
-
-impl<T: LedSocket> LedSocketConnector<T> {
-    pub fn new(url: String) -> Self {
-        Self {
-            url,
-            _marker: PhantomData,
-        }
-    }
-
-    pub async fn connect(&self) -> Result<T> {
-        T::connect(&self.url).await
     }
 }

@@ -1,13 +1,14 @@
 mod config;
 mod dom_color;
 mod led_socket;
+mod mdns_service;
 mod song_pipeline;
 mod spotify;
 
 use anyhow::Result;
-use led_socket::LedSocketConnector;
 use led_socket::WsLedSocket;
-use song_pipeline::SongPipeline;
+use mdns_service::MdnsService;
+use song_pipeline::Pipeline;
 
 use log::LevelFilter;
 
@@ -17,13 +18,18 @@ use std::error::Error;
 use std::sync::Arc;
 use tokio::net::TcpListener;
 
-const LED_SOCKET_URL: &str = "ws://spotiled-esp32.local:8000/ws";
-
 fn create_tokio_runtime() -> tokio::runtime::Runtime {
     tokio::runtime::Builder::new_multi_thread()
         .enable_all()
         .build()
         .expect("Failed to build Tokio runtime")
+}
+
+fn get_hostname() -> String {
+    let instance_name_local = hostname::get()
+        .map(|h| h.to_string_lossy().into_owned())
+        .unwrap_or_else(|_| "spotiled".to_string());
+    instance_name_local.split(".").next().unwrap().to_string()
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
@@ -39,12 +45,16 @@ fn main() -> Result<(), Box<dyn Error>> {
     spotify.init(&rt)?;
     let spotify: Arc<dyn ISpotify> = Arc::new(spotify);
 
-    type Connector = LedSocketConnector<WsLedSocket>;
-    let connector = Connector::new(LED_SOCKET_URL.to_string());
-    let mut pipeline = SongPipeline::new(spotify, connector);
+    let mut pipeline = Pipeline::<WsLedSocket>::new(spotify);
+
+    let instance_name = get_hostname();
+    log::info!("{}", instance_name);
 
     rt.block_on(async {
         let listener = TcpListener::bind(&cfg.bind_address).await?;
+        let port = listener.local_addr()?.port();
+        let _mdns = MdnsService::new("_ws._tcp", &instance_name, port)?;
+
         pipeline.serve(listener).await
     })?;
 

@@ -10,7 +10,7 @@ pub struct Config {
 impl Default for Config {
     fn default() -> Self {
         Config {
-            bind_address: "127.0.0.1:6000".to_string(),
+            bind_address: "0.0.0.0:6000".to_string(),
         }
     }
 }
