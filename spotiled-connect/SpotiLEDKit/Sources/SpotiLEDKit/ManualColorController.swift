@@ -6,17 +6,22 @@
 //
 
 import SwiftUI
+import Network
 
 @Observable
 public final class ManualColorController {
     public var color: Color = Color(.mint) {
         didSet {
-            sender.send(RGBColor(color))
+            sender?.send(RGBColor(color))
         }
     }
-    private let sender: RGBSending
+    private var sender: RGBSending?
 
-    public init(sender: RGBSending = UDPRGBSender()) {
+    public init(sender: RGBSending? = nil) {
         self.sender = sender
+    }
+
+    public func updateTarget(_ endpoint: NWEndpoint) {
+        sender = UDPRGBSender(endpoint: endpoint)
     }
 }

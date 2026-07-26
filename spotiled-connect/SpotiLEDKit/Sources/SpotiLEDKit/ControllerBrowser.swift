@@ -69,7 +69,7 @@ public final class ControllerBrowser {
     public var discoveredNames: [String] { discoveredControllers.map(\.name) }
     private let discovery: ControllerDiscovering
 
-    public init(discovery: ControllerDiscovering = BonjourControllerDiscovery(serviceType: "_ws._tcp")) {
+    public init(discovery: ControllerDiscovering = BonjourControllerDiscovery(serviceType: "_s-led-controler._tcp")) {
         self.discovery = discovery
         discovery.onControllersChanged { [weak self] controllers in
             self?.discoveredControllers = controllers

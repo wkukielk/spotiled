@@ -12,7 +12,9 @@ import SpotiLEDKit
 struct MiddleTab: View {
     @State private var isProvisioningDevice = false
     @State private var isSelectingController = false
+    @State private var isSelectingESP32 = false
     @Environment(\.controllerConnection) private var connection
+    @Environment(SelectedESP32Store.self) private var esp32Store
 
     var body: some View {
         NavigationStack {
@@ -22,6 +24,9 @@ struct MiddleTab: View {
                 }
                 .navigationDestination(isPresented: $isSelectingController) {
                     SelectControllerView()
+                }
+                .navigationDestination(isPresented: $isSelectingESP32) {
+                    SelectESP32View { esp32Store.device = $0 }
                 }
         }
     }
@@ -34,7 +39,11 @@ struct MiddleTab: View {
             Text("Hello, world!")
             controllerConnectionSection
             Button("Provision device") { isProvisioningDevice = true }
-            Button("Select ESP32") {}
+            Button("Select ESP32") { isSelectingESP32 = true }
+            if let device = esp32Store.device {
+                Text("Selected: \(device.name)")
+                    .foregroundStyle(.secondary)
+            }
         }
         .padding(.horizontal)
         .buttonStyle(.appPrimary)
@@ -90,5 +99,6 @@ struct MiddleTab: View {
 
 #Preview {
     MiddleTab()
+        .environment(SelectedESP32Store())
 }
 

@@ -36,6 +36,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     env_logger::builder()
         .filter_level(LevelFilter::Info)
         .filter_module("librespot", LevelFilter::Debug)
+        .filter_module("libmdns::fsm", LevelFilter::Error)
         .init();
 
     let cfg = config::load("config.toml".as_ref())?;
@@ -53,7 +54,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     rt.block_on(async {
         let listener = TcpListener::bind(&cfg.bind_address).await?;
         let port = listener.local_addr()?.port();
-        let _mdns = MdnsService::new("_ws._tcp", &instance_name, port)?;
+        let _mdns = MdnsService::new("_s-led-controler._tcp", &instance_name, port)?;
 
         pipeline.serve(listener).await
     })?;

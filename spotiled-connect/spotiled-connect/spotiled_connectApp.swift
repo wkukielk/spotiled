@@ -11,11 +11,13 @@ import SpotiLEDKit
 @main
 struct spotiled_connectApp: App {
     @State private var controllerConnection = WebSocketControllerConnection()
+    @State private var selectedESP32Store = SelectedESP32Store()
 
     var body: some Scene {
         WindowGroup {
             ContentView()
                 .environment(\.controllerConnection, controllerConnection)
+                .environment(selectedESP32Store)
         }
     }
 }

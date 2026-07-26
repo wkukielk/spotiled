@@ -6,7 +6,7 @@
 //
 
 import SwiftUI
-
+import SpotiLEDKit
 
 struct ContentView: View {
     @State private var selectedTab = 0
@@ -38,4 +38,5 @@ struct ContentView: View {
 
 #Preview {
     ContentView()
+        .environment(SelectedESP32Store())
 }

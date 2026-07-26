@@ -38,17 +38,15 @@ public protocol RGBSending {
 }
 
 public final class UDPRGBSender: RGBSending {
-    public static let defaultPort: NWEndpoint.Port = 4210
+    private let connection: NWConnection
 
-    private let host: NWEndpoint.Host
-    private let port: NWEndpoint.Port
-
-    public init(host: NWEndpoint.Host = "192.168.1.1", port: NWEndpoint.Port = UDPRGBSender.defaultPort) {
-        self.host = host
-        self.port = port
+    public init(endpoint: NWEndpoint) {
+        connection = NWConnection(to: endpoint, using: .udp)
+        connection.start(queue: .main)
     }
 
     public func send(_ color: RGBColor) {
-        // TODO: open an NWConnection(.udp) to host:port and write [color.red, color.green, color.blue].
+        let data = Data([color.red, color.green, color.blue])
+        connection.send(content: data, completion: .contentProcessed { _ in })
     }
 }
