@@ -31,13 +31,16 @@ struct ControllerBrowserTests {
 
     @Test func publishesNamesReportedByDiscovery() {
         let discovery = MockControllerDiscovering(policy: .relaxed)
-        var capturedHandler: (([String]) -> Void)?
-        given(discovery).onNamesChanged(.any).willProduce { handler in
+        var capturedHandler: (([DiscoveredController]) -> Void)?
+        given(discovery).onControllersChanged(.any).willProduce { handler in
             capturedHandler = handler
         }
 
         let browser = ControllerBrowser(discovery: discovery)
-        capturedHandler?(["Alpha", "Zeta"])
+        capturedHandler?([
+            DiscoveredController(name: "Alpha", endpoint: .hostPort(host: "192.168.1.10", port: 80)),
+            DiscoveredController(name: "Zeta", endpoint: .hostPort(host: "192.168.1.11", port: 80))
+        ])
 
         #expect(browser.discoveredNames == ["Alpha", "Zeta"])
     }

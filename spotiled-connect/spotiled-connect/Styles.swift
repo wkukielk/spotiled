@@ -22,3 +22,8 @@ struct PrimaryActionButtonStyle: PrimitiveButtonStyle {
 extension PrimitiveButtonStyle where Self == PrimaryActionButtonStyle {
     static var appPrimary: PrimaryActionButtonStyle { PrimaryActionButtonStyle() }
 }
+
+extension Color {
+    static let cardBackground = Color(uiColor: .secondarySystemBackground)
+    static let cardBorder = Color(uiColor: .separator)
+}
