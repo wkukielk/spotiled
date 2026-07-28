@@ -2,7 +2,7 @@
 #include "esp_log.h"
 #include <arpa/inet.h>
 #include <cerrno>
-#include <poll.h>
+#include <sys/poll.h>
 #include <sys/socket.h>
 #include <unistd.h>
 

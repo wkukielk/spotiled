@@ -649,7 +649,7 @@ CONFIG_IDF_TARGET_ARCH="xtensa"
 # default:
 CONFIG_IDF_TARGET="esp32s3"
 # default:
-CONFIG_IDF_INIT_VERSION="6.0.1"
+CONFIG_IDF_INIT_VERSION="6.0.2"
 # default:
 CONFIG_IDF_TARGET_ESP32S3=y
 # default:
@@ -976,11 +976,8 @@ CONFIG_PARTITION_TABLE_MD5=y
 #
 # Project configuration
 #
-# default:
-# CONFIG_DEV is not set
-# default:
-CONFIG_RELEASE=y
-# default:
+CONFIG_DEV=y
+# CONFIG_RELEASE is not set
 # CONFIG_CI is not set
 # end of Project configuration
 

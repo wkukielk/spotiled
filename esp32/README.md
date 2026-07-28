@@ -1,10 +1,3 @@
-#### Compile
-
-```
-idf.py set-target esp32s3
-idf.py build
-```
-
 #### Dev and Release
 
 App can be built in Release or Dev mode. To configure it, run:
@@ -14,10 +7,12 @@ idf.py menuconfig
 ```
 
 then select *Project Configuration* and pick desired build type.
+That command requires (stub) `firmware/nvs/config.csv` to be present.
+Refer to the next section.
 
 #### Configuration files
 
-They use different configuration files that get flashed to 'cfg' nvs partition.
+Dev and release use different configuration files that get flashed to 'cfg' nvs partition.
 
 Create `firmware/nvs/devconfig.csv` and `firmware/nvs/config.csv` files.
 See the format these files should have:
@@ -40,3 +35,10 @@ supposed to be encrypted because it contains e.g. and api key (see `firmware/par
 
 Similarly to "cfg" partition, "encnvs" is populated based on `firmware/nvs/encnvs.csv`. This file can
 be generated automatically, refer to backend's README.
+
+#### Compile
+
+```
+idf.py set-target esp32s3
+idf.py build
+```
