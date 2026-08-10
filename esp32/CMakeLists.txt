@@ -7,7 +7,3 @@ set(EXCLUDE_COMPONENTS wifi_provisioning)
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 
 project(spotifyled)
-
-if(CMAKE_C_COMPILER_ID MATCHES "Clang")
-    idf_build_set_property(COMPILE_OPTIONS "-Wno-sometimes-uninitialized" APPEND)
-endif()

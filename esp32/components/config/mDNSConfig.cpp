@@ -11,7 +11,7 @@ u_ptr<I_mDNS> mDNSConfig::get() const {
 
     mdns->set_hostname(hostname.data());
     auto txt = std::span<mdns::txt_item_t>{};
-    mdns->add_service(nullptr, "_s-led-auto", "_udp", 8000, txt);
-    mdns->add_service(nullptr, "_s-led-direct", "_tcp", 8001, txt);
+    mdns->add_service(nullptr, "_s-led-auto", "_tcp", 8000, txt);
+    mdns->add_service(nullptr, "_s-led-direct", "_udp", 8001, txt);
     return mdns;
 }

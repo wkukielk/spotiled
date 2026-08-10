@@ -22,11 +22,11 @@ struct MiddleTab: View {
                 .navigationDestination(isPresented: $isProvisioningDevice) {
                     ProvisionDeviceView()
                 }
-                .navigationDestination(isPresented: $isSelectingController) {
-                    SelectControllerView()
-                }
                 .navigationDestination(isPresented: $isSelectingESP32) {
                     SelectESP32View { esp32Store.device = $0 }
+                }
+                .navigationDestination(isPresented: $isSelectingController) {
+                    SelectControllerView()
                 }
         }
     }
@@ -34,12 +34,8 @@ struct MiddleTab: View {
     private var homePage: some View {
         VStack {
             controllerConnectionSection
+            esp32Section.padding(.bottom, 32)
             Button("Provision device") { isProvisioningDevice = true }
-            Button("Select ESP32") { isSelectingESP32 = true }
-            if let device = esp32Store.device {
-                Text("Selected: \(device.name)")
-                    .foregroundStyle(.secondary)
-            }
         }
         .padding(.horizontal)
         .buttonStyle(.appPrimary)
@@ -89,6 +85,34 @@ struct MiddleTab: View {
             HStack {
                 Button("Disconnect", role: .destructive) { connection.disconnect() }
             }
+        }
+    }
+
+    private var esp32Section: some View {
+        HStack {
+            Image(systemName: "cpu")
+                .font(.system(size: 32))
+
+            VStack(spacing: 8) {
+                esp32Status
+                Button(esp32Store.device == nil ? "Select ESP32" : "Change ESP32") {
+                    isSelectingESP32 = true
+                }
+            }
+        }
+        .padding(8)
+        .background(Color.cardBackground)
+        .border(Color.cardBorder, width: 1)
+    }
+
+    @ViewBuilder
+    private var esp32Status: some View {
+        if let device = esp32Store.device {
+            Label("Selected: \(device.name)", systemImage: "checkmark.circle.fill")
+                .foregroundStyle(.green)
+        } else {
+            Label("No ESP32 selected", systemImage: "wifi.slash")
+                .foregroundStyle(.secondary)
         }
     }
 }

@@ -65,7 +65,6 @@ esp_err_t MockDftEventLoop::post(esp_event_base_t event_base, int32_t event_id,
 void MockDftEventLoop::handler_adapter(void *event_handler_arg,
                                        esp_event_base_t event_base,
                                        int32_t event_id, void *event_data) {
-    static atomic<int> curr_counter{0};
     auto &cbd = *(cbdata *)event_handler_arg;
     proxy_callback(cbd, event_base, event_id, event_data);
     cbd.eloop.get().mutex.give();

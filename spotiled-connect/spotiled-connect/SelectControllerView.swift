@@ -10,30 +10,21 @@ import SwiftUI
 import SpotiLEDKit
 
 struct SelectControllerView: View {
-    @State private var browser: ControllerBrowser
+    private let browser: ControllerBrowser
     @Environment(\.controllerConnection) private var connection
     @Environment(\.dismiss) private var dismiss
 
     init(browser: ControllerBrowser = ControllerBrowser()) {
-        _browser = State(initialValue: browser)
+        self.browser = browser
     }
 
     var body: some View {
-        Group {
-            if browser.discoveredControllers.isEmpty {
-                ContentUnavailableView("Searching for controllers…", systemImage: "wifi")
-            } else {
-                List(browser.discoveredControllers) { controller in
-                    listItem(controller)
-                }
-            }
-        }
-        .navigationTitle("Select controller")
-        .task {
-            browser.start()
-        }
-        .onDisappear {
-            browser.stop()
+        DiscoveredControllerListView(
+            browser: browser,
+            title: "Select controller",
+            emptyMessage: "Searching for controllers…"
+        ) { controller in
+            listItem(controller)
         }
         .onChange(of: connection.state) { _, newState in
             switch newState {
@@ -44,7 +35,7 @@ struct SelectControllerView: View {
             }
         }
     }
-    
+
     private func listItem(_ controller: DiscoveredController) -> some View {
         Button {
             selectController(controller)

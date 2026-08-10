@@ -16,6 +16,7 @@ project(host_test)
 
 idf_build_set_property(COMPILE_OPTIONS "-g" APPEND)
 idf_build_set_property(COMPILE_OPTIONS "-O0" APPEND)
+idf_build_set_property(COMPILE_OPTIONS "-Wno-uninitialized-const-pointer" APPEND)
 
 include(FetchContent)
 FetchContent_Declare(

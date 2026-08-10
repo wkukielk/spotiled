@@ -21,6 +21,7 @@ IGNORE_UNUSED_POP
 #include "esp_log.h"
 #include "freertos/event_groups.h"
 #include "straux.hpp"
+#include <atomic>
 #include <functional>
 #include <optional>
 #include <span>
