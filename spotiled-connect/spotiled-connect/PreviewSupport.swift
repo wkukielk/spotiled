@@ -2,7 +2,7 @@
 //  PreviewSupport.swift
 //  spotiled-connect
 //
-//  Preview-only test doubles for ControllerConnecting and ControllerDiscovering.
+//  Preview-only test doubles for ESP32SessionManaging and ControllerDiscovering.
 //
 
 #if DEBUG
@@ -13,8 +13,9 @@ import SpotiLEDKit
 import SwiftUI
 
 @Observable
-final class PreviewFailingConnection: ControllerConnecting {
-    var state: ControllerConnectionState = .disconnected
+final class PreviewFailingConnection: ESP32SessionManaging {
+    var controllerState: ControllerConnectionState = .disconnected
+    var esp32State: ESP32ConnectionState = .disconnected
     private let failAfter: Duration
 
     init(failAfter: Duration = .seconds(0.6)) {
@@ -22,40 +23,49 @@ final class PreviewFailingConnection: ControllerConnecting {
     }
 
     func connect(to endpoint: NWEndpoint, name: String) {
-        state = .connecting(name: name)
+        controllerState = .connecting(name: name)
         Task { @MainActor in
             try? await Task.sleep(for: failAfter)
-            state = .failed(name: name)
+            controllerState = .failed(name: name)
         }
     }
 
     func disconnect() {
-        state = .disconnected
+        controllerState = .disconnected
     }
 
-    func send(_ message: String) async throws -> String {
-        throw ControllerConnectionError.notConnected
+    func connectESP32(hostname: String) async throws {
+        throw ESP32SessionError.rejected("preview failure")
+    }
+
+    func disconnectESP32() async throws {
+        esp32State = .disconnected
     }
 }
 
 @Observable
-final class PreviewControllerConnection: ControllerConnecting {
-    var state: ControllerConnectionState
+final class PreviewControllerConnection: ESP32SessionManaging {
+    var controllerState: ControllerConnectionState
+    var esp32State: ESP32ConnectionState = .disconnected
 
     init(state: ControllerConnectionState) {
-        self.state = state
+        self.controllerState = state
     }
 
     func connect(to endpoint: NWEndpoint, name: String) {
-        state = .connecting(name: name)
+        controllerState = .connecting(name: name)
     }
 
     func disconnect() {
-        state = .disconnected
+        controllerState = .disconnected
     }
 
-    func send(_ message: String) async throws -> String {
-        throw ControllerConnectionError.notConnected
+    func connectESP32(hostname: String) async throws {
+        esp32State = .connected(host: hostname)
+    }
+
+    func disconnectESP32() async throws {
+        esp32State = .disconnected
     }
 }
 

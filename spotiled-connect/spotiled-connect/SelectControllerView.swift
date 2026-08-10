@@ -11,7 +11,7 @@ import SpotiLEDKit
 
 struct SelectControllerView: View {
     private let browser: ControllerBrowser
-    @Environment(\.controllerConnection) private var connection
+    @Environment(\.esp32Session) private var session
     @Environment(\.dismiss) private var dismiss
 
     init(browser: ControllerBrowser = ControllerBrowser()) {
@@ -26,7 +26,7 @@ struct SelectControllerView: View {
         ) { controller in
             listItem(controller)
         }
-        .onChange(of: connection.state) { _, newState in
+        .onChange(of: session.controllerState) { _, newState in
             switch newState {
                 case .connected, .failed:
                     dismiss()
@@ -51,11 +51,11 @@ struct SelectControllerView: View {
     }
 
     private func selectController(_ controller: DiscoveredController) {
-        connection.connect(to: controller.endpoint, name: controller.name)
+        session.connect(to: controller.endpoint, name: controller.name)
     }
 
     private func isConnecting(to controller: DiscoveredController) -> Bool {
-        if case .connecting(let name) = connection.state {
+        if case .connecting(let name) = session.controllerState {
             return name == controller.name
         }
         return false
@@ -65,7 +65,7 @@ struct SelectControllerView: View {
 #Preview {
     NavigationStack {
         SelectControllerView()
-            .environment(\.controllerConnection, WebSocketControllerConnection())
+            .environment(\.esp32Session, ControllerESP32Session())
     }
 }
 
@@ -74,5 +74,5 @@ struct SelectControllerView: View {
         DiscoveredController(name: "Living Room", endpoint: .hostPort(host: "192.168.1.50", port: 8080)),
         DiscoveredController(name: "Bedroom", endpoint: .hostPort(host: "192.168.1.51", port: 8080))
     ])
-    .environment(\.controllerConnection, PreviewFailingConnection())
+    .environment(\.esp32Session, PreviewFailingConnection())
 }

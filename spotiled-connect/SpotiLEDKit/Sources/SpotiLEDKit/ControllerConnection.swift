@@ -5,9 +5,9 @@
 //  Created by wkuki on 25/07/2026.
 //
 
+import Foundation
 import Network
 import Observation
-import SwiftUI
 import Mockable
 
 public enum ControllerConnectionState: Equatable, Sendable {
@@ -138,16 +138,5 @@ public final class WebSocketControllerConnection: ControllerConnecting, @uncheck
 
     private func failPendingReply(with error: Error) {
         resumePendingReply(with: .failure(error))
-    }
-}
-
-private struct ControllerConnectionKey: EnvironmentKey {
-    static let defaultValue: any ControllerConnecting = WebSocketControllerConnection()
-}
-
-public extension EnvironmentValues {
-    var controllerConnection: any ControllerConnecting {
-        get { self[ControllerConnectionKey.self] }
-        set { self[ControllerConnectionKey.self] = newValue }
     }
 }

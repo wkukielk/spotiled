@@ -13,7 +13,7 @@ struct MiddleTab: View {
     @State private var isProvisioningDevice = false
     @State private var isSelectingController = false
     @State private var isSelectingESP32 = false
-    @Environment(\.controllerConnection) private var connection
+    @Environment(\.esp32Session) private var session
     @Environment(SelectedESP32Store.self) private var esp32Store
 
     var body: some View {
@@ -58,7 +58,7 @@ struct MiddleTab: View {
 
     @ViewBuilder
     private var connectionStatus: some View {
-        switch connection.state {
+        switch session.controllerState {
         case .disconnected:
             Label("Not connected", systemImage: "wifi.slash")
                 .foregroundStyle(.secondary)
@@ -76,14 +76,14 @@ struct MiddleTab: View {
 
     @ViewBuilder
     private var connectionActions: some View {
-        switch connection.state {
+        switch session.controllerState {
         case .disconnected, .failed:
             Button("Select controller") { isSelectingController = true }
         case .connecting:
-            Button("Cancel", role: .cancel) { connection.disconnect() }
+            Button("Cancel", role: .cancel) { session.disconnect() }
         case .connected:
             HStack {
-                Button("Disconnect", role: .destructive) { connection.disconnect() }
+                Button("Disconnect", role: .destructive) { session.disconnect() }
             }
         }
     }
@@ -125,6 +125,6 @@ struct MiddleTab: View {
 #Preview("Connection failed") {
     MiddleTab()
         .environment(SelectedESP32Store())
-        .environment(\.controllerConnection, PreviewControllerConnection(state: .failed(name: "Living Room")))
+        .environment(\.esp32Session, PreviewControllerConnection(state: .failed(name: "Living Room")))
 }
 
