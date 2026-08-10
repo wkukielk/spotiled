@@ -33,10 +33,6 @@ struct MiddleTab: View {
 
     private var homePage: some View {
         VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
             controllerConnectionSection
             Button("Provision device") { isProvisioningDevice = true }
             Button("Select ESP32") { isSelectingESP32 = true }
@@ -100,5 +96,11 @@ struct MiddleTab: View {
 #Preview {
     MiddleTab()
         .environment(SelectedESP32Store())
+}
+
+#Preview("Connection failed") {
+    MiddleTab()
+        .environment(SelectedESP32Store())
+        .environment(\.controllerConnection, PreviewControllerConnection(state: .failed(name: "Living Room")))
 }
 
