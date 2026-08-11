@@ -9,9 +9,9 @@ import Observation
 
 @Observable
 public final class SelectedESP32Store {
-    public var device: DiscoveredController?
+    public var device: DiscoveredDevice?
 
-    public init(device: DiscoveredController? = nil) {
+    public init(device: DiscoveredDevice? = nil) {
         self.device = device
     }
 }

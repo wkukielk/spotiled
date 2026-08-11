@@ -8,20 +8,17 @@
 import SwiftUI
 import SpotiLEDKit
 
-/// Shared skeleton for browsing mDNS-discovered controllers: empty state while
-/// searching, a list once found, and the browser's start/stop lifecycle. Callers
-/// supply the discovery source, copy, and what a row looks like/does.
-struct DiscoveredControllerListView<RowContent: View>: View {
-    @State private var browser: ControllerBrowser
+struct DiscoveredDeviceListView<RowContent: View>: View {
+    @State private var browser: DeviceBrowser
     private let title: String
     private let emptyMessage: String
-    private let rowContent: (DiscoveredController) -> RowContent
+    private let rowContent: (DiscoveredDevice) -> RowContent
 
     init(
-        browser: ControllerBrowser,
+        browser: DeviceBrowser,
         title: String,
         emptyMessage: String,
-        @ViewBuilder rowContent: @escaping (DiscoveredController) -> RowContent
+        @ViewBuilder rowContent: @escaping (DiscoveredDevice) -> RowContent
     ) {
         _browser = State(initialValue: browser)
         self.title = title
@@ -31,10 +28,10 @@ struct DiscoveredControllerListView<RowContent: View>: View {
 
     var body: some View {
         Group {
-            if browser.discoveredControllers.isEmpty {
+            if browser.discoveredDevices.isEmpty {
                 ContentUnavailableView(emptyMessage, systemImage: "wifi")
             } else {
-                List(browser.discoveredControllers) { controller in
+                List(browser.discoveredDevices) { controller in
                     rowContent(controller)
                 }
             }

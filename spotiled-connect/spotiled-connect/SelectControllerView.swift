@@ -10,16 +10,16 @@ import SwiftUI
 import SpotiLEDKit
 
 struct SelectControllerView: View {
-    private let browser: ControllerBrowser
+    private let browser: DeviceBrowser
     @Environment(\.esp32Session) private var session
     @Environment(\.dismiss) private var dismiss
 
-    init(browser: ControllerBrowser = ControllerBrowser()) {
+    init(browser: DeviceBrowser = DeviceBrowser()) {
         self.browser = browser
     }
 
     var body: some View {
-        DiscoveredControllerListView(
+        DiscoveredDeviceListView(
             browser: browser,
             title: "Select controller",
             emptyMessage: "Searching for controllers…"
@@ -36,7 +36,7 @@ struct SelectControllerView: View {
         }
     }
 
-    private func listItem(_ controller: DiscoveredController) -> some View {
+    private func listItem(_ controller: DiscoveredDevice) -> some View {
         Button {
             selectController(controller)
         } label: {
@@ -50,11 +50,11 @@ struct SelectControllerView: View {
         }
     }
 
-    private func selectController(_ controller: DiscoveredController) {
+    private func selectController(_ controller: DiscoveredDevice) {
         session.connect(to: controller.endpoint, name: controller.name)
     }
 
-    private func isConnecting(to controller: DiscoveredController) -> Bool {
+    private func isConnecting(to controller: DiscoveredDevice) -> Bool {
         if case .connecting(let name) = session.controllerState {
             return name == controller.name
         }
@@ -71,8 +71,8 @@ struct SelectControllerView: View {
 
 #Preview("Connection fails") {
     SelectControllerDismissHarness(controllers: [
-        DiscoveredController(name: "Living Room", endpoint: .hostPort(host: "192.168.1.50", port: 8080)),
-        DiscoveredController(name: "Bedroom", endpoint: .hostPort(host: "192.168.1.51", port: 8080))
+        DiscoveredDevice(name: "Living Room", endpoint: .hostPort(host: "192.168.1.50", port: 8080)),
+        DiscoveredDevice(name: "Bedroom", endpoint: .hostPort(host: "192.168.1.51", port: 8080))
     ])
     .environment(\.esp32Session, PreviewFailingConnection())
 }

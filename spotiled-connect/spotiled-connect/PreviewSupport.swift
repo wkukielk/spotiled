@@ -69,11 +69,11 @@ final class PreviewControllerConnection: ESP32SessionManaging {
     }
 }
 
-final class PreviewControllerDiscovery: ControllerDiscovering {
-    private let controllers: [DiscoveredController]
-    private var handler: (([DiscoveredController]) -> Void)?
+final class PreviewControllerDiscovery: DeviceDiscovering {
+    private let controllers: [DiscoveredDevice]
+    private var handler: (([DiscoveredDevice]) -> Void)?
 
-    init(controllers: [DiscoveredController]) {
+    init(controllers: [DiscoveredDevice]) {
         self.controllers = controllers
     }
 
@@ -87,13 +87,13 @@ final class PreviewControllerDiscovery: ControllerDiscovering {
 
     func cancel() {}
 
-    func onControllersChanged(_ handler: @escaping ([DiscoveredController]) -> Void) {
+    func onDevicesChanged(_ handler: @escaping ([DiscoveredDevice]) -> Void) {
         self.handler = handler
     }
 }
 
 struct SelectControllerDismissHarness: View {
-    let controllers: [DiscoveredController]
+    let controllers: [DiscoveredDevice]
     @State private var isSelectingController = true
 
     var body: some View {
@@ -101,7 +101,7 @@ struct SelectControllerDismissHarness: View {
             Text("Root")
                 .navigationDestination(isPresented: $isSelectingController) {
                     SelectControllerView(
-                        browser: ControllerBrowser(discovery: PreviewControllerDiscovery(controllers: controllers))
+                        browser: DeviceBrowser(discovery: PreviewControllerDiscovery(controllers: controllers))
                     )
                 }
         }

@@ -1,5 +1,5 @@
 //
-//  ControllerBrowserTests.swift
+//  DeviceBrowserTests.swift
 //  SpotiLEDKitTests
 //
 //  Created by wkuki on 19/07/2026.
@@ -9,11 +9,11 @@ import Testing
 import Mockable
 @testable import SpotiLEDKit
 
-struct ControllerBrowserTests {
+struct DeviceBrowserTests {
 
     @Test func startDelegatesToDiscovery() {
-        let discovery = MockControllerDiscovering(policy: .relaxed)
-        let browser = ControllerBrowser(discovery: discovery)
+        let discovery = MockDeviceDiscovering(policy: .relaxed)
+        let browser = DeviceBrowser(discovery: discovery)
 
         browser.start()
 
@@ -21,8 +21,8 @@ struct ControllerBrowserTests {
     }
 
     @Test func stopDelegatesToDiscovery() {
-        let discovery = MockControllerDiscovering(policy: .relaxed)
-        let browser = ControllerBrowser(discovery: discovery)
+        let discovery = MockDeviceDiscovering(policy: .relaxed)
+        let browser = DeviceBrowser(discovery: discovery)
 
         browser.stop()
 
@@ -30,24 +30,24 @@ struct ControllerBrowserTests {
     }
 
     @Test func publishesNamesReportedByDiscovery() {
-        let discovery = MockControllerDiscovering(policy: .relaxed)
-        var capturedHandler: (([DiscoveredController]) -> Void)?
-        given(discovery).onControllersChanged(.any).willProduce { handler in
+        let discovery = MockDeviceDiscovering(policy: .relaxed)
+        var capturedHandler: (([DiscoveredDevice]) -> Void)?
+        given(discovery).onDevicesChanged(.any).willProduce { handler in
             capturedHandler = handler
         }
 
-        let browser = ControllerBrowser(discovery: discovery)
+        let browser = DeviceBrowser(discovery: discovery)
         capturedHandler?([
-            DiscoveredController(name: "Alpha", endpoint: .hostPort(host: "192.168.1.10", port: 80)),
-            DiscoveredController(name: "Zeta", endpoint: .hostPort(host: "192.168.1.11", port: 80))
+            DiscoveredDevice(name: "Alpha", endpoint: .hostPort(host: "192.168.1.10", port: 80)),
+            DiscoveredDevice(name: "Zeta", endpoint: .hostPort(host: "192.168.1.11", port: 80))
         ])
 
         #expect(browser.discoveredNames == ["Alpha", "Zeta"])
     }
 
     @Test func startsWithNoDiscoveredNames() {
-        let discovery = MockControllerDiscovering(policy: .relaxed)
-        let browser = ControllerBrowser(discovery: discovery)
+        let discovery = MockDeviceDiscovering(policy: .relaxed)
+        let browser = DeviceBrowser(discovery: discovery)
 
         #expect(browser.discoveredNames.isEmpty)
     }

@@ -9,7 +9,7 @@ import Observation
 import Network
 import Mockable
 
-public struct DiscoveredController: Equatable, Identifiable, Sendable {
+public struct DiscoveredDevice: Equatable, Identifiable, Sendable {
     public var id: String { name }
     public let name: String
     public let endpoint: NWEndpoint
@@ -21,15 +21,16 @@ public struct DiscoveredController: Equatable, Identifiable, Sendable {
 }
 
 @Mockable
-public protocol ControllerDiscovering {
+public protocol DeviceDiscovering {
     func start()
     func cancel()
-    func onControllersChanged(_ handler: @escaping ([DiscoveredController]) -> Void)
+    func onDevicesChanged(_ handler: @escaping ([DiscoveredDevice]) -> Void)
 }
 
-public final class BonjourControllerDiscovery: ControllerDiscovering {
+
+public final class BonjourServiceDiscovery: DeviceDiscovering {
     private var browser: NWBrowser?
-    private var controllersChangedHandler: (([DiscoveredController]) -> Void)?
+    private var servicesChangedHandler: (([DiscoveredDevice]) -> Void)?
     private var serviceType: String;
 
     public init(serviceType: String) {
@@ -38,11 +39,15 @@ public final class BonjourControllerDiscovery: ControllerDiscovering {
 
 
     public func start() {
+        guard let servicesChangedHandler = servicesChangedHandler else {
+            assertionFailure("you must set servicesChangedHandler before start()")
+            return
+        }
         let parameters = NWParameters()
         parameters.includePeerToPeer = true
         browser = NWBrowser(for: .bonjour(type: serviceType, domain: nil), using: parameters)
         browser?.browseResultsChangedHandler = { [weak self] results, _ in
-            self?.controllersChangedHandler?(Self.controllers(from: results))
+            self?.servicesChangedHandler?(Self.devices(from: results))
         }
         browser?.start(queue: .main)
     }
@@ -51,28 +56,28 @@ public final class BonjourControllerDiscovery: ControllerDiscovering {
         browser?.cancel()
     }
 
-    public func onControllersChanged(_ handler: @escaping ([DiscoveredController]) -> Void) {
-        controllersChangedHandler = handler
+    public func onDevicesChanged(_ handler: @escaping ([DiscoveredDevice]) -> Void) {
+        servicesChangedHandler = handler
     }
 
-    static func controllers(from results: some Sequence<NWBrowser.Result>) -> [DiscoveredController] {
+    static func devices(from results: some Sequence<NWBrowser.Result>) -> [DiscoveredDevice] {
         results.compactMap { result in
             guard case let .service(name, _, _, _) = result.endpoint else { return nil }
-            return DiscoveredController(name: name, endpoint: result.endpoint)
+            return DiscoveredDevice(name: name, endpoint: result.endpoint)
         }.sorted { $0.name < $1.name }
     }
 }
 
 @Observable
-public final class ControllerBrowser {
-    public private(set) var discoveredControllers: [DiscoveredController] = []
-    public var discoveredNames: [String] { discoveredControllers.map(\.name) }
-    private let discovery: ControllerDiscovering
+public final class DeviceBrowser {
+    public private(set) var discoveredDevices: [DiscoveredDevice] = []
+    public var discoveredNames: [String] { discoveredDevices.map(\.name) }
+    private let discovery: DeviceDiscovering
 
-    public init(discovery: ControllerDiscovering = BonjourControllerDiscovery(serviceType: "_s-led-controler._tcp")) {
+    public init(discovery: DeviceDiscovering = BonjourServiceDiscovery(serviceType: "_s-led-controler._tcp")) {
         self.discovery = discovery
-        discovery.onControllersChanged { [weak self] controllers in
-            self?.discoveredControllers = controllers
+        discovery.onDevicesChanged { [weak self] devices in
+            self?.discoveredDevices = devices
         }
     }
 
