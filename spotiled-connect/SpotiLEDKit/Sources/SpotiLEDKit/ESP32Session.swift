@@ -11,9 +11,6 @@ import Observation
 import SwiftUI
 import Mockable
 
-/// Whether the *controller* currently has its own proxied websocket open to an ESP32.
-/// The ESP32 accepts one client at a time, so this is tracked separately from
-/// `controllerState`, which is the phone's own link to the controller.
 public enum ESP32ConnectionState: Equatable, Sendable {
     case disconnected
     case connecting(host: String)
@@ -25,13 +22,9 @@ public enum ESP32SessionError: Error, Equatable {
     case rejected(String)
 }
 
-/// Everything a view needs to know about the controller: the phone's own link to it,
-/// and the ESP32 the controller is (or isn't) proxying on the phone's behalf. Wraps a
-/// `ControllerConnecting` transport and speaks the controller's proxy protocol over it
-/// (`connect <hostname>` / `disconnect`, acked with `{"ack":"ok"}` or `{"error": ...}`).
 @Mockable
-public protocol ESP32SessionManaging: AnyObject {
-    var controllerState: ControllerConnectionState { get }
+public protocol ControllerSessionManaging: AnyObject {
+    var controllerState: EndpointConnectionState { get }
     var esp32State: ESP32ConnectionState { get }
     func connect(to endpoint: NWEndpoint, name: String)
     func disconnect()
@@ -40,13 +33,13 @@ public protocol ESP32SessionManaging: AnyObject {
 }
 
 @Observable
-public final class ControllerESP32Session: ESP32SessionManaging {
-    private let connection: any ControllerConnecting
+public final class ControllerESP32Session: ControllerSessionManaging {
+    private let connection: any EndpointConnecting
     public private(set) var esp32State: ESP32ConnectionState = .disconnected
 
-    public var controllerState: ControllerConnectionState { connection.state }
+    public var controllerState: EndpointConnectionState { connection.state }
 
-    public init(connection: any ControllerConnecting = WebSocketControllerConnection()) {
+    public init(connection: any EndpointConnecting = WebSocketEndpointConnection()) {
         self.connection = connection
     }
 
@@ -99,11 +92,11 @@ public final class ControllerESP32Session: ESP32SessionManaging {
 }
 
 private struct ESP32SessionKey: EnvironmentKey {
-    static let defaultValue: any ESP32SessionManaging = ControllerESP32Session()
+    static let defaultValue: any ControllerSessionManaging = ControllerESP32Session()
 }
 
 public extension EnvironmentValues {
-    var esp32Session: any ESP32SessionManaging {
+    var esp32Session: any ControllerSessionManaging {
         get { self[ESP32SessionKey.self] }
         set { self[ESP32SessionKey.self] = newValue }
     }

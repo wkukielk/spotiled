@@ -13,8 +13,8 @@ import SpotiLEDKit
 import SwiftUI
 
 @Observable
-final class PreviewFailingConnection: ESP32SessionManaging {
-    var controllerState: ControllerConnectionState = .disconnected
+final class PreviewFailingConnection: ControllerSessionManaging {
+    var controllerState: EndpointConnectionState = .disconnected
     var esp32State: ESP32ConnectionState = .disconnected
     private let failAfter: Duration
 
@@ -44,11 +44,11 @@ final class PreviewFailingConnection: ESP32SessionManaging {
 }
 
 @Observable
-final class PreviewControllerConnection: ESP32SessionManaging {
-    var controllerState: ControllerConnectionState
+final class PreviewControllerConnection: ControllerSessionManaging {
+    var controllerState: EndpointConnectionState
     var esp32State: ESP32ConnectionState = .disconnected
 
-    init(state: ControllerConnectionState) {
+    init(state: EndpointConnectionState) {
         self.controllerState = state
     }
 

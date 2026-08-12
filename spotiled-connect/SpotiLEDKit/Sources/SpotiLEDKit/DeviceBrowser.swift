@@ -39,7 +39,7 @@ public final class BonjourServiceDiscovery: DeviceDiscovering {
 
 
     public func start() {
-        guard let servicesChangedHandler = servicesChangedHandler else {
+        guard let _ = servicesChangedHandler else {
             assertionFailure("you must set servicesChangedHandler before start()")
             return
         }

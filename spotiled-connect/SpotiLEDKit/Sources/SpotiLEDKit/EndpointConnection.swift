@@ -1,5 +1,5 @@
 //
-//  ControllerConnection.swift
+//  EndpointConnection.swift
 //  SpotiLEDKit
 //
 //  Created by wkuki on 25/07/2026.
@@ -10,14 +10,14 @@ import Network
 import Observation
 import Mockable
 
-public enum ControllerConnectionState: Equatable, Sendable {
+public enum EndpointConnectionState: Equatable, Sendable {
     case disconnected
     case connecting(name: String)
     case connected(name: String)
     case failed(name: String)
 }
 
-public enum ControllerConnectionError: Error, Equatable {
+public enum EndpointConnectionError: Error, Equatable {
     case notConnected
     case sendInProgress
     case connectionFailed
@@ -25,16 +25,16 @@ public enum ControllerConnectionError: Error, Equatable {
 }
 
 @Mockable
-public protocol ControllerConnecting: AnyObject {
-    var state: ControllerConnectionState { get }
+public protocol EndpointConnecting: AnyObject {
+    var state: EndpointConnectionState { get }
     func connect(to endpoint: NWEndpoint, name: String)
     func disconnect()
     func send(_ message: String) async throws -> String
 }
 
 @Observable
-public final class WebSocketControllerConnection: ControllerConnecting, @unchecked Sendable {
-    public private(set) var state: ControllerConnectionState = .disconnected
+public final class WebSocketEndpointConnection: EndpointConnecting, @unchecked Sendable {
+    public private(set) var state: EndpointConnectionState = .disconnected
 
     private var connection: NWConnection?
     private var pendingReply: CheckedContinuation<String, Error>?
@@ -63,7 +63,7 @@ public final class WebSocketControllerConnection: ControllerConnecting, @uncheck
                 if case .disconnected = self.state {} else {
                     self.state = .failed(name: name)
                 }
-                self.failPendingReply(with: ControllerConnectionError.connectionFailed)
+                self.failPendingReply(with: EndpointConnectionError.connectionFailed)
             default:
                 break
             }
@@ -75,15 +75,15 @@ public final class WebSocketControllerConnection: ControllerConnecting, @uncheck
         connection?.cancel()
         connection = nil
         state = .disconnected
-        failPendingReply(with: ControllerConnectionError.notConnected)
+        failPendingReply(with: EndpointConnectionError.notConnected)
     }
 
     public func send(_ message: String) async throws -> String {
         guard let connection, case .connected = state else {
-            throw ControllerConnectionError.notConnected
+            throw EndpointConnectionError.notConnected
         }
         guard pendingReply == nil else {
-            throw ControllerConnectionError.sendInProgress
+            throw EndpointConnectionError.sendInProgress
         }
 
         return try await withCheckedThrowingContinuation { continuation in
@@ -122,7 +122,7 @@ public final class WebSocketControllerConnection: ControllerConnecting, @uncheck
                 if let text = String(data: content, encoding: .utf8) {
                     self.resumePendingReply(with: .success(text))
                 } else {
-                    self.resumePendingReply(with: .failure(ControllerConnectionError.unexpectedMessage))
+                    self.resumePendingReply(with: .failure(EndpointConnectionError.unexpectedMessage))
                 }
             }
 
