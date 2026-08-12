@@ -5,3 +5,4 @@ firmware/nvs/
 sdkconfig.old
 *.pem
 .claude/settings.local.json
+.vscode/

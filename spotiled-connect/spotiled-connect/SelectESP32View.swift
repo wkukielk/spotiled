@@ -15,7 +15,7 @@ struct SelectESP32View: View {
 
     var body: some View {
         DiscoveredDeviceListView(
-            browser: DeviceBrowser(discovery: BonjourServiceDiscovery(serviceType: "_s-led-auto._tcp")),
+            browser: DeviceBrowser(discovery: BonjourServiceDiscovery(serviceType: "_s-led-direct._udp")),
             title: "Select ESP32",
             emptyMessage: "Searching for ESP32s…"
         ) { controller in

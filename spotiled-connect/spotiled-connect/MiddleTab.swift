@@ -7,6 +7,7 @@
 
 import SwiftUI
 import SpotiLEDKit
+import Network
 
 
 struct MiddleTab: View {
