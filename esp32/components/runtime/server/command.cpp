@@ -25,6 +25,22 @@ std::optional<Command> parse_fade(const cJSON *root) {
     }};
 }
 
+std::optional<Command> parse_pulsate(const cJSON *root) {
+    auto r = cJSON_GetObjectItem(root, "r");
+    auto g = cJSON_GetObjectItem(root, "g");
+    auto b = cJSON_GetObjectItem(root, "b");
+    auto duration = cJSON_GetObjectItem(root, "duration_ms");
+    if (!cJSON_IsNumber(r) || !cJSON_IsNumber(g) || !cJSON_IsNumber(b) ||
+        !cJSON_IsNumber(duration) || duration->valueint <= 0)
+        return std::nullopt;
+    return PulsateLed{RGB{
+                          static_cast<uint8_t>(r->valueint),
+                          static_cast<uint8_t>(g->valueint),
+                          static_cast<uint8_t>(b->valueint),
+                      },
+                      static_cast<uint32_t>(duration->valueint)};
+}
+
 } // namespace
 
 std::optional<Command> parse(std::string_view text) {
@@ -37,6 +53,8 @@ std::optional<Command> parse(std::string_view text) {
     std::string_view cmd_str{cmd->valuestring};
     if (cmd_str == "fade")
         return parse_fade(root.get());
+    if (cmd_str == "pulsate")
+        return parse_pulsate(root.get());
     return std::nullopt;
 }
 

@@ -18,14 +18,17 @@ TEST_F(LEDCTest, fadeTo) {
 
     EXPECT_CALL(led_, stop_fade(_, _)).WillRepeatedly(Return(ESP_OK));
     InSequence seq;
-    EXPECT_CALL(led_, set_fade_time_and_start(MODE, channel::RED, 100, _, _))
+    EXPECT_CALL(led_,
+               set_fade_time_and_start(MODE, channel::RED, 100, 2000, _))
         .WillOnce(Return(ESP_OK));
-    EXPECT_CALL(led_, set_fade_time_and_start(MODE, channel::GREEN, 150, _, _))
+    EXPECT_CALL(led_,
+               set_fade_time_and_start(MODE, channel::GREEN, 150, 2000, _))
         .WillOnce(Return(ESP_OK));
-    EXPECT_CALL(led_, set_fade_time_and_start(MODE, channel::BLUE, 200, _, _))
+    EXPECT_CALL(led_,
+               set_fade_time_and_start(MODE, channel::BLUE, 200, 2000, _))
         .WillOnce(Return(ESP_OK));
 
-    ASSERT_EQ(ledc.fade_to(color), ESP_OK);
+    ASSERT_EQ(ledc.fade_to(color, 2000), ESP_OK);
 }
 
 TEST_F(LEDCTest, fadeToStopsOnFirstError) {
@@ -39,7 +42,7 @@ TEST_F(LEDCTest, fadeToStopsOnFirstError) {
     EXPECT_CALL(led_, set_fade_time_and_start(MODE, channel::BLUE, _, _, _))
         .Times(0);
 
-    ASSERT_EQ(ledc.fade_to(color), ESP_FAIL);
+    ASSERT_EQ(ledc.fade_to(color, 2000), ESP_FAIL);
 }
 
 TEST_F(LEDCTest, setColor) {

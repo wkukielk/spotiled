@@ -18,7 +18,12 @@ struct FadeLed {
     RGB target;
 };
 
-using Command = std::variant<FadeLed>;
+struct PulsateLed {
+    RGB target;
+    uint32_t duration_ms;
+};
+
+using Command = std::variant<FadeLed, PulsateLed>;
 
 std::optional<Command> parse(std::string_view text);
 

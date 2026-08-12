@@ -1,6 +1,7 @@
 #include "TestableCommandHandler.hpp"
 #include "TestableServerThread.hpp"
 #include <gtest/gtest.h>
+#include <vector>
 
 using namespace testing;
 
@@ -26,6 +27,29 @@ TEST(ParseTest, MissingFields) {
     EXPECT_FALSE(server::parse(R"({"cmd":"fade","r":255})").has_value());
 }
 
+TEST(ParseTest, PulsateLed) {
+    auto result = server::parse(
+        R"({"cmd":"pulsate","r":255,"g":0,"b":128,"duration_ms":2000})");
+    ASSERT_TRUE(result.has_value());
+    auto *pulsate = std::get_if<server::PulsateLed>(&*result);
+    ASSERT_NE(pulsate, nullptr);
+    EXPECT_EQ(pulsate->target, (RGB{255, 0, 128}));
+    EXPECT_EQ(pulsate->duration_ms, 2000);
+}
+
+TEST(ParseTest, PulsateLedMissingDuration) {
+    EXPECT_FALSE(
+        server::parse(R"({"cmd":"pulsate","r":255,"g":0,"b":128})")
+            .has_value());
+}
+
+TEST(ParseTest, PulsateLedNonPositiveDuration) {
+    EXPECT_FALSE(server::parse(
+                     R"({"cmd":"pulsate","r":255,"g":0,"b":128,)"
+                     R"("duration_ms":0})")
+                     .has_value());
+}
+
 // --- CommandHandler ---
 
 class CommandHandlerTest : public Test {
@@ -35,29 +59,48 @@ class CommandHandlerTest : public Test {
 };
 
 TEST_F(CommandHandlerTest, FadeLedOk) {
-    EXPECT_CALL(ledc, fade_to(RGB{255, 0, 128})).WillOnce(Return(ESP_OK));
+    EXPECT_CALL(ledc, fade_to(RGB{255, 0, 128}, _)).WillOnce(Return(ESP_OK));
     auto response = handler.process(
         MockWSServer::make_message(R"({"cmd":"fade","r":255,"g":0,"b":128})"));
     EXPECT_EQ(response, server::Response::ok);
 }
 
 TEST_F(CommandHandlerTest, FadeLedFail) {
-    EXPECT_CALL(ledc, fade_to(_)).WillOnce(Return(ESP_FAIL));
+    EXPECT_CALL(ledc, fade_to(_, _)).WillOnce(Return(ESP_FAIL));
     auto response = handler.process(
         MockWSServer::make_message(R"({"cmd":"fade","r":255,"g":0,"b":128})"));
     EXPECT_EQ(response, server::Response::fail);
 }
 
 TEST_F(CommandHandlerTest, InvalidJson) {
-    EXPECT_CALL(ledc, fade_to(_)).Times(0);
+    EXPECT_CALL(ledc, fade_to(_, _)).Times(0);
     auto response = handler.process(MockWSServer::make_message("bad json"));
     EXPECT_EQ(response, server::Response::invalid_command);
 }
 
 TEST_F(CommandHandlerTest, NullBuffer) {
-    EXPECT_CALL(ledc, fade_to(_)).Times(0);
+    EXPECT_CALL(ledc, fade_to(_, _)).Times(0);
     auto response = handler.process({nullptr, 0});
     EXPECT_EQ(response, server::Response::invalid_command);
+}
+
+TEST_F(CommandHandlerTest, PulsateLedStartsAnimation) {
+    led::AnimationSpec spec{};
+    EXPECT_CALL(ledc, start_animation(_)).WillOnce(SaveArg<0>(&spec));
+    auto response = handler.process(MockWSServer::make_message(
+        R"({"cmd":"pulsate","r":255,"g":0,"b":128,"duration_ms":2000})"));
+    EXPECT_EQ(response, server::Response::ok);
+    EXPECT_EQ(spec.colors, (std::vector<RGB>{RGB{255, 0, 128}, RGB{0, 0, 0}}));
+    EXPECT_EQ(spec.step_ms, 1000);
+}
+
+TEST_F(CommandHandlerTest, PulsateLedSubMillisecondHalfPeriodFloorsToOne) {
+    led::AnimationSpec spec{};
+    EXPECT_CALL(ledc, start_animation(_)).WillOnce(SaveArg<0>(&spec));
+    auto response = handler.process(MockWSServer::make_message(
+        R"({"cmd":"pulsate","r":255,"g":0,"b":128,"duration_ms":1})"));
+    EXPECT_EQ(response, server::Response::ok);
+    EXPECT_EQ(spec.step_ms, 1);
 }
 
 // --- ServerThread::perform ---

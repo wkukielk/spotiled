@@ -12,8 +12,8 @@ class AnimatorTest : public testing::Test {
 };
 
 TEST_F(AnimatorTest, FadeToForwardsWhenIdle) {
-    EXPECT_CALL(ledc, fade_to(RGB{1, 2, 3})).WillOnce(Return(ESP_OK));
-    ASSERT_EQ(animator.fade_to(RGB{1, 2, 3}), ESP_OK);
+    EXPECT_CALL(ledc, fade_to(RGB{1, 2, 3}, 500)).WillOnce(Return(ESP_OK));
+    ASSERT_EQ(animator.fade_to(RGB{1, 2, 3}, 500), ESP_OK);
 }
 
 TEST_F(AnimatorTest, SetColorForwardsWhenIdle) {
@@ -23,9 +23,9 @@ TEST_F(AnimatorTest, SetColorForwardsWhenIdle) {
 
 TEST_F(AnimatorTest, SetColorAlwaysWinsOverAnimation) {
     RGB last_color{};
-    EXPECT_CALL(ledc, fade_to(_))
+    EXPECT_CALL(ledc, fade_to(_, _))
         .WillRepeatedly(DoAll(SaveArg<0>(&last_color), Return(ESP_OK)));
-    EXPECT_CALL(ledc, fade_to(_))
+    EXPECT_CALL(ledc, fade_to(_, _))
         .WillOnce(DoAll(SaveArg<0>(&last_color), Return(ESP_OK)));
 
     animator.start_animation(
@@ -33,12 +33,12 @@ TEST_F(AnimatorTest, SetColorAlwaysWinsOverAnimation) {
     vTaskDelay(pdMS_TO_TICKS(20));
 
     RGB override_color{9, 9, 9};
-    ASSERT_EQ(animator.fade_to(override_color), ESP_OK);
+    ASSERT_EQ(animator.fade_to(override_color, 500), ESP_OK);
     ASSERT_EQ(last_color, override_color);
 }
 
 TEST_F(AnimatorTest, StartAnimationWritesFrames) {
-    EXPECT_CALL(ledc, fade_to(_)).WillRepeatedly(Return(ESP_OK));
+    EXPECT_CALL(ledc, fade_to(_, _)).WillRepeatedly(Return(ESP_OK));
 
     animator.start_animation(
         led::AnimationSpec{{RGB{1, 0, 0}, RGB{0, 1, 0}}, 5});
@@ -48,7 +48,7 @@ TEST_F(AnimatorTest, StartAnimationWritesFrames) {
 
 TEST_F(AnimatorTest, FadeToAlwaysWinsOverAnimation) {
     RGB last_color{};
-    EXPECT_CALL(ledc, fade_to(_))
+    EXPECT_CALL(ledc, fade_to(_, _))
         .WillRepeatedly(DoAll(SaveArg<0>(&last_color), Return(ESP_OK)));
 
     animator.start_animation(
@@ -56,6 +56,6 @@ TEST_F(AnimatorTest, FadeToAlwaysWinsOverAnimation) {
     vTaskDelay(pdMS_TO_TICKS(20));
 
     RGB override_color{9, 9, 9};
-    ASSERT_EQ(animator.fade_to(override_color), ESP_OK);
+    ASSERT_EQ(animator.fade_to(override_color, 500), ESP_OK);
     ASSERT_EQ(last_color, override_color);
 }

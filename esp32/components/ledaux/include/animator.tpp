@@ -14,10 +14,11 @@ template <I_LEDC LEDC> void Animator<LEDC>::close() noexcept {
         stop_animation();
 }
 
-template <I_LEDC LEDC> esp_err_t Animator<LEDC>::fade_to(RGB rgb) noexcept {
+template <I_LEDC LEDC>
+esp_err_t Animator<LEDC>::fade_to(RGB rgb, uint32_t duration_ms) noexcept {
     if (is_animating.load())
         stop_animation();
-    return ledc.fade_to(rgb);
+    return ledc.fade_to(rgb, duration_ms);
 }
 
 template <I_LEDC LEDC> esp_err_t Animator<LEDC>::set_color(RGB rgb) noexcept {
@@ -57,7 +58,7 @@ template <I_LEDC LEDC> void Animator<LEDC>::animate_fn(void *self_ptr) {
         return;
     size_t idx = 0;
     while (!self->stop_requested.load()) {
-        self->ledc.set_color(self->spec.colors[idx]);
+        self->ledc.fade_to(self->spec.colors[idx], self->spec.step_ms);
         idx = (idx + 1) % self->spec.colors.size();
         vTaskDelay(pdMS_TO_TICKS(self->spec.step_ms));
     }

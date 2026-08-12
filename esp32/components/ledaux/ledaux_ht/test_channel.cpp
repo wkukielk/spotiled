@@ -46,33 +46,33 @@ TEST_F(ChannelTest, getDutyFail) {
 TEST_F(ChannelTest, fade) {
     InSequence seq;
     EXPECT_CALL(led_, stop_fade(_, channel)).WillOnce(Return(ESP_OK));
-    EXPECT_CALL(led_, set_fade_time_and_start(_, channel, 100, _, _))
+    EXPECT_CALL(led_, set_fade_time_and_start(_, channel, 100, 1000, _))
         .WillOnce(Return(ESP_OK));
 
-    ASSERT_EQ(ESP_OK, ch_->fade(100));
+    ASSERT_EQ(ESP_OK, ch_->fade(100, 1000));
 }
 
 TEST_F(ChannelTest, fadeStopsFadeFirst) {
     EXPECT_CALL(led_, stop_fade(_, channel)).WillOnce(Return(ESP_FAIL));
     EXPECT_CALL(led_, set_fade_time_and_start(_, _, _, _, _)).Times(0);
 
-    ASSERT_EQ(ESP_FAIL, ch_->fade(100));
+    ASSERT_EQ(ESP_FAIL, ch_->fade(100, 1000));
 }
 
 TEST_F(ChannelTest, fadeTwiceStopsPreviousFade) {
     {
         InSequence seq;
         EXPECT_CALL(led_, stop_fade(_, channel)).WillOnce(Return(ESP_OK));
-        EXPECT_CALL(led_, set_fade_time_and_start(_, channel, 100, _, _))
+        EXPECT_CALL(led_, set_fade_time_and_start(_, channel, 100, 1000, _))
             .WillOnce(Return(ESP_OK));
-        ASSERT_EQ(ESP_OK, ch_->fade(100));
+        ASSERT_EQ(ESP_OK, ch_->fade(100, 1000));
     }
     {
         InSequence seq;
         EXPECT_CALL(led_, stop_fade(_, channel)).WillOnce(Return(ESP_OK));
-        EXPECT_CALL(led_, set_fade_time_and_start(_, channel, 200, _, _))
+        EXPECT_CALL(led_, set_fade_time_and_start(_, channel, 200, 500, _))
             .WillOnce(Return(ESP_OK));
-        ASSERT_EQ(ESP_OK, ch_->fade(200));
+        ASSERT_EQ(ESP_OK, ch_->fade(200, 500));
     }
 }
 

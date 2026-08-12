@@ -32,10 +32,11 @@ Channel<LED>::Channel(channel_t channel, gpio_num_t pin)
     : channel_{channel}, config_{channel, pin} {}
 
 template <I_LED LED>
-esp_err_t Channel<LED>::fade(uint32_t target_duty) noexcept {
+esp_err_t Channel<LED>::fade(uint32_t target_duty,
+                             uint32_t duration_ms) noexcept {
     UTIL_RETURN(LED::get().stop_fade(led::PWM::MODE, channel_));
     return LED::get().set_fade_time_and_start(
-        led::PWM::MODE, channel_, target_duty, led::PWM::DEFAULT_FADE_TIME_MS,
+        led::PWM::MODE, channel_, target_duty, duration_ms,
         LEDC_FADE_NO_WAIT);
 }
 
@@ -85,11 +86,12 @@ LEDC<LED>::LEDC() noexcept
       blue_{led::PWM::channel::BLUE, led::pin::BLUE},
       ww_{led::PWM::channel::WW, led::pin::WW} {}
 
-template <I_LED LED> esp_err_t LEDC<LED>::fade_to(RGB rgb) noexcept {
+template <I_LED LED>
+esp_err_t LEDC<LED>::fade_to(RGB rgb, uint32_t duration_ms) noexcept {
     auto target = RGBDuty::rgb_to_duty(rgb);
-    UTIL_RETURN(red_.fade(target.r_duty));
-    UTIL_RETURN(green_.fade(target.g_duty));
-    UTIL_RETURN(blue_.fade(target.b_duty));
+    UTIL_RETURN(red_.fade(target.r_duty, duration_ms));
+    UTIL_RETURN(green_.fade(target.g_duty, duration_ms));
+    UTIL_RETURN(blue_.fade(target.b_duty, duration_ms));
     return ESP_OK;
 }
 

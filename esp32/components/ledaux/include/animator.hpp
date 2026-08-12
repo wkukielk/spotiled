@@ -31,7 +31,7 @@ template <I_LEDC LEDC> class Animator {
   public:
     Animator() noexcept = default;
     ~Animator() noexcept;
-    esp_err_t fade_to(RGB rgb) noexcept;
+    esp_err_t fade_to(RGB rgb, uint32_t duration_ms) noexcept;
     esp_err_t set_color(RGB rgb) noexcept;
     RGB get_current_color() const noexcept;
     void start_animation(led::AnimationSpec spec);

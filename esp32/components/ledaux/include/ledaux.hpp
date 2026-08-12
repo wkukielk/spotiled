@@ -72,7 +72,7 @@ template <I_LED LED> class Channel {
 
   public:
     Channel(channel_t channel, gpio_num_t pin);
-    esp_err_t fade(uint32_t target_duty) noexcept;
+    esp_err_t fade(uint32_t target_duty, uint32_t duration_ms) noexcept;
     esp_err_t set_color(uint32_t target_duty) noexcept;
     uint32_t get_duty() const;
 
@@ -94,8 +94,9 @@ template <I_LED LED> class LEDCConfigurer {
 
 template <typename T>
 concept I_LEDC =
-    std::default_initializable<T> && requires(T t, const T &ct, RGB rgb) {
-        { t.fade_to(rgb) } noexcept -> std::same_as<esp_err_t>;
+    std::default_initializable<T> &&
+    requires(T t, const T &ct, RGB rgb, uint32_t duration_ms) {
+        { t.fade_to(rgb, duration_ms) } noexcept -> std::same_as<esp_err_t>;
         { t.set_color(rgb) } noexcept -> std::same_as<esp_err_t>;
         { ct.get_current_color() } noexcept -> std::same_as<RGB>;
     };
@@ -103,7 +104,7 @@ concept I_LEDC =
 template <I_LED LED> class LEDC {
   public:
     LEDC() noexcept;
-    esp_err_t fade_to(RGB rgb) noexcept;
+    esp_err_t fade_to(RGB rgb, uint32_t duration_ms) noexcept;
     esp_err_t set_color(RGB rgb) noexcept;
     RGB get_current_color() const noexcept;
 

@@ -1,10 +1,10 @@
 #ifndef SERVER_COMMAND_HANDLER_HPP
 #define SERVER_COMMAND_HANDLER_HPP
 
-#include "ledaux.hpp"
+#include "animator.hpp"
 #include "server/command.hpp"
 
-template <I_LEDC LEDC> class CommandHandler {
+template <I_Animatable LEDC> class CommandHandler {
   public:
     explicit CommandHandler(LEDC &ledc) : ledc{ledc} {};
     server::Response process(server::Message msg);
@@ -14,6 +14,7 @@ template <I_LEDC LEDC> class CommandHandler {
 
   private:
     server::Response handle(const server::FadeLed &);
+    server::Response handle(const server::PulsateLed &);
 };
 
 template <typename T>
