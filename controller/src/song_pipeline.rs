@@ -53,16 +53,13 @@ pub(crate) trait Controller: Send + Sync {
     fn disconnect(&mut self) -> Result<(), SongPipelineError>;
 }
 
-pub struct SongPipeline<C: Controller> {
+pub struct WsServer<C: Controller> {
     processor: CommandProcessor<C>,
 }
 
-/// Concrete pipeline type for a given `LedSocket` implementation, so callers
-/// outside this module can name it without reaching into the private
-/// `pipeline_controller` submodule.
-pub type Pipeline<S> = SongPipeline<PipelineController<S>>;
+pub type Pipeline<S> = WsServer<PipelineController<S>>;
 
-impl<S> SongPipeline<PipelineController<S>>
+impl<S> WsServer<PipelineController<S>>
 where
     S: LedSocket + 'static,
 {
@@ -73,7 +70,7 @@ where
     }
 }
 
-impl<C> SongPipeline<C>
+impl<C> WsServer<C>
 where
     C: Controller,
 {

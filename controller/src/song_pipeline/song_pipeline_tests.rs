@@ -10,7 +10,7 @@ use super::*;
 async fn spawn_server(controller: MockController) -> SocketAddr {
     let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
     let addr = listener.local_addr().unwrap();
-    let mut pipeline = SongPipeline {
+    let mut pipeline = WsServer {
         processor: CommandProcessor::new(controller),
     };
 
