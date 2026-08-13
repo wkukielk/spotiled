@@ -47,6 +47,7 @@ struct AppHandles {
     NVSHandle nvs;
     TimeHandle time;
     MDNSHandle mdns;
+    Handle<LED> led;
     u_ptr<runtime_t> runtime;
 };
 

@@ -1,3 +1,4 @@
+#include "Handle.hpp"
 #include "MockLED.hpp"
 #include "ledaux.hpp"
 #include <gmock/gmock.h>
@@ -9,7 +10,8 @@ using namespace led::PWM;
 
 class LEDCTest : public testing::Test {
   protected:
-    MockLED &led_{MockLED::reset_and_get()};
+    Handle<MockLED> led_handle{};
+    MockLED &led_{led_handle.get()};
     LEDC<MockLED> ledc{};
 };
 
@@ -18,14 +20,13 @@ TEST_F(LEDCTest, fadeTo) {
 
     EXPECT_CALL(led_, stop_fade(_, _)).WillRepeatedly(Return(ESP_OK));
     InSequence seq;
-    EXPECT_CALL(led_,
-               set_fade_time_and_start(MODE, channel::RED, 100, 2000, _))
+    EXPECT_CALL(led_, set_fade_time_and_start(MODE, channel::RED, 100, 2000, _))
         .WillOnce(Return(ESP_OK));
     EXPECT_CALL(led_,
-               set_fade_time_and_start(MODE, channel::GREEN, 150, 2000, _))
+                set_fade_time_and_start(MODE, channel::GREEN, 150, 2000, _))
         .WillOnce(Return(ESP_OK));
     EXPECT_CALL(led_,
-               set_fade_time_and_start(MODE, channel::BLUE, 200, 2000, _))
+                set_fade_time_and_start(MODE, channel::BLUE, 200, 2000, _))
         .WillOnce(Return(ESP_OK));
 
     ASSERT_EQ(ledc.fade_to(color, 2000), ESP_OK);

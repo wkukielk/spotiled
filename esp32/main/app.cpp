@@ -20,6 +20,7 @@ App App::create() {
     auto netif = Netif{};
     auto nvs = NVSHandle{mkuptr<NVS>()};
     auto time = TimeHandle{mkuptr<Time>()};
+    auto led = Handle<LED>{};
 
     auto cfg = cfg_reader.get_config();
     auto mdns = MDNSHandle{move(cfg.mdns)};
@@ -33,6 +34,7 @@ App App::create() {
         .nvs{move(nvs)},
         .time{move(time)},
         .mdns{move(mdns)},
+        .led{move(led)},
         .runtime{move(runtime)},
     };
     return App{move(handles)};

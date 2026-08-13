@@ -1,6 +1,5 @@
 idf_component_register(
-    SRCS "MockLED.cpp"
-         "test_animator.cpp"
+    SRCS "test_animator.cpp"
          "test_channel.cpp"
          "test_LEDC.cpp"
     INCLUDE_DIRS "include"

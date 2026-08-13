@@ -1,3 +1,4 @@
+#include "Handle.hpp"
 #include "MockLED.hpp"
 #include "ledaux.hpp"
 #include <gmock/gmock.h>
@@ -11,7 +12,8 @@ class ChannelConstructTest : public testing::Test {
     const ledc_channel_t channel = led::PWM::channel::RED;
     const gpio_num_t pin = led::pin::RED;
 
-    MockLED &led_{MockLED::reset_and_get()};
+    Handle<MockLED> led_handle{};
+    MockLED &led_{led_handle.get()};
 };
 
 TEST_F(ChannelConstructTest, configFail) {
@@ -27,7 +29,8 @@ class ChannelTest : public testing::Test {
     const ledc_channel_t channel = led::PWM::channel::RED;
     const gpio_num_t pin = led::pin::RED;
 
-    MockLED &led_{MockLED::reset_and_get()};
+    Handle<MockLED> led_handle{};
+    MockLED &led_{led_handle.get()};
     std::optional<led::Channel<MockLED>> ch_;
 };
 

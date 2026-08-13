@@ -14,14 +14,14 @@ class MockHandlerFactory {
 };
 
 struct ProvisionedWiFiManagerMockTypes {
-    using WiFi = Handle<MockWiFi>;
+    using WiFi = Handle<::testing::NiceMock<MockWiFi>>;
     using EventGroup = MockEventGroup;
     using EventHandler = int;
     using Provisioning = MockProvisioningIsProvisioned;
 };
 
 struct NotProvisionedWiFiManagerMockTypes {
-    using WiFi = Handle<MockWiFi>;
+    using WiFi = Handle<::testing::NiceMock<MockWiFi>>;
     using EventGroup = MockEventGroup;
     using EventHandler = int;
     using Provisioning = MockProvisioningNotProvisioned;

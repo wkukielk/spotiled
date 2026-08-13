@@ -1,6 +1,7 @@
 #ifndef LEDAUX_HPP
 #define LEDAUX_HPP
 
+#include "Handle.hpp"
 #include "I_LED.hpp"
 #include "errors.hpp"
 #include "rgb.hpp"

@@ -14,8 +14,6 @@ concept I_LED =
              const ledc_timer_config_t *timer_cfg, ledc_mode_t speed_mode,
              ledc_channel_t channel, uint32_t duty, uint32_t fade_time_ms,
              ledc_fade_mode_t fade_mode, int intr_alloc_flags) {
-        { T::get() } -> std::same_as<T &>;
-
         { t.configure_channel(ch_cfg) } noexcept -> std::same_as<esp_err_t>;
         { t.configure_timer(timer_cfg) } noexcept -> std::same_as<esp_err_t>;
         {

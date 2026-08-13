@@ -2,12 +2,12 @@
 #define LED_WRAP_HPP
 
 #include "I_LED.hpp"
-#include "global.hpp"
 
 class LED {
-    LED();
-
   public:
+    esp_err_t init() noexcept { return ESP_OK; }
+    esp_err_t deinit() noexcept { return ESP_OK; }
+
     esp_err_t configure_channel(const ledc_channel_config_t *cfg) noexcept {
         return ledc_channel_config(cfg);
     }
@@ -47,14 +47,7 @@ class LED {
         return ledc_update_duty(speed_mode, channel);
     }
 
-    static LED &get() { return instance; }
-
     static const ledc_clk_cfg_t CLOCK = LEDC_USE_APB_CLK;
-
-  private:
-    static LED instance;
-
-    friend class Global;
 };
 
 static_assert(I_LED<LED>);

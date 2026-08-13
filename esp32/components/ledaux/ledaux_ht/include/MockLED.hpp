@@ -6,6 +6,9 @@
 
 class MockLED {
   public:
+    esp_err_t init() noexcept { return ESP_OK; }
+    esp_err_t deinit() noexcept { return ESP_OK; }
+
     MOCK_METHOD(esp_err_t, configure_channel,
                 (const ledc_channel_config_t *cfg), (noexcept));
     MOCK_METHOD(esp_err_t, configure_timer, (const ledc_timer_config_t *cfg),
@@ -34,18 +37,6 @@ class MockLED {
     MOCK_METHOD(bool, is_fade_func_installed, (), (noexcept));
 
     static const ledc_clk_cfg_t CLOCK = (ledc_clk_cfg_t)0;
-
-    static MockLED &get() {
-        if (!instance)
-            instance = std::make_unique<MockLED>();
-        return *instance;
-    };
-    static void reset() { instance = nullptr; };
-    static MockLED &reset_and_get() {
-        reset();
-        return get();
-    };
-    static std::unique_ptr<MockLED> instance;
 };
 
 static_assert(I_LED<MockLED>);
