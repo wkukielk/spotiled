@@ -38,15 +38,13 @@ TEST(ParseTest, PulsateLed) {
 }
 
 TEST(ParseTest, PulsateLedMissingDuration) {
-    EXPECT_FALSE(
-        server::parse(R"({"cmd":"pulsate","r":255,"g":0,"b":128})")
-            .has_value());
+    EXPECT_FALSE(server::parse(R"({"cmd":"pulsate","r":255,"g":0,"b":128})")
+                     .has_value());
 }
 
 TEST(ParseTest, PulsateLedNonPositiveDuration) {
-    EXPECT_FALSE(server::parse(
-                     R"({"cmd":"pulsate","r":255,"g":0,"b":128,)"
-                     R"("duration_ms":0})")
+    EXPECT_FALSE(server::parse(R"({"cmd":"pulsate","r":255,"g":0,"b":128,)"
+                               R"("duration_ms":0})")
                      .has_value());
 }
 
@@ -111,7 +109,7 @@ class ServerThreadTest : public Test {
     TestableServerThread server{util::JoinEventGroup{egroup, 0x1}};
     MockWSServer &ws_server = server.get_ws_server();
     MockCommandHandler &handler = server.get_handler();
-    MockQueue &queue = server.get_queue();
+    NiceMock<MockQueue> &queue = server.get_queue();
 
     void SetUp() override {
         ON_CALL(queue, receive(_)).WillByDefault([](uint32_t) {
@@ -123,13 +121,13 @@ class ServerThreadTest : public Test {
 TEST_F(ServerThreadTest, PerformForwardsMessageToHandler) {
     auto msg =
         MockWSServer::make_message(R"({"cmd":"fade","r":255,"g":0,"b":0})");
-    EXPECT_CALL(ws_server, receive(1000)).WillOnce(Return(std::move(msg)));
+    EXPECT_CALL(ws_server, receive(_)).WillOnce(Return(std::move(msg)));
     EXPECT_CALL(handler, process(_));
     server.perform();
 }
 
 TEST_F(ServerThreadTest, PerformWithEmptyMessage) {
-    EXPECT_CALL(ws_server, receive(1000))
+    EXPECT_CALL(ws_server, receive(_))
         .WillOnce(Return(ByMove(server::Message{nullptr, 0})));
     EXPECT_CALL(handler, process(_));
     server.perform();

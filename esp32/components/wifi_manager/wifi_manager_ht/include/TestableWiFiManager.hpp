@@ -34,9 +34,10 @@ class TestableProvisionedWiFiManager
     : public WiFiManager<ProvisionedWiFiManagerMockTypes> {
   public:
     using WiFiManager<ProvisionedWiFiManagerMockTypes>::WiFiManager;
+    using NiceWiFi = ::testing::NiceMock<MockWiFi>;
 
+    NiceWiFi &get_wifi() { return Handle<NiceWiFi>::get(); }
     EGroup &get_event_group() { return event_group; };
-    MockWiFi &get_wifi() { return Handle<MockWiFi>::get(); };
     std::optional<Provisioning> &get_provisioning() { return provisioning; };
 };
 

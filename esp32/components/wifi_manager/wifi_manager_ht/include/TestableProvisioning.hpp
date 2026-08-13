@@ -12,7 +12,7 @@ class MockProvEventHandler {
 };
 
 struct MockProvisioningTypes {
-    using WiFiProv = MockWiFiProv;
+    using WiFiProv = ::testing::NiceMock<MockWiFiProv>;
     using EventGroup = MockEventGroup;
     using EventHandler = MockProvEventHandler;
 };

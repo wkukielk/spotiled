@@ -14,7 +14,7 @@ using namespace testing;
 struct MockWiFiEventHandlerTypes {
     using EventGroup = util::EventGroup;
     using EventLoop = Handle<MockDftEventLoop>;
-    using WiFi = Handle<MockWiFi>;
+    using WiFi = Handle<NiceMock<MockWiFi>>;
 };
 
 class WiFiEventHandlerTest : public Test {
@@ -23,8 +23,8 @@ class WiFiEventHandlerTest : public Test {
     MockDftEventLoop &eloop = eloop_handle.get();
 
     util::EventGroup event_group{};
-    Handle<MockWiFi> wifi_handle{};
-    MockWiFi &wifi_ = wifi_handle.get();
+    Handle<NiceMock<MockWiFi>> wifi_handle{};
+    NiceMock<MockWiFi> &wifi_ = wifi_handle.get();
     WiFiEventHandler<MockWiFiEventHandlerTypes> handler{event_group, 2};
 
     wifi_event_sta_disconnected_t disc_unrec{.reason = WIFI_REASON_AUTH_FAIL};
@@ -45,6 +45,7 @@ TEST_F(WiFiEventHandlerTest, init) {
 }
 
 TEST_F(WiFiEventHandlerTest, start) {
+    EXPECT_CALL(wifi_, connect()).WillOnce(Return(ESP_OK));
     eloop.post(WIFI_EVENT, WIFI_EVENT_STA_START, nullptr, 0);
     expect_state({{wifi::end_bit, false},
                   {wifi::fail_bit, false},

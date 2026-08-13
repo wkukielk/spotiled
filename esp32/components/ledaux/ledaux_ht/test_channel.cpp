@@ -29,9 +29,9 @@ class ChannelTest : public testing::Test {
     const ledc_channel_t channel = led::PWM::channel::RED;
     const gpio_num_t pin = led::pin::RED;
 
-    Handle<MockLED> led_handle{};
-    MockLED &led_{led_handle.get()};
-    std::optional<led::Channel<MockLED>> ch_;
+    Handle<NiceMock<MockLED>> led_handle{};
+    NiceMock<MockLED> &led_{led_handle.get()};
+    std::optional<led::Channel<NiceMock<MockLED>>> ch_;
 };
 
 TEST_F(ChannelTest, getDutySuccess) {

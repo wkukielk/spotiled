@@ -10,9 +10,9 @@ using namespace led::PWM;
 
 class LEDCTest : public testing::Test {
   protected:
-    Handle<MockLED> led_handle{};
-    MockLED &led_{led_handle.get()};
-    LEDC<MockLED> ledc{};
+    Handle<NiceMock<MockLED>> led_handle{};
+    NiceMock<MockLED> &led_{led_handle.get()};
+    LEDC<NiceMock<MockLED>> ledc{};
 };
 
 TEST_F(LEDCTest, fadeTo) {

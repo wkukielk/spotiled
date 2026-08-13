@@ -7,9 +7,12 @@
 #include "MockWSServer.hpp"
 #include "server/server.hpp"
 
+using namespace std;
+using namespace testing;
+
 struct TestServerTypes {
     using WSServer = MockWSServer;
-    using Queue = MockQueue;
+    using Queue = NiceMock<MockQueue>;
     using Handler = MockCommandHandler;
 };
 
@@ -21,7 +24,7 @@ class TestableServerThread : public ServerThread<TestServerTypes> {
     using ServerThread::perform;
     MockWSServer &get_ws_server() { return ws_server; }
     MockCommandHandler &get_handler() { return *handler; }
-    MockQueue &get_queue() { return queue; }
+    NiceMock<MockQueue> &get_queue() { return queue; }
 };
 
 #endif

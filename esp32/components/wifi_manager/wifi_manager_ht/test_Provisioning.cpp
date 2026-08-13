@@ -11,8 +11,8 @@ using namespace testing;
 
 class ProvisioningTest : public Test {
   protected:
-    TimeHandle time_handle{mkuptr<MockTime>()};
-    MockTime &time = (MockTime &)(Global::get_time());
+    TimeHandle time_handle{mkuptr<NiceMock<MockTime>>()};
+    NiceMock<MockTime> &time = (NiceMock<MockTime> &)(Global::get_time());
     const char *service_name = "TEST_PROV";
     MockEventGroup event_group{};
     TestableProvisioning prov{event_group, service_name};

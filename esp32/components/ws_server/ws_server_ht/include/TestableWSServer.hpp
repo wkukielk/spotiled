@@ -4,10 +4,10 @@
 #include "MockHTTPD.hpp"
 #include "WSServer.hpp"
 
-class TestableWSServer : public WSServer<MockHTTPD> {
+class TestableWSServer : public WSServer<::testing::NiceMock<MockHTTPD>> {
   public:
-    MockHTTPD &get_httpd() noexcept { return httpd; }
-    using WSServer<MockHTTPD>::handler;
+    ::testing::NiceMock<MockHTTPD> &get_httpd() noexcept { return httpd; }
+    using WSServer<::testing::NiceMock<MockHTTPD>>::handler;
 };
 
 #endif

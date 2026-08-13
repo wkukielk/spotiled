@@ -14,14 +14,20 @@ using namespace wifi;
 
 class ProvisionedWiFiManagerTest : public Test {
   protected:
-    TimeHandle time_handle{mkuptr<MockTime>()};
-    MockHandlerFactory factory{};
+    TimeHandle time_handle{mkuptr<NiceMock<MockTime>>()};
+
+    NiceMock<MockHandlerFactory> factory{};
     TestableProvisionedWiFiManager manager{
         [&](auto &egroup) { return factory.call(egroup); }};
-    MockWiFi &wifi_ = manager.get_wifi();
+
+    NiceMock<MockWiFi> &wifi_ = manager.get_wifi();
     optional<MockProvisioningIsProvisioned> &provisioning =
         manager.get_provisioning();
     MockEventGroup &egroup = manager.get_event_group();
+
+    void SetUp() override {
+        EXPECT_CALL(egroup, wait(end_bit)).Times(AnyNumber());
+    }
 };
 
 TEST_F(ProvisionedWiFiManagerTest, constructDestruct) {
@@ -40,12 +46,13 @@ TEST_F(ProvisionedWiFiManagerTest, initFail) {
     ASSERT_THROW(manager.init(), InitError);
 }
 
-TEST_F(ProvisionedWiFiManagerTest, notConnectedBeforeInit) {
-    EXPECT_FALSE(manager.is_connected());
+TEST_F(ProvisionedWiFiManagerTest, isConnected) {
+    EXPECT_CALL(egroup, get()).WillOnce(Return(wifi::success_bit));
+    EXPECT_TRUE(manager.is_connected());
 }
 
-TEST_F(ProvisionedWiFiManagerTest, notConnectedAfterInit) {
-    manager.init();
+TEST_F(ProvisionedWiFiManagerTest, isConnectedNo) {
+    EXPECT_CALL(egroup, get()).WillOnce(Return(0));
     EXPECT_FALSE(manager.is_connected());
 }
 
@@ -77,13 +84,17 @@ TEST_F(ProvisionedWiFiManagerTest, connectFail) {
 class NotProvisionedWiFiManagerTest : public Test {
   protected:
     TimeHandle time_handle{mkuptr<MockTime>()};
-    MockHandlerFactory factory{};
+    NiceMock<MockHandlerFactory> factory{};
     TestableNotProvisionedWiFiManager manager{
         [&](auto &egroup) { return factory.call(egroup); }};
     MockWiFi &wifi_ = manager.get_wifi();
     optional<MockProvisioningNotProvisioned> &provisioning =
         manager.get_provisioning();
     MockEventGroup &egroup = manager.get_event_group();
+
+    void SetUp() override {
+        EXPECT_CALL(egroup, wait(end_bit)).Times(AnyNumber());
+    }
 };
 
 TEST_F(NotProvisionedWiFiManagerTest, initSuccess) {

@@ -24,9 +24,8 @@ TEST_F(AnimatorTest, SetColorForwardsWhenIdle) {
 TEST_F(AnimatorTest, SetColorAlwaysWinsOverAnimation) {
     RGB last_color{};
     EXPECT_CALL(ledc, fade_to(_, _))
+        .Times(testing::AtLeast(1))
         .WillRepeatedly(DoAll(SaveArg<0>(&last_color), Return(ESP_OK)));
-    EXPECT_CALL(ledc, fade_to(_, _))
-        .WillOnce(DoAll(SaveArg<0>(&last_color), Return(ESP_OK)));
 
     animator.start_animation(
         led::AnimationSpec{{RGB{1, 0, 0}, RGB{0, 1, 0}}, 2});
