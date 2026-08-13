@@ -14,9 +14,25 @@ use crate::spotify::playback_event_listener::PlaybackEventListener;
 
 const LED_SOCKET_PORT: u16 = 8000;
 
+/// Owns the resources of an active proxy session and tears them down when
+/// dropped, so `disconnect()` never has to know what those resources are.
+struct ActiveSession(JoinHandle<()>);
+
+impl Drop for ActiveSession {
+    fn drop(&mut self) {
+        self.0.abort();
+    }
+}
+
+impl From<JoinHandle<()>> for ActiveSession {
+    fn from(handle: JoinHandle<()>) -> Self {
+        Self(handle)
+    }
+}
+
 pub(crate) struct PipelineController<S: LedSocket> {
     spotify: Arc<dyn ISpotify>,
-    active: Option<JoinHandle<()>>,
+    active: Option<ActiveSession>,
     _socket: PhantomData<S>,
 }
 
@@ -58,17 +74,18 @@ where
         let stream = self.spotify.get_playback_event_stream()?;
         let event_listener = PlaybackEventListener::new(stream);
 
-        self.active = Some(tokio::spawn(async move {
-            event_listener.run(handler).await;
-        }));
+        self.active = Some(
+            tokio::spawn(async move {
+                event_listener.run(handler).await;
+            })
+            .into(),
+        );
 
         Ok(())
     }
 
     fn disconnect(&mut self) -> Result<(), SongPipelineError> {
-        if let Some(task) = self.active.take() {
-            task.abort();
-        }
+        self.active = None;
         Ok(())
     }
 }

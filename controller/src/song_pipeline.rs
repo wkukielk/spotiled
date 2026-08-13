@@ -54,7 +54,8 @@ pub(crate) trait Controller: Send + Sync {
 }
 
 pub struct WsServer<C: Controller> {
-    processor: CommandProcessor<C>,
+    controller: C,
+    processor: CommandProcessor,
 }
 
 pub type Pipeline<S> = WsServer<PipelineController<S>>;
@@ -65,7 +66,8 @@ where
 {
     pub fn new(spotify: Arc<dyn ISpotify>) -> Self {
         Self {
-            processor: CommandProcessor::new(PipelineController::new(spotify)),
+            controller: PipelineController::new(spotify),
+            processor: CommandProcessor::new(),
         }
     }
 }
@@ -96,6 +98,13 @@ where
                 }
             }
         }
+
+        // The client is gone, one way or another — tear down whatever it
+        // had connected. `Controller::disconnect` owns the resources, so
+        // this stays a single call no matter how many resources that is.
+        if let Err(err) = self.controller.disconnect() {
+            log::warn!("Failed to disconnect controller after client left: {err}");
+        }
     }
 
     async fn handle_message(
@@ -105,10 +114,11 @@ where
     ) -> LoopStatus {
         match msg {
             WsMessage::Text(command) => {
-                let (reply, status) = match self.processor.process(&command).await {
-                    Ok(reply) => (reply, LoopStatus::Continue),
-                    Err(reply) => (reply, LoopStatus::Break),
-                };
+                let (reply, status) =
+                    match self.processor.process(&mut self.controller, &command).await {
+                        Ok(reply) => (reply, LoopStatus::Continue),
+                        Err(reply) => (reply, LoopStatus::Break),
+                    };
                 let _ = ws.send(WsMessage::Text(reply.into())).await;
                 status
             }
