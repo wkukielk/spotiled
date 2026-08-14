@@ -27,7 +27,7 @@ public enum EndpointConnectionError: Error, Equatable {
 @Mockable
 public protocol EndpointConnecting: AnyObject {
     var state: EndpointConnectionState { get }
-    func connect(to endpoint: NWEndpoint, name: String)
+    func connect(to endpoint: NWEndpoint, name: String, path: String)
     func disconnect()
     func send(_ message: String) async throws -> String
 }
@@ -39,11 +39,46 @@ public final class WebSocketEndpointConnection: EndpointConnecting, @unchecked S
     private var connection: NWConnection?
     private var pendingReply: CheckedContinuation<String, Error>?
 
+    private var resolver: NWConnection?
+
     public init() {}
 
-    public func connect(to endpoint: NWEndpoint, name: String) {
+    public func connect(to endpoint: NWEndpoint, name: String, path: String) {
         disconnect()
         state = .connecting(name: name)
+
+        // NWProtocolWebSocket only sends a custom request path for `.url` endpoints; `.service`/`.hostPort`
+        // endpoints always get "GET /". So resolve to a concrete host/port first, then reconnect via `.url`.
+        // Uses `.udp` so this is connectionless resolution only — a `.tcp` resolver would complete a real
+        // handshake against the actual TCP listener and then abort it, which can break servers (e.g. one
+        // that calls accept_async on the raw accepted stream and errors the whole accept loop on failure).
+        let resolver = NWConnection(to: endpoint, using: .udp)
+        self.resolver = resolver
+        resolver.stateUpdateHandler = { [weak self, weak resolver] resolverState in
+            guard let self, let resolver else { return }
+            switch resolverState {
+            case .ready:
+                let resolved = resolver.currentPath?.remoteEndpoint
+                resolver.cancel()
+                self.resolver = nil
+                self.startWebSocketConnection(to: resolved ?? endpoint, path: path, name: name)
+            case .failed, .cancelled:
+                resolver.cancel()
+                self.resolver = nil
+            default:
+                break
+            }
+        }
+        resolver.start(queue: .main)
+    }
+
+    private func startWebSocketConnection(to endpoint: NWEndpoint, path: String, name: String) {
+        let target: NWEndpoint
+        if case .hostPort(let host, let port) = endpoint, let url = Self.webSocketURL(host: host, port: port, path: path) {
+            target = .url(url)
+        } else {
+            target = endpoint
+        }
 
         let webSocketOptions = NWProtocolWebSocket.Options()
         webSocketOptions.autoReplyPing = true
@@ -51,7 +86,7 @@ public final class WebSocketEndpointConnection: EndpointConnecting, @unchecked S
         let parameters = NWParameters.tcp
         parameters.defaultProtocolStack.applicationProtocols.insert(webSocketOptions, at: 0)
 
-        let connection = NWConnection(to: endpoint, using: parameters)
+        let connection = NWConnection(to: target, using: parameters)
         self.connection = connection
         connection.stateUpdateHandler = { [weak self] connectionState in
             guard let self else { return }
@@ -71,7 +106,28 @@ public final class WebSocketEndpointConnection: EndpointConnecting, @unchecked S
         connection.start(queue: .main)
     }
 
+    private static func webSocketURL(host: NWEndpoint.Host, port: NWEndpoint.Port, path: String) -> URL? {
+        let hostString: String
+        switch host {
+        case .ipv4(let address):
+            hostString = Self.stripInterfaceSuffix(address.debugDescription)
+        case .ipv6(let address):
+            hostString = "[\(Self.stripInterfaceSuffix(address.debugDescription))]"
+        case .name(let name, _):
+            hostString = name
+        @unknown default:
+            return nil
+        }
+        return URL(string: "ws://\(hostString):\(port.rawValue)\(path)")
+    }
+
+    private static func stripInterfaceSuffix(_ description: String) -> String {
+        String(description.split(separator: "%", maxSplits: 1).first ?? Substring(description))
+    }
+
     public func disconnect() {
+        resolver?.cancel()
+        resolver = nil
         connection?.cancel()
         connection = nil
         state = .disconnected

@@ -17,7 +17,7 @@ struct ControllerESP32SessionTests {
 
         session.connect(to: .hostPort(host: "192.168.1.10", port: 80), name: "Controller")
 
-        verify(connection).connect(to: .value(.hostPort(host: "192.168.1.10", port: 80)), name: .value("Controller")).called(.once)
+        verify(connection).connect(to: .value(.hostPort(host: "192.168.1.10", port: 80)), name: .value("Controller"), path: .value("/")).called(.once)
     }
 
     @Test func disconnectDelegatesToConnectionAndResetsESP32State() async throws {

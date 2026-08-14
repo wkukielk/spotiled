@@ -44,7 +44,7 @@ public final class ControllerESP32Session: ControllerSessionManaging {
     }
 
     public func connect(to endpoint: NWEndpoint, name: String) {
-        connection.connect(to: endpoint, name: name)
+        connection.connect(to: endpoint, name: name, path: "/")
     }
 
     public func disconnect() {

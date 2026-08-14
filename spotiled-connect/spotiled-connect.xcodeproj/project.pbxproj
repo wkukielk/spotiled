@@ -428,7 +428,7 @@
 				ENABLE_PREVIEWS = YES;
 				GCC_WARN_INHIBIT_ALL_WARNINGS = NO;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_NSBonjourServices = "_s-led-controler._tcp _s-led-direct._udp";
+				INFOPLIST_KEY_NSBonjourServices = "_s-led-controler._tcp _s-led-direct._udp _s-led-auto._tcp";
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "This app uses your local network to discover Spotiled controllers.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -464,7 +464,7 @@
 				ENABLE_PREVIEWS = YES;
 				GCC_WARN_INHIBIT_ALL_WARNINGS = NO;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_NSBonjourServices = "_s-led-controler._tcp _s-led-direct._udp";
+				INFOPLIST_KEY_NSBonjourServices = "_s-led-controler._tcp _s-led-direct._udp _s-led-auto._tcp";
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "This app uses your local network to discover Spotiled controllers.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;

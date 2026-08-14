@@ -29,7 +29,7 @@ public final class DirectESP32Connection: DirectESP32Connecting {
     }
 
     public func connect(to device: DiscoveredDevice) {
-        connection.connect(to: device.endpoint, name: device.name)
+        connection.connect(to: device.endpoint, name: device.name, path: "/ws")
     }
 
     public func disconnect() {

@@ -17,9 +17,15 @@ private enum ManualAnimation: String, CaseIterable, Identifiable {
 struct ManualTab: View {
     @State private var controller = ManualColorController()
     @State private var esp32Connection = DirectESP32Connection()
+    @State private var autoBrowser = DeviceBrowser(discovery: BonjourServiceDiscovery(serviceType: "_s-led-auto._tcp"))
     @State private var selectedAnimation: ManualAnimation = .pulsate
     @Environment(SelectedESP32Store.self) private var esp32Store
     @Environment(\.esp32Session) private var session
+
+    private var matchedAutoDevice: DiscoveredDevice? {
+        guard let device = esp32Store.device else { return nil }
+        return autoBrowser.discoveredDevices.first { $0.name == device.name }
+    }
 
     var body: some View {
         VStack {
@@ -44,14 +50,21 @@ struct ManualTab: View {
             animationPanel
         }
         .padding(.horizontal)
+        .onAppear {
+            autoBrowser.start()
+        }
         .task(id: esp32Store.device) {
             guard let device = esp32Store.device else { return }
             controller.updateTarget(device.endpoint)
             try? await session.disconnectESP32()
-            esp32Connection.connect(to: device)
+        }
+        .task(id: matchedAutoDevice) {
+            guard let matchedAutoDevice else { return }
+            esp32Connection.connect(to: matchedAutoDevice)
         }
         .onDisappear {
             esp32Connection.disconnect()
+            autoBrowser.stop()
         }
     }
 
@@ -76,6 +89,7 @@ private struct PulsateAnimationPanel: View {
             LabeledNumberField(title: "Duration (ms)", value: $durationMs)
             Button("Play") {
                 Task {
+                    
                     try? await connection.pulsate(color: RGBColor(color), durationMs: durationMs)
                 }
             }
