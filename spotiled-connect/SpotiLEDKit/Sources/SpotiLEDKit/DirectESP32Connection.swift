@@ -39,7 +39,7 @@ public final class DirectESP32Connection: DirectESP32Connecting {
     public func pulsate(color: RGBColor, durationMs: Int32) async throws {
         let command = PulsateCommand(r: color.red, g: color.green, b: color.blue, durationMs: durationMs)
         let data = try JSONEncoder().encode(command)
-        _ = try await connection.send(String(decoding: data, as: UTF8.self))
+        try await connection.sendOneWay(String(decoding: data, as: UTF8.self))
     }
 
     private struct PulsateCommand: Encodable {

@@ -89,7 +89,6 @@ private struct PulsateAnimationPanel: View {
             LabeledNumberField(title: "Duration (ms)", value: $durationMs)
             Button("Play") {
                 Task {
-                    
                     try? await connection.pulsate(color: RGBColor(color), durationMs: durationMs)
                 }
             }

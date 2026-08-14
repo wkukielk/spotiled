@@ -30,6 +30,7 @@ public protocol EndpointConnecting: AnyObject {
     func connect(to endpoint: NWEndpoint, name: String, path: String)
     func disconnect()
     func send(_ message: String) async throws -> String
+    func sendOneWay(_ message: String) async throws
 }
 
 @Observable
@@ -155,6 +156,30 @@ public final class WebSocketEndpointConnection: EndpointConnecting, @unchecked S
                 completion: .contentProcessed { [weak self] error in
                     if let error {
                         self?.resumePendingReply(with: .failure(error))
+                    }
+                }
+            )
+        }
+    }
+
+    public func sendOneWay(_ message: String) async throws {
+        guard let connection, case .connected = state else {
+            throw EndpointConnectionError.notConnected
+        }
+
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            let metadata = NWProtocolWebSocket.Metadata(opcode: .text)
+            let context = NWConnection.ContentContext(identifier: "text", metadata: [metadata])
+
+            connection.send(
+                content: Data(message.utf8),
+                contentContext: context,
+                isComplete: true,
+                completion: .contentProcessed { error in
+                    if let error {
+                        continuation.resume(throwing: error)
+                    } else {
+                        continuation.resume()
                     }
                 }
             )
