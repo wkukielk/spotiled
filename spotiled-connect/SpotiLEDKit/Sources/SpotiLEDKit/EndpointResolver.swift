@@ -11,8 +11,13 @@ import Network
 /// Resolves a possibly-unresolved `NWEndpoint` (e.g. a Bonjour `.service`) to a concrete
 /// `.url` endpoint carrying the given path, since `NWProtocolWebSocket` only sends a custom
 /// request path for `.url` endpoints — `.service`/`.hostPort` endpoints always get "GET /".
-final class EndpointResolver {
+final class EndpointResolver: @unchecked Sendable {
+    private static let resolveTimeout: TimeInterval = 5
+    private static let maxAttempts = 3
+    private static let retryDelay: TimeInterval = 1
+
     private var connection: NWConnection?
+    private var generation = 0
 
     /// Calls `completion` with the resolved `.url` endpoint, or `nil` if resolution failed —
     /// callers must treat `nil` as a connection failure rather than falling back to the
@@ -37,31 +42,62 @@ final class EndpointResolver {
     }
 
     private func resolveAddress(_ endpoint: NWEndpoint, completion: @escaping (NWEndpoint?) -> Void) {
+        generation += 1
+        attemptResolve(endpoint, generation: generation, attempt: 1, completion: completion)
+    }
+
+    private func attemptResolve(_ endpoint: NWEndpoint, generation: Int, attempt: Int, completion: @escaping (NWEndpoint?) -> Void) {
+        resolveOnce(endpoint) { [weak self] resolved in
+            guard let self, generation == self.generation else { return }
+            if let resolved {
+                completion(resolved)
+            } else if attempt < Self.maxAttempts {
+                DispatchQueue.main.asyncAfter(deadline: .now() + Self.retryDelay) { [weak self] in
+                    guard let self, generation == self.generation else { return }
+                    self.attemptResolve(endpoint, generation: generation, attempt: attempt + 1, completion: completion)
+                }
+            } else {
+                completion(nil)
+            }
+        }
+    }
+
+    private func resolveOnce(_ endpoint: NWEndpoint, completion: @escaping (NWEndpoint?) -> Void) {
         // Uses `.udp` so this is connectionless resolution only — a `.tcp` resolver would complete a real
         // handshake against the actual TCP listener and then abort it, which can break servers (e.g. one
         // that calls accept_async on the raw accepted stream and errors the whole accept loop on failure).
         let resolver = NWConnection(to: endpoint, using: .udp)
         connection = resolver
-        resolver.stateUpdateHandler = { [weak self, weak resolver] state in
-            guard let self, let resolver else { return }
+
+        var didComplete = false
+        let finish: (NWEndpoint?) -> Void = { [weak self, weak resolver] resolved in
+            guard !didComplete else { return }
+            didComplete = true
+            resolver?.cancel()
+            if let self, let resolver, self.connection === resolver {
+                self.connection = nil
+            }
+            completion(resolved)
+        }
+
+        resolver.stateUpdateHandler = { [weak resolver] state in
             switch state {
             case .ready:
-                let resolved = resolver.currentPath?.remoteEndpoint
-                resolver.cancel()
-                self.connection = nil
-                completion(resolved)
+                finish(resolver?.currentPath?.remoteEndpoint)
             case .failed, .cancelled:
-                resolver.cancel()
-                self.connection = nil
-                completion(nil)
+                finish(nil)
             default:
                 break
             }
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + Self.resolveTimeout) {
+            finish(nil)
         }
         resolver.start(queue: .main)
     }
 
     func cancel() {
+        generation += 1
         connection?.cancel()
         connection = nil
     }
