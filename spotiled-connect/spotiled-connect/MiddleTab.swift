@@ -118,7 +118,7 @@ struct MiddleTab: View {
     }
 }
 
-#Preview {
+#Preview("Default") {
     MiddleTab()
         .environment(SelectedESP32Store())
 }

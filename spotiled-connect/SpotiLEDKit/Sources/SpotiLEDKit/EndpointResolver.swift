@@ -18,6 +18,25 @@ final class EndpointResolver {
     /// callers must treat `nil` as a connection failure rather than falling back to the
     /// unresolved endpoint, since that would silently connect to "/" instead of `path`.
     func resolve(_ endpoint: NWEndpoint, path: String, completion: @escaping (NWEndpoint?) -> Void) {
+        resolveAddress(endpoint) { resolved in
+            completion(resolved.flatMap { Self.webSocketEndpoint(from: $0, path: path) })
+        }
+    }
+
+    /// Resolves any `NWEndpoint` (e.g. a Bonjour `.service`) down to the dialable host string a
+    /// third party (like the controller, which isn't on this device and can't reuse our local
+    /// Bonjour resolution) can use to reach it directly, or `nil` if resolution failed.
+    func resolveHostString(_ endpoint: NWEndpoint, completion: @escaping (String?) -> Void) {
+        resolveAddress(endpoint) { resolved in
+            guard case .hostPort(let host, _) = resolved else {
+                completion(nil)
+                return
+            }
+            completion(Self.hostString(from: host))
+        }
+    }
+
+    private func resolveAddress(_ endpoint: NWEndpoint, completion: @escaping (NWEndpoint?) -> Void) {
         // Uses `.udp` so this is connectionless resolution only — a `.tcp` resolver would complete a real
         // handshake against the actual TCP listener and then abort it, which can break servers (e.g. one
         // that calls accept_async on the raw accepted stream and errors the whole accept loop on failure).
@@ -30,7 +49,7 @@ final class EndpointResolver {
                 let resolved = resolver.currentPath?.remoteEndpoint
                 resolver.cancel()
                 self.connection = nil
-                completion(resolved.flatMap { Self.webSocketEndpoint(from: $0, path: path) })
+                completion(resolved)
             case .failed, .cancelled:
                 resolver.cancel()
                 self.connection = nil
@@ -55,18 +74,21 @@ final class EndpointResolver {
     }
 
     private static func webSocketURL(host: NWEndpoint.Host, port: NWEndpoint.Port, path: String) -> URL? {
-        let hostString: String
+        guard let hostString = hostString(from: host) else { return nil }
+        return URL(string: "ws://\(hostString):\(port.rawValue)\(path)")
+    }
+
+    private static func hostString(from host: NWEndpoint.Host) -> String? {
         switch host {
         case .ipv4(let address):
-            hostString = stripInterfaceSuffix(address.debugDescription)
+            return stripInterfaceSuffix(address.debugDescription)
         case .ipv6(let address):
-            hostString = "[\(stripInterfaceSuffix(address.debugDescription))]"
+            return "[\(stripInterfaceSuffix(address.debugDescription))]"
         case .name(let name, _):
-            hostString = name
+            return name
         @unknown default:
             return nil
         }
-        return URL(string: "ws://\(hostString):\(port.rawValue)\(path)")
     }
 
     private static func stripInterfaceSuffix(_ description: String) -> String {

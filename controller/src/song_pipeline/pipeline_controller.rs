@@ -2,6 +2,7 @@ use std::marker::PhantomData;
 use std::sync::Arc;
 
 use async_trait::async_trait;
+use futures_util::future::Join;
 use tokio::task::JoinHandle;
 
 use super::Controller;
@@ -14,19 +15,23 @@ use crate::spotify::playback_event_listener::PlaybackEventListener;
 
 const LED_SOCKET_PORT: u16 = 8000;
 
-/// Owns the resources of an active proxy session and tears them down when
-/// dropped, so `disconnect()` never has to know what those resources are.
-struct ActiveSession(JoinHandle<()>);
+struct ActiveSession{
+    pub handle: JoinHandle<()>,
+    pub hostname: String,
+}
 
-impl Drop for ActiveSession {
-    fn drop(&mut self) {
-        self.0.abort();
+impl ActiveSession {
+    pub fn new(handle: JoinHandle<()>, hostname: &str) -> Self {
+        Self {
+            handle: handle,
+            hostname: hostname.to_string()
+        }
     }
 }
 
-impl From<JoinHandle<()>> for ActiveSession {
-    fn from(handle: JoinHandle<()>) -> Self {
-        Self(handle)
+impl Drop for ActiveSession {
+    fn drop(&mut self) {
+        self.handle.abort();
     }
 }
 
@@ -66,20 +71,19 @@ where
     S: LedSocket + 'static,
 {
     async fn connect(&mut self, hostname: &str) -> Result<(), SongPipelineError> {
-        if self.active.is_some() {
+        if let Some(active) = &self.active && active.hostname == hostname {
             return Ok(());
         }
+        log::info!("connect {hostname}");
 
         let handler = self.create_handler(hostname).await?;
         let stream = self.spotify.get_playback_event_stream()?;
         let event_listener = PlaybackEventListener::new(stream);
 
-        self.active = Some(
-            tokio::spawn(async move {
-                event_listener.run(handler).await;
-            })
-            .into(),
-        );
+        let handle = tokio::spawn(async move {
+            event_listener.run(handler).await;
+        });
+        self.active = Some(ActiveSession::new(handle, hostname));
 
         Ok(())
     }

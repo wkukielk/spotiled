@@ -14,7 +14,7 @@ struct ContentView: View {
     var body: some View {
             TabView(selection: $selectedTab) {
                 Tab("Spotify", systemImage: "wave.3.up.circle.fill", value: -1) {
-                    secondPage
+                    SpotifyTab()
                 }
                 Tab("Home", systemImage: "house", value: 0) {
                     MiddleTab()
@@ -23,16 +23,6 @@ struct ContentView: View {
                     ManualTab()
                 }
             }
-    }
-
-    private var secondPage: some View {
-        VStack {
-            Image(systemName: "star")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Second page")
-        }
-        .padding(.horizontal)
     }
 }
 

@@ -98,13 +98,6 @@ where
                 }
             }
         }
-
-        // The client is gone, one way or another — tear down whatever it
-        // had connected. `Controller::disconnect` owns the resources, so
-        // this stays a single call no matter how many resources that is.
-        if let Err(err) = self.controller.disconnect() {
-            log::warn!("Failed to disconnect controller after client left: {err}");
-        }
     }
 
     async fn handle_message(
