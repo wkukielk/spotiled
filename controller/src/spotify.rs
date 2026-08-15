@@ -2,15 +2,13 @@ pub mod playback_event_listener;
 
 use anyhow::Result;
 use async_trait::async_trait;
+use futures_util::StreamExt;
+use futures_util::stream::poll_fn;
 use librespot::core::Error as LibrespotError;
 use librespot::{
     core::{
-        SpotifyUri,
-        authentication::Credentials,
-        cache::Cache,
-        config::SessionConfig,
-        dealer::{manager::BoxedStreamResult, protocol::Message},
-        session::Session,
+        SpotifyUri, authentication::Credentials, cache::Cache, config::SessionConfig,
+        dealer::manager::BoxedStreamResult, mercury::MercuryResponse, session::Session,
     },
     metadata::audio::AudioItem as LibrespotAudioItem,
     metadata::audio::item::CoverImage,
@@ -59,7 +57,9 @@ pub struct AudioItem {
 #[async_trait]
 pub trait ISpotify: Send + Sync {
     fn init(&mut self, rt: &tokio::runtime::Runtime) -> Result<()>;
-    fn get_playback_event_stream(&self) -> Result<BoxedStreamResult<Message>, SpotifyError>;
+    async fn get_playback_event_stream(
+        &self,
+    ) -> Result<BoxedStreamResult<MercuryResponse>, SpotifyError>;
     async fn get_audio_item(&self, uri: &str) -> Result<AudioItem, SpotifyError>;
 }
 
@@ -70,6 +70,23 @@ pub struct Spotify {
 
 impl Spotify {
     const HM_URL: &str = "hm://herodotus/uri/spotify:list:play-history:v1/resume-point-revision";
+    // librespot percent-encodes each path segment (except the first) of an
+    // incoming Mercury push's URI before matching it against subscriptions
+    // (see librespot-core mercury/mod.rs, MercuryManager::complete_request).
+    // HM_URL's segments contain literal colons, which aren't in librespot's
+    // "safe" character set, so the subscription has to be encoded the same
+    // way or the prefix match silently fails.
+    fn encode_mercury_uri(uri: &str) -> String {
+        let mut parts = uri.split('/');
+        std::iter::once(parts.next().unwrap_or_default().to_string())
+            .chain(
+                parts.map(|component| {
+                    form_urlencoded::byte_serialize(component.as_bytes()).collect()
+                }),
+            )
+            .collect::<Vec<String>>()
+            .join("/")
+    }
 
     pub fn new() -> Self {
         Spotify {
@@ -134,12 +151,14 @@ impl ISpotify for Spotify {
         Ok(())
     }
 
-    fn get_playback_event_stream(&self) -> Result<BoxedStreamResult<Message>, SpotifyError> {
+    async fn get_playback_event_stream(
+        &self,
+    ) -> Result<BoxedStreamResult<MercuryResponse>, SpotifyError> {
         let session = self.session.as_ref().ok_or(SpotifyError::NotInit)?;
-        let stream = session
-            .dealer()
-            .listen_for(Spotify::HM_URL, |msg| Ok(msg))?;
-        Ok(stream)
+        let uri = Spotify::encode_mercury_uri(Spotify::HM_URL);
+        let mut receiver = session.mercury().listen_for(uri).await;
+        let stream = poll_fn(move |cx| receiver.poll_recv(cx)).map(Ok);
+        Ok(Box::pin(stream))
     }
 
     async fn get_audio_item(&self, uri: &str) -> Result<AudioItem, SpotifyError> {

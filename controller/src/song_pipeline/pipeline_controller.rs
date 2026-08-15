@@ -2,7 +2,6 @@ use std::marker::PhantomData;
 use std::sync::Arc;
 
 use async_trait::async_trait;
-use futures_util::future::Join;
 use tokio::task::JoinHandle;
 
 use super::Controller;
@@ -77,7 +76,7 @@ where
         log::info!("connect {hostname}");
 
         let handler = self.create_handler(hostname).await?;
-        let stream = self.spotify.get_playback_event_stream()?;
+        let stream = self.spotify.get_playback_event_stream().await?;
         let event_listener = PlaybackEventListener::new(stream);
 
         let handle = tokio::spawn(async move {

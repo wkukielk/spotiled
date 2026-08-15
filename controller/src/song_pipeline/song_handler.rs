@@ -3,7 +3,7 @@ use crate::dom_color::JPEGDecoder;
 use crate::dom_color::get_jpg_dominating_color;
 use crate::led_socket::LedSocket;
 use crate::spotify::{ISpotify, SpotifyError, playback_event_listener::PlaybackEventHandler};
-use librespot::core::dealer::protocol::{Message, PayloadValue};
+use librespot::core::mercury::MercuryResponse;
 use std::fmt::Debug;
 use std::marker::PhantomData;
 use std::sync::Arc;
@@ -19,7 +19,7 @@ pub(crate) trait CoverFetcher: Sync + Send {
     fn new(spotify: Arc<dyn ISpotify>) -> Self;
     fn fetch(
         &self,
-        message: Result<Message, SpotifyError>,
+        message: Result<MercuryResponse, SpotifyError>,
     ) -> impl std::future::Future<Output = Result<bytes::Bytes, SongPipelineError>> + Send;
 }
 
@@ -41,13 +41,14 @@ impl DftCoverFetcher {
     }
 
     fn extract_cover_uri(
-        message: Result<Message, SpotifyError>,
+        message: Result<MercuryResponse, SpotifyError>,
     ) -> Result<String, SongPipelineError> {
         let msg = message?;
-        let PayloadValue::Raw(ref bytes) = msg.payload else {
+        if msg.payload.is_empty() {
             return Err(SongPipelineError::UnexpectedDealerMessage);
-        };
-        Self::extract_track_uri(bytes).ok_or(SongPipelineError::UnexpectedDealerMessage)
+        }
+        let bytes = msg.payload.concat();
+        Self::extract_track_uri(&bytes).ok_or(SongPipelineError::UnexpectedDealerMessage)
     }
 
     async fn fetch_cover(&self, url: &str) -> Result<bytes::Bytes, reqwest::Error> {
@@ -66,7 +67,7 @@ impl CoverFetcher for DftCoverFetcher {
 
     async fn fetch(
         &self,
-        message: Result<Message, SpotifyError>,
+        message: Result<MercuryResponse, SpotifyError>,
     ) -> Result<bytes::Bytes, SongPipelineError> {
         let uri = Self::extract_cover_uri(message)?;
         let audio_item = self.spotify.get_audio_item(&uri).await?;
@@ -94,7 +95,7 @@ impl<F: CoverFetcher, S: LedSocket, D: JPEGDecoder> SongHandler<F, S, D> {
 
     async fn on_song_changed_impl(
         &mut self,
-        message: Result<Message, SpotifyError>,
+        message: Result<MercuryResponse, SpotifyError>,
     ) -> Result<(), SongPipelineError> {
         let cover_jpg = self.cover_fetcher.fetch(message).await?;
         let color = tokio::task::spawn_blocking(|| get_jpg_dominating_color::<D>(cover_jpg))
@@ -109,7 +110,7 @@ impl<F: CoverFetcher, S: LedSocket, D: JPEGDecoder> SongHandler<F, S, D> {
 }
 
 impl<F: CoverFetcher, S: LedSocket, D: JPEGDecoder> PlaybackEventHandler for SongHandler<F, S, D> {
-    async fn on_song_changed(&mut self, msg: Result<Message, SpotifyError>) {
+    async fn on_song_changed(&mut self, msg: Result<MercuryResponse, SpotifyError>) {
         log_on_error(&self.on_song_changed_impl(msg).await)
     }
 }

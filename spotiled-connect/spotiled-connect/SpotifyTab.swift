@@ -33,13 +33,17 @@ struct SpotifyTab: View {
         .padding(.horizontal)
         .task(id: esp32Store.device) {
             connectionError = nil
+            print("fun")
             guard let device = esp32Store.device else { return }
+            print("device \(device.name)")
             guard let host = await hostResolver.resolveHost(for: device.endpoint) else {
                 connectionError = "Could not resolve \(device.name)"
                 return
             }
+            print("host resolved: \(host)")
             do {
                 try await session.connectESP32(hostname: host)
+                print("sent")
             } catch {
                 connectionError = "Failed to connect to \(device.name): \(error)"
             }

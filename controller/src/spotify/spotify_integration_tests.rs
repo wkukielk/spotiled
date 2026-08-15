@@ -12,9 +12,9 @@ fn real_spotify_session() -> (tokio::runtime::Runtime, Spotify) {
 #[test]
 #[ignore = "hits the real Spotify backend; run with `cargo test -- --ignored`"]
 fn init_connects_and_starts_dealer() {
-    let (_rt, spotify) = real_spotify_session();
+    let (rt, spotify) = real_spotify_session();
 
-    assert!(spotify.get_playback_event_stream().is_ok());
+    assert!(rt.block_on(spotify.get_playback_event_stream()).is_ok());
 }
 
 #[test]

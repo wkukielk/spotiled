@@ -3,7 +3,7 @@ use crate::dom_color::{MockJPEGDecoder, Rgb};
 use crate::led_socket::MockLedSocket;
 use crate::spotify::{AudioItem, MockISpotify, SpotifyError};
 
-use librespot::core::dealer::protocol::{Message, PayloadValue};
+use librespot::core::mercury::MercuryResponse;
 use librespot::metadata::audio::item::CoverImage;
 use librespot::metadata::image::ImageSize;
 use mockall::predicate::eq;
@@ -11,11 +11,11 @@ use std::sync::Arc;
 use wiremock::matchers::{method, path};
 use wiremock::{Mock, MockServer, ResponseTemplate};
 
-pub fn raw_message(uri: &str) -> Result<Message, SpotifyError> {
-    Ok(Message {
-        headers: Default::default(),
-        payload: PayloadValue::Raw(format!("junk {} junk", uri).into_bytes()),
+pub fn raw_message(uri: &str) -> Result<MercuryResponse, SpotifyError> {
+    Ok(MercuryResponse {
         uri: String::new(),
+        status_code: 200,
+        payload: vec![format!("junk {} junk", uri).into_bytes()],
     })
 }
 
@@ -52,11 +52,11 @@ fn extract_cover_uri_returns_uri_from_raw_payload() {
 }
 
 #[test]
-fn extract_cover_uri_errors_on_non_raw_payload() {
-    let message = Ok(Message {
-        headers: Default::default(),
-        payload: PayloadValue::Json("{}".to_string()),
+fn extract_cover_uri_errors_on_empty_payload() {
+    let message = Ok(MercuryResponse {
         uri: String::new(),
+        status_code: 200,
+        payload: vec![],
     });
 
     let result = DftCoverFetcher::extract_cover_uri(message);
@@ -166,10 +166,10 @@ async fn fetch_errors_when_cover_download_fails() {
 async fn fetch_errors_on_malformed_dealer_message() {
     let spotify = MockISpotify::new();
     let fetcher = DftCoverFetcher::new(Arc::new(spotify));
-    let message = Ok(Message {
-        headers: Default::default(),
-        payload: PayloadValue::Empty,
+    let message = Ok(MercuryResponse {
         uri: String::new(),
+        status_code: 200,
+        payload: vec![],
     });
 
     let result = fetcher.fetch(message).await;
@@ -214,16 +214,14 @@ async fn test_song_handler() {
         socket,
     );
 
-    let PayloadValue::Raw(exp_bytes) = raw_message("message").unwrap().payload else {
-        unreachable!()
-    };
+    let exp_bytes = raw_message("message").unwrap().payload;
     handler
         .cover_fetcher
         .expect_fetch()
         .withf(move |message| {
             matches!(
                 message,
-                Ok(Message { payload: PayloadValue::Raw(bytes), .. }) if *bytes == exp_bytes
+                Ok(MercuryResponse { payload, .. }) if *payload == exp_bytes
             )
         })
         .times(1)

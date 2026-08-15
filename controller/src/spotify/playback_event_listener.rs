@@ -1,21 +1,21 @@
 use super::SpotifyError;
 use futures_util::StreamExt;
 use librespot::core::dealer::manager::BoxedStreamResult;
-use librespot::core::dealer::protocol::Message;
+use librespot::core::mercury::MercuryResponse;
 
 pub trait PlaybackEventHandler {
     fn on_song_changed(
         &mut self,
-        msg: Result<Message, SpotifyError>,
+        msg: Result<MercuryResponse, SpotifyError>,
     ) -> impl Future<Output = ()> + Send;
 }
 
 pub struct PlaybackEventListener {
-    stream: BoxedStreamResult<Message>,
+    stream: BoxedStreamResult<MercuryResponse>,
 }
 
 impl PlaybackEventListener {
-    pub fn new(stream: BoxedStreamResult<Message>) -> Self {
+    pub fn new(stream: BoxedStreamResult<MercuryResponse>) -> Self {
         Self { stream }
     }
 

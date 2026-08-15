@@ -26,7 +26,7 @@ fn controller() -> PipelineController<MockLedSocket> {
 #[tokio::test]
 async fn connect_is_noop_when_already_active() {
     let mut controller = controller();
-    controller.active = Some(tokio::spawn(async {}).into());
+    controller.active = Some(ActiveSession::new(tokio::spawn(async {}), "example.local"));
 
     let result = controller.connect("example.local").await;
 
@@ -97,12 +97,12 @@ async fn connect_spawns_listener_on_success() {
 #[tokio::test]
 async fn disconnect_clears_active_task() {
     let mut controller = controller();
-    controller.active = Some(
+    controller.active = Some(ActiveSession::new(
         tokio::spawn(async {
             tokio::time::sleep(std::time::Duration::from_secs(60)).await;
-        })
-        .into(),
-    );
+        }),
+        "example.local",
+    ));
 
     let result = controller.disconnect();
 

@@ -86,10 +86,6 @@ async fn connect_failure_replies_with_error_and_closes_connection() {
         .expect_connect()
         .times(1)
         .return_once(|_| Err(SongPipelineError::LEDConnectionError));
-    // The connection closing runs cleanup, which calls disconnect() even
-    // though connect() never succeeded — PipelineController's disconnect is
-    // a no-op when nothing is active.
-    controller.expect_disconnect().times(1).return_once(|| Ok(()));
 
     let addr = spawn_server(controller).await;
     let mut ws = connect_client(addr).await;
@@ -130,10 +126,7 @@ async fn disconnect_command_invokes_controller_and_keeps_connection_open() {
 #[tokio::test]
 async fn unknown_command_replies_with_error_and_closes_connection() {
     // No connect expectation: an unknown command must never reach it.
-    // disconnect() is still expected once, from cleanup after the
-    // resulting close is handled.
-    let mut controller = MockController::new();
-    controller.expect_disconnect().times(1).return_once(|| Ok(()));
+    let controller = MockController::new();
 
     let addr = spawn_server(controller).await;
     let mut ws = connect_client(addr).await;
@@ -144,17 +137,14 @@ async fn unknown_command_replies_with_error_and_closes_connection() {
 }
 
 #[tokio::test]
-async fn client_disconnecting_without_explicit_disconnect_command_cleans_up_controller() {
-    let (tx, mut rx) = mpsc::unbounded_channel();
+async fn client_disconnecting_without_explicit_disconnect_command_leaves_controller_connected() {
+    let (tx, mut rx) = mpsc::unbounded_channel::<()>();
     let mut controller = MockController::new();
     controller.expect_connect().times(1).return_once(|_| Ok(()));
-    controller
-        .expect_disconnect()
-        .times(1)
-        .return_once(move || {
-            let _ = tx.send(());
-            Ok(())
-        });
+    controller.expect_disconnect().returning(move || {
+        let _ = tx.send(());
+        Ok(())
+    });
 
     let addr = spawn_server(controller).await;
     let mut ws = connect_client(addr).await;
@@ -163,13 +153,11 @@ async fn client_disconnecting_without_explicit_disconnect_command_cleans_up_cont
         .await
         .unwrap();
     expect_text(&mut ws, r#"{"ack":"ok"}"#).await;
-
-    // Simulate the client vanishing (crash, network drop, ...) instead of
-    // sending "disconnect".
     drop(ws);
 
-    tokio::time::timeout(Duration::from_secs(1), rx.recv())
-        .await
-        .expect("timed out waiting for controller.disconnect() to be called after client left")
-        .expect("channel closed before signaling");
+    let signaled = tokio::time::timeout(Duration::from_millis(300), rx.recv()).await;
+    assert!(
+        signaled.is_err(),
+        "controller.disconnect() was called after the client vanished, but should not have been"
+    );
 }

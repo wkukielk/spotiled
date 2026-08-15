@@ -44,3 +44,13 @@ fn resolve_credentials_propagates_oauth_error_when_not_cached() {
 
     assert!(result.is_err());
 }
+
+#[test]
+fn encode_mercury_uri_percent_encodes_every_segment_but_the_first() {
+    let encoded = Spotify::encode_mercury_uri(Spotify::HM_URL);
+
+    assert_eq!(
+        encoded,
+        "hm://herodotus/uri/spotify%3Alist%3Aplay-history%3Av1/resume-point-revision"
+    );
+}
