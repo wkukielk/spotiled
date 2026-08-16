@@ -11,11 +11,16 @@ import SpotiLEDKit
 struct SpotifyTab: View {
     @Environment(SelectedESP32Store.self) private var esp32Store
     @Environment(\.esp32Session) private var session
+    @Environment(\.openURL) private var openURL
     @State private var hostResolver = DeviceHostResolver()
     @State private var connectionError: String?
+    @State private var spotifyAuthorizer: any SpotifyAuthorizing = SpotifyPKCEAuthorizer()
+    @State private var isAuthorizingSpotify = false
+    @State private var isSpotifyAuthorized = false
+    @State private var spotifyError: String?
 
     var body: some View {
-        VStack {
+        VStack(spacing: 16) {
             Text("Spotify mode")
                 .navigationTitle("Manual mode")
             if let device = esp32Store.device {
@@ -27,6 +32,20 @@ struct SpotifyTab: View {
             }
             if let connectionError {
                 Text(connectionError)
+                    .foregroundStyle(.red)
+            }
+
+            Button(isSpotifyAuthorized ? "Reconnect Spotify" : "Connect Spotify") {
+                Task { await authorizeSpotify() }
+            }
+            .disabled(isAuthorizingSpotify)
+
+            if isSpotifyAuthorized {
+                Label("Spotify connected", systemImage: "checkmark.circle")
+                    .foregroundStyle(.green)
+            }
+            if let spotifyError {
+                Text(spotifyError)
                     .foregroundStyle(.red)
             }
         }
@@ -43,6 +62,22 @@ struct SpotifyTab: View {
             } catch {
                 connectionError = "Failed to connect to \(device.name): \(error)"
             }
+        }
+    }
+
+    private func authorizeSpotify() async {
+        spotifyError = nil
+        isAuthorizingSpotify = true
+        defer { isAuthorizingSpotify = false }
+        do {
+            let result = try await spotifyAuthorizer.requestAuthorizationCode { url in
+                openURL(url)
+            }
+            try await session.authorizeSpotify(code: result.code, codeVerifier: result.codeVerifier)
+            isSpotifyAuthorized = true
+        } catch {
+            isSpotifyAuthorized = false
+            spotifyError = "Failed to connect Spotify: \(error)"
         }
     }
 }

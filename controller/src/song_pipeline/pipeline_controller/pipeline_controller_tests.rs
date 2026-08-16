@@ -1,6 +1,7 @@
 use std::sync::{Arc, Mutex};
 
 use futures_util::stream;
+use mockall::predicate::eq;
 
 use super::*;
 use crate::led_socket::MockLedSocket;
@@ -117,4 +118,35 @@ fn disconnect_is_noop_without_active_task() {
     let result = controller.disconnect();
 
     assert!(result.is_ok());
+}
+
+#[tokio::test]
+async fn authorize_passes_code_and_verifier_to_spotify() {
+    let mut spotify = MockISpotify::new();
+    spotify
+        .expect_authorize()
+        .with(eq("auth-code"), eq("code-verifier"))
+        .times(1)
+        .return_once(|_, _| Ok(()));
+
+    let mut controller = controller_with(spotify);
+
+    let result = controller.authorize("auth-code", "code-verifier").await;
+
+    assert!(result.is_ok());
+}
+
+#[tokio::test]
+async fn authorize_propagates_spotify_error() {
+    let mut spotify = MockISpotify::new();
+    spotify
+        .expect_authorize()
+        .times(1)
+        .return_once(|_, _| Err(SpotifyError::NotInit));
+
+    let mut controller = controller_with(spotify);
+
+    let result = controller.authorize("auth-code", "code-verifier").await;
+
+    assert!(matches!(result, Err(SongPipelineError::SpotifyError(_))));
 }

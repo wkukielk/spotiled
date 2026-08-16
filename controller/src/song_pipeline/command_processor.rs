@@ -1,6 +1,11 @@
 use super::{Controller, SongPipelineError};
+use std::iter::Iterator;
 
 pub(crate) struct CommandProcessor;
+
+fn get_next_part<'a>(parts: &mut impl Iterator<Item=&'a str>) -> Result<&'a str, SongPipelineError> {
+    parts.next().ok_or(SongPipelineError::IllFormedCommand)
+}
 
 impl CommandProcessor {
     pub(crate) fn new() -> Self {
@@ -25,10 +30,15 @@ impl CommandProcessor {
         let mut parts = command.split_whitespace();
         match parts.next() {
             Some("connect") => {
-                let hostname = parts.next().ok_or(SongPipelineError::MissingHostname)?;
+                let hostname = get_next_part(&mut parts)?;
                 controller.connect(hostname).await
             }
             Some("disconnect") => controller.disconnect(),
+            Some("authorize") => {
+                let auth_code = get_next_part(&mut parts)?;
+                let code_verifier = get_next_part(&mut parts)?;
+                controller.authorize(auth_code, code_verifier).await
+            }
             _ => Err(SongPipelineError::UnknownCommand),
         }
     }

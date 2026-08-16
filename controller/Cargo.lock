@@ -318,6 +318,7 @@ dependencies = [
  "librespot",
  "log",
  "mockall",
+ "oauth2",
  "reqwest",
  "serde",
  "serde_json",

@@ -87,6 +87,15 @@ where
         Ok(())
     }
 
+    async fn authorize(
+        &mut self,
+        auth_code: &str,
+        code_verifier: &str,
+    ) -> Result<(), SongPipelineError> {
+        self.spotify.authorize(auth_code, code_verifier).await?;
+        Ok(())
+    }
+
     fn disconnect(&mut self) -> Result<(), SongPipelineError> {
         self.active = None;
         Ok(())

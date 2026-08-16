@@ -30,6 +30,7 @@ public protocol ControllerSessionManaging: AnyObject {
     func disconnect()
     func connectESP32(hostname: String) async throws
     func disconnectESP32() async throws
+    func authorizeSpotify(code: String, codeVerifier: String) async throws
 }
 
 @Observable
@@ -75,6 +76,13 @@ public final class ControllerESP32Session: ControllerSessionManaging {
             throw ESP32SessionError.rejected(message)
         }
         esp32State = .disconnected
+    }
+
+    public func authorizeSpotify(code: String, codeVerifier: String) async throws {
+        let reply = try await connection.send("authorize \(code) \(codeVerifier)")
+        if let message = Self.errorMessage(in: reply) {
+            throw ESP32SessionError.rejected(message)
+        }
     }
 
     private struct ControllerReply: Decodable {

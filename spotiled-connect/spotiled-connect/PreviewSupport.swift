@@ -41,6 +41,10 @@ final class PreviewFailingConnection: ControllerSessionManaging {
     func disconnectESP32() async throws {
         esp32State = .disconnected
     }
+
+    func authorizeSpotify(code: String, codeVerifier: String) async throws {
+        throw ESP32SessionError.rejected("preview failure")
+    }
 }
 
 @Observable
@@ -67,6 +71,8 @@ final class PreviewControllerConnection: ControllerSessionManaging {
     func disconnectESP32() async throws {
         esp32State = .disconnected
     }
+
+    func authorizeSpotify(code: String, codeVerifier: String) async throws {}
 }
 
 final class PreviewControllerDiscovery: DeviceDiscovering {

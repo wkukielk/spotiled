@@ -35,8 +35,8 @@ pub(crate) enum SongPipelineError {
     JPGError(#[from] image::ImageError),
     #[error("Unknown command")]
     UnknownCommand,
-    #[error("Missing hostname argument")]
-    MissingHostname,
+    #[error("Command is ill-formed")]
+    IllFormedCommand,
     #[error("Other")]
     Other,
 }
@@ -50,6 +50,11 @@ enum LoopStatus {
 #[async_trait]
 pub(crate) trait Controller: Send + Sync {
     async fn connect(&mut self, hostname: &str) -> Result<(), SongPipelineError>;
+    async fn authorize(
+        &mut self,
+        auth_code: &str,
+        code_verifier: &str,
+    ) -> Result<(), SongPipelineError>;
     fn disconnect(&mut self) -> Result<(), SongPipelineError>;
 }
 

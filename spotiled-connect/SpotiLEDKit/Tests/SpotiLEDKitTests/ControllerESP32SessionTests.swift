@@ -113,4 +113,24 @@ struct ControllerESP32SessionTests {
         }
         #expect(session.esp32State == .connected(host: "esp.local"))
     }
+
+    @Test func authorizeSpotifySendsAuthorizeCommandWithCodeAndVerifier() async throws {
+        let connection = MockEndpointConnecting(policy: .relaxed)
+        given(connection).send(.any).willReturn(#"{"ack":"ok"}"#)
+        let session = ControllerESP32Session(connection: connection)
+
+        try await session.authorizeSpotify(code: "auth-code", codeVerifier: "verifier")
+
+        verify(connection).send(.value("authorize auth-code verifier")).called(.once)
+    }
+
+    @Test func authorizeSpotifyThrowsOnControllerRejection() async {
+        let connection = MockEndpointConnecting(policy: .relaxed)
+        given(connection).send(.any).willReturn(#"{"error":"exchange failed"}"#)
+        let session = ControllerESP32Session(connection: connection)
+
+        await #expect(throws: ESP32SessionError.rejected("exchange failed")) {
+            try await session.authorizeSpotify(code: "auth-code", codeVerifier: "verifier")
+        }
+    }
 }
