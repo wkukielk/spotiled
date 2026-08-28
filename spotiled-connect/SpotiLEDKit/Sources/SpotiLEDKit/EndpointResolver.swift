@@ -19,20 +19,12 @@ final class EndpointResolver: @unchecked Sendable {
     private var connection: NWConnection?
     private var generation = 0
 
-    /// Calls `completion` with the resolved `.url` endpoint and the interface it was reached on,
-    /// or `nil` if resolution failed — callers must treat `nil` as a connection failure rather
-    /// than falling back to the unresolved endpoint, since that would silently connect to "/"
-    /// instead of `path`. The interface must be passed to `NWParameters.requiredInterface`
-    /// alongside the URL: an IPv6 link-local address (e.g. "fe80::...") is only routable via the
-    /// interface it was scoped to, but that scope can't survive being embedded in a URL string,
-    /// so it has to travel out-of-band.
-    func resolve(_ endpoint: NWEndpoint, path: String, completion: @escaping (NWEndpoint?, NWInterface?) -> Void) {
+    /// Calls `completion` with the resolved `.url` endpoint, or `nil` if resolution failed —
+    /// callers must treat `nil` as a connection failure rather than falling back to the
+    /// unresolved endpoint, since that would silently connect to "/" instead of `path`.
+    func resolve(_ endpoint: NWEndpoint, path: String, completion: @escaping (NWEndpoint?) -> Void) {
         resolveAddress(endpoint) { resolved in
-            guard let resolved, let webSocketEndpoint = Self.webSocketEndpoint(from: resolved, path: path) else {
-                completion(nil, nil)
-                return
-            }
-            completion(webSocketEndpoint, Self.interface(of: resolved))
+            completion(resolved.flatMap { Self.webSocketEndpoint(from: $0, path: path) })
         }
     }
 
@@ -71,9 +63,6 @@ final class EndpointResolver: @unchecked Sendable {
     }
 
     private func resolveOnce(_ endpoint: NWEndpoint, completion: @escaping (NWEndpoint?) -> Void) {
-        // Uses `.udp` so this is connectionless resolution only — a `.tcp` resolver would complete a real
-        // handshake against the actual TCP listener and then abort it, which can break servers (e.g. one
-        // that calls accept_async on the raw accepted stream and errors the whole accept loop on failure).
         let resolver = NWConnection(to: endpoint, using: .udp)
         connection = resolver
 
@@ -120,11 +109,6 @@ final class EndpointResolver: @unchecked Sendable {
     private static func webSocketURL(host: NWEndpoint.Host, port: NWEndpoint.Port, path: String) -> URL? {
         guard let hostString = hostString(from: host) else { return nil }
         return URL(string: "ws://\(hostString):\(port.rawValue)\(path)")
-    }
-
-    private static func interface(of endpoint: NWEndpoint) -> NWInterface? {
-        guard case .hostPort(let host, _) = endpoint, case .ipv6(let address) = host else { return nil }
-        return address.interface
     }
 
     private static func hostString(from host: NWEndpoint.Host) -> String? {

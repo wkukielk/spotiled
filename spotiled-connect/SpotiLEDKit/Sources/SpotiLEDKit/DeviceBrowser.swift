@@ -91,8 +91,6 @@ public final class BonjourServiceDiscovery: DeviceDiscovering {
         case .setup, .ready, .cancelled:
             return .searching
         case .waiting(let error), .failed(let error):
-            // `NoAuth` covers the not-yet-decided/unentitled case; `PolicyDenied` is what comes
-            // back once the user has explicitly turned Local Network access off in Settings.
             if case .dns(let code) = error, code == kDNSServiceErr_NoAuth || code == kDNSServiceErr_PolicyDenied {
                 return .localNetworkPermissionDenied
             }
