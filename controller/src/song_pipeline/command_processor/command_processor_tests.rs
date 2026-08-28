@@ -116,6 +116,31 @@ async fn authorize_without_verifier_returns_error_json_without_touching_controll
 }
 
 #[tokio::test]
+async fn status_returns_username_when_connected() {
+    let mut controller = MockController::new();
+    controller
+        .expect_status()
+        .times(1)
+        .return_once(|| Some("someuser".to_string()));
+
+    let mut processor = CommandProcessor::new();
+    let result = processor.process(&mut controller, "status").await;
+
+    assert_eq!(result, Ok(r#"{"username":"someuser"}"#.to_string()));
+}
+
+#[tokio::test]
+async fn status_returns_null_username_when_not_connected() {
+    let mut controller = MockController::new();
+    controller.expect_status().times(1).return_once(|| None);
+
+    let mut processor = CommandProcessor::new();
+    let result = processor.process(&mut controller, "status").await;
+
+    assert_eq!(result, Ok(r#"{"username":null}"#.to_string()));
+}
+
+#[tokio::test]
 async fn unknown_command_returns_error_json_without_touching_controller() {
     let mut controller = MockController::new();
 

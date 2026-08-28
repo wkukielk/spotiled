@@ -46,6 +46,10 @@ pub struct AudioItem {
 #[cfg_attr(test, mockall::automock)]
 #[async_trait]
 pub trait ISpotify: Send + Sync {
+    /// The connected account's canonical Spotify username, or `None` if not connected.
+    /// Never attempts to (re)connect — a status check should never itself trigger a network
+    /// round-trip.
+    fn status(&self) -> Option<String>;
     async fn get_playback_event_stream(
         &self,
     ) -> Result<BoxedStreamResult<MercuryResponse>, SpotifyError>;
@@ -161,6 +165,13 @@ impl Spotify {
 
 #[async_trait]
 impl ISpotify for Spotify {
+    fn status(&self) -> Option<String> {
+        match self.session.read().unwrap().clone() {
+            Some(session) if !session.is_invalid() => Some(session.username()),
+            _ => None,
+        }
+    }
+
     async fn get_playback_event_stream(
         &self,
     ) -> Result<BoxedStreamResult<MercuryResponse>, SpotifyError> {

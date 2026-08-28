@@ -56,6 +56,8 @@ pub(crate) trait Controller: Send + Sync {
         code_verifier: &str,
     ) -> Result<(), SongPipelineError>;
     fn disconnect(&mut self) -> Result<(), SongPipelineError>;
+    /// The connected Spotify account's username, or `None` if not connected.
+    fn status(&self) -> Option<String>;
 }
 
 pub struct WsServer<C: Controller> {

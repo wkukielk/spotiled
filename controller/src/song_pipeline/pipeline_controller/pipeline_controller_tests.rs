@@ -152,6 +152,19 @@ fn disconnect_is_noop_without_active_task() {
     assert!(result.is_ok());
 }
 
+#[test]
+fn status_delegates_to_spotify() {
+    let mut spotify = MockISpotify::new();
+    spotify
+        .expect_status()
+        .times(1)
+        .return_once(|| Some("someuser".to_string()));
+
+    let controller = controller_with(spotify);
+
+    assert_eq!(controller.status(), Some("someuser".to_string()));
+}
+
 #[tokio::test]
 async fn authorize_passes_code_and_verifier_to_spotify() {
     let mut spotify = MockISpotify::new();

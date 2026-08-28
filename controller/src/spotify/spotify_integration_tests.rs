@@ -21,6 +21,20 @@ fn get_playback_event_stream_connects_lazily_using_cached_credentials() {
 
 #[test]
 #[ignore = "hits the real Spotify backend; run with `cargo test -- --ignored`"]
+fn status_reports_username_after_connecting() {
+    let (rt, spotify) = real_spotify_session();
+
+    assert_eq!(spotify.status(), None, "no session established yet");
+
+    let _stream = rt
+        .block_on(spotify.get_playback_event_stream())
+        .expect("requires valid cached credentials in .cache");
+
+    assert!(spotify.status().is_some());
+}
+
+#[test]
+#[ignore = "hits the real Spotify backend; run with `cargo test -- --ignored`"]
 fn get_audio_item_fetches_real_track_metadata() {
     let (rt, spotify) = real_spotify_session();
     let uri = "spotify:track:4PTG3Z6ehGkBFwjybzWkR8"; // Never Gonna Give You Up

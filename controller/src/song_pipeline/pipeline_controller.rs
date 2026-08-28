@@ -122,6 +122,10 @@ where
         self.active = None;
         Ok(())
     }
+
+    fn status(&self) -> Option<String> {
+        self.spotify.status()
+    }
 }
 
 #[cfg(test)]

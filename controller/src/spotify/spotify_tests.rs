@@ -3,6 +3,16 @@ use wiremock::matchers::{method, path};
 use wiremock::{Mock, MockServer, ResponseTemplate};
 
 #[test]
+fn status_is_none_before_any_session_exists() {
+    let spotify = Spotify {
+        cache: None,
+        session: RwLock::new(None),
+    };
+
+    assert_eq!(spotify.status(), None);
+}
+
+#[test]
 fn encode_mercury_uri_percent_encodes_every_segment_but_the_first() {
     let encoded = Spotify::encode_mercury_uri(Spotify::HM_URL);
 

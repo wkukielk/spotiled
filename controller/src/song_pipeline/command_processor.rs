@@ -18,7 +18,7 @@ impl CommandProcessor {
         command: &str,
     ) -> Result<String, String> {
         match Self::dispatch(controller, command).await {
-            Ok(()) => Ok(serde_json::json!({ "ack": "ok" }).to_string()),
+            Ok(reply) => Ok(reply.to_string()),
             Err(err) => Err(serde_json::json!({ "error": err.to_string() }).to_string()),
         }
     }
@@ -26,21 +26,31 @@ impl CommandProcessor {
     async fn dispatch<C: Controller>(
         controller: &mut C,
         command: &str,
-    ) -> Result<(), SongPipelineError> {
+    ) -> Result<serde_json::Value, SongPipelineError> {
         let mut parts = command.split_whitespace();
         match parts.next() {
             Some("connect") => {
                 let hostname = get_next_part(&mut parts)?;
-                controller.connect(hostname).await
+                controller.connect(hostname).await?;
+                Ok(Self::ack())
             }
-            Some("disconnect") => controller.disconnect(),
+            Some("disconnect") => {
+                controller.disconnect()?;
+                Ok(Self::ack())
+            }
             Some("authorize") => {
                 let auth_code = get_next_part(&mut parts)?;
                 let code_verifier = get_next_part(&mut parts)?;
-                controller.authorize(auth_code, code_verifier).await
+                controller.authorize(auth_code, code_verifier).await?;
+                Ok(Self::ack())
             }
+            Some("status") => Ok(serde_json::json!({ "username": controller.status() })),
             _ => Err(SongPipelineError::UnknownCommand),
         }
+    }
+
+    fn ack() -> serde_json::Value {
+        serde_json::json!({ "ack": "ok" })
     }
 }
 
