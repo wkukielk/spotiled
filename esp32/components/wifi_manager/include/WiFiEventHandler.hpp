@@ -24,6 +24,10 @@ template <WiFiEventHandlerTypes T> class WiFiEventHandler {
     WiFiEventHandler(EGroup &event_group, uint8_t retries);
     ~WiFiEventHandler() noexcept;
 
+    WiFiEventHandler(const WiFiEventHandler &) = delete;
+    WiFiEventHandler &operator=(const WiFiEventHandler &) = delete;
+    WiFiEventHandler(WiFiEventHandler &&other) noexcept;
+
   private:
     esp_err_t register_self() noexcept;
     static void handler(void *arg, esp_event_base_t event_base,

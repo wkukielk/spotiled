@@ -17,6 +17,7 @@ template <WiFiEventHandlerTypes T> int8_t WiFiEventHandler<T>::retries_left{};
 
 template <WiFiEventHandlerTypes T>
 WiFiEventHandler<T>::WiFiEventHandler(EGroup &event_group, uint8_t retries) {
+    ESP_LOGW("HANDLER", "handler init");
     UTIL_THROW(WiFiEventHandler::event_group != nullptr, InitError,
                "two handlers");
     UTIL_THROW(register_self(), InitError, "handler register");
@@ -27,8 +28,18 @@ WiFiEventHandler<T>::WiFiEventHandler(EGroup &event_group, uint8_t retries) {
 }
 
 template <WiFiEventHandlerTypes T>
+WiFiEventHandler<T>::WiFiEventHandler(WiFiEventHandler &&other) noexcept
+    : instance{other.instance}, ip_instance{other.ip_instance} {
+    other.instance = nullptr;
+    other.ip_instance = nullptr;
+}
+
+template <WiFiEventHandlerTypes T>
 WiFiEventHandler<T>::~WiFiEventHandler() noexcept {
+    if (!instance && !ip_instance)
+        return;
     WiFiEventHandler::event_group = nullptr;
+    ESP_LOGW("HANDLER", "handler unregister");
     DEL::get().handler_unregister(IP_EVENT, IP_EVENT_STA_GOT_IP, ip_instance);
     DEL::get().handler_unregister(WIFI_EVENT, ESP_EVENT_ANY_ID, instance);
 }
@@ -48,6 +59,7 @@ void WiFiEventHandler<T>::handler(void *arg, esp_event_base_t event_base,
     (void)arg;
     (void)event_base;
     (void)event_id;
+    ESP_LOGW("wifihandler", "wifihandler");
     switch (event_id) {
     case WIFI_EVENT_STA_START:
         event_group->clear(wifi::end_bit);

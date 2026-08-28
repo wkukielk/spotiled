@@ -34,12 +34,16 @@ concept DftEventLoopHandle = requires(T t) {
 class DftEventLoop {
   public:
     esp_err_t init() noexcept { return esp_event_loop_create_default(); }
-    esp_err_t deinit() noexcept { return esp_event_loop_delete_default(); }
+    esp_err_t deinit() noexcept {
+        ESP_LOGW("eloop", "eloop delete");
+        return esp_event_loop_delete_default();
+    }
 
     esp_err_t
     handler_register(esp_event_base_t event_base, int32_t event_id,
                      esp_event_handler_t event_handler, void *event_handler_arg,
                      esp_event_handler_instance_t *instance) noexcept {
+        ESP_LOGW("dfteloop", "handler register");
         return esp_event_handler_instance_register(
             event_base, event_id, event_handler, event_handler_arg, instance);
     }

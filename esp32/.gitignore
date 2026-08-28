@@ -6,3 +6,4 @@ sdkconfig.old
 *.pem
 .claude/settings.local.json
 .vscode/
+.cache/

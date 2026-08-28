@@ -32,6 +32,7 @@ template <ProvisioningTypes T> int Provisioning<T>::connect() {
         event_group->wait(wifi::end_bit);
         start();
     }
+    event_group->wait(wifi::end_bit);
     return ESP_OK;
 }
 
