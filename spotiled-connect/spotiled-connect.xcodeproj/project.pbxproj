@@ -40,9 +40,22 @@
 		82F278AE3013D67300B6CCFD /* unit.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = unit.xctestplan; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		827D4AA230418217005D2DBD /* Exceptions for "spotiled-connect" folder in "spotiled-connect" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 82241707300CE2E1002D4F42 /* spotiled-connect */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		8224170A300CE2E1002D4F42 /* spotiled-connect */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				827D4AA230418217005D2DBD /* Exceptions for "spotiled-connect" folder in "spotiled-connect" target */,
+			);
 			path = "spotiled-connect";
 			sourceTree = "<group>";
 		};
@@ -428,7 +441,7 @@
 				ENABLE_PREVIEWS = YES;
 				GCC_WARN_INHIBIT_ALL_WARNINGS = NO;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_NSBonjourServices = "_s-led-controler._tcp _s-led-direct._udp _s-led-auto._tcp";
+				INFOPLIST_FILE = "spotiled-connect/Info.plist";
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "This app uses your local network to discover Spotiled controllers.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -464,7 +477,7 @@
 				ENABLE_PREVIEWS = YES;
 				GCC_WARN_INHIBIT_ALL_WARNINGS = NO;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_NSBonjourServices = "_s-led-controler._tcp _s-led-direct._udp _s-led-auto._tcp";
+				INFOPLIST_FILE = "spotiled-connect/Info.plist";
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "This app uses your local network to discover Spotiled controllers.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;

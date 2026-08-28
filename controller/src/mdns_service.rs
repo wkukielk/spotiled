@@ -1,4 +1,5 @@
 use std::io;
+use std::net::IpAddr;
 
 /// Advertises a service over mDNS/DNS-SD for as long as it is kept alive.
 /// The advertisement is withdrawn when this value is dropped.
@@ -12,7 +13,10 @@ pub struct MdnsService {
 impl MdnsService {
     /// `service_type` should be in the form `_service._tcp` (e.g. `_ws._tcp`).
     pub fn new(service_type: &str, instance_name: &str, port: u16) -> io::Result<Self> {
-        let responder = libmdns::Responder::spawn(&tokio::runtime::Handle::current())?;
+        let responder = libmdns::Responder::spawn_with_ip_list(
+            &tokio::runtime::Handle::current(),
+            advertised_ips()?,
+        )?;
         let service = responder.register(service_type, instance_name, port, &[]);
 
         Ok(Self {
@@ -20,4 +24,23 @@ impl MdnsService {
             _service: service,
         })
     }
+}
+
+/// Restricted to non-loopback IPv4 addresses. The controller is meant to run on arbitrary
+/// end-user PCs, which routinely have VPN/virtualization/other adapters carrying their own
+/// link-local IPv6 addresses that aren't reachable from any other device on the network. Unlike
+/// IPv4, an IPv6 link-local address is only valid on the specific interface it's scoped to, so a
+/// client that resolves to the wrong candidate doesn't just fail to connect — the OS reports the
+/// path as routable and it hangs until it times out. Plain LAN IPv4 addresses don't have that
+/// ambiguity, so advertising only those avoids the whole class of failure.
+///
+/// (Also excludes loopback: `libmdns`'s own loopback filtering only recognizes the literal
+/// `::1`/`127.0.0.1` addresses, so on macOS — where `lo0` also carries the link-local address
+/// `fe80::1` — it would otherwise advertise that alongside the real one.)
+fn advertised_ips() -> io::Result<Vec<IpAddr>> {
+    Ok(if_addrs::get_if_addrs()?
+        .into_iter()
+        .filter(|iface| !iface.name.starts_with("lo") && iface.ip().is_ipv4())
+        .map(|iface| iface.ip())
+        .collect())
 }

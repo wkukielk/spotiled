@@ -14,7 +14,10 @@ use log::LevelFilter;
 
 use spotify::ISpotify;
 use spotify::Spotify;
+use socket2::{Domain, Socket, Type};
 use std::error::Error;
+use std::io;
+use std::net::SocketAddr;
 use std::sync::Arc;
 use tokio::net::TcpListener;
 
@@ -23,6 +26,23 @@ fn create_tokio_runtime() -> tokio::runtime::Runtime {
         .enable_all()
         .build()
         .expect("Failed to build Tokio runtime")
+}
+
+/// Binds a TCP listener that accepts both IPv4 and IPv6 clients on a single socket.
+/// `IPV6_V6ONLY` defaults to `true` on macOS/BSD/Windows, so binding `[::]` alone would
+/// silently stay IPv6-only there even though it works as dual-stack on Linux — this clears
+/// it explicitly so the controller behaves the same on every platform it might run on.
+fn bind_dual_stack(addr: &str) -> io::Result<std::net::TcpListener> {
+    let addr: SocketAddr = addr
+        .parse()
+        .map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e))?;
+    let socket = Socket::new(Domain::IPV6, Type::STREAM, None)?;
+    socket.set_only_v6(false)?;
+    socket.set_reuse_address(true)?;
+    socket.bind(&addr.into())?;
+    socket.listen(128)?;
+    socket.set_nonblocking(true)?;
+    Ok(socket.into())
 }
 
 fn get_hostname() -> String {
@@ -52,7 +72,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     log::info!("{}", instance_name);
 
     rt.block_on(async {
-        let listener = TcpListener::bind(&cfg.bind_address).await?;
+        let listener = TcpListener::from_std(bind_dual_stack(&cfg.bind_address)?)?;
         let port = listener.local_addr()?.port();
         let _mdns = MdnsService::new("_s-led-controler._tcp", &instance_name, port)?;
 

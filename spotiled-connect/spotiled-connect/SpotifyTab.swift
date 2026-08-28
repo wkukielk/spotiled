@@ -70,8 +70,11 @@ struct SpotifyTab: View {
         isAuthorizingSpotify = true
         defer { isAuthorizingSpotify = false }
         do {
+            let openURL = self.openURL
             let result = try await spotifyAuthorizer.requestAuthorizationCode { url in
-                openURL(url)
+                Task { @MainActor in
+                    openURL(url)
+                }
             }
             try await session.authorizeSpotify(code: result.code, codeVerifier: result.codeVerifier)
             isSpotifyAuthorized = true

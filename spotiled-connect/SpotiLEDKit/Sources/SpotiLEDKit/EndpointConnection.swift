@@ -48,22 +48,25 @@ public final class WebSocketEndpointConnection: EndpointConnecting, @unchecked S
         disconnect()
         state = .connecting(name: name)
 
-        resolver.resolve(endpoint, path: path) { [weak self] resolvedEndpoint in
+        resolver.resolve(endpoint, path: path) { [weak self] resolvedEndpoint, interface in
             guard let self else { return }
             guard let resolvedEndpoint else {
                 self.state = .failed(name: name)
                 return
             }
-            self.startWebSocketConnection(to: resolvedEndpoint, name: name)
+            self.startWebSocketConnection(to: resolvedEndpoint, name: name, interface: interface)
         }
     }
 
-    private func startWebSocketConnection(to endpoint: NWEndpoint, name: String) {
+    private func startWebSocketConnection(to endpoint: NWEndpoint, name: String, interface: NWInterface?) {
         let webSocketOptions = NWProtocolWebSocket.Options()
         webSocketOptions.autoReplyPing = true
 
         let parameters = NWParameters.tcp
         parameters.defaultProtocolStack.applicationProtocols.insert(webSocketOptions, at: 0)
+        if let interface {
+            parameters.requiredInterface = interface
+        }
 
         let connection = NWConnection(to: endpoint, using: parameters)
         self.connection = connection

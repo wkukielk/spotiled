@@ -84,8 +84,10 @@ where
     pub async fn serve(&mut self, listener: TcpListener) -> Result<()> {
         loop {
             let (stream, _) = listener.accept().await?;
-            let ws = tokio_tungstenite::accept_async(stream).await?;
-            self.handle_client(ws).await;
+            match tokio_tungstenite::accept_async(stream).await {
+                Ok(ws) => self.handle_client(ws).await,
+                Err(err) => log::warn!("WebSocket handshake failed: {err}"),
+            }
         }
     }
 
