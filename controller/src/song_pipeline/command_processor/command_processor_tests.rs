@@ -90,7 +90,7 @@ async fn authorize_failure_returns_error_json() {
     controller
         .expect_authorize()
         .times(1)
-        .return_once(|_, _| Err(SongPipelineError::SpotifyError(SpotifyError::NotInit)));
+        .return_once(|_, _| Err(SongPipelineError::SpotifyError(SpotifyError::NoCache)));
 
     let mut processor = CommandProcessor::new();
     let result = processor

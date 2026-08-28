@@ -28,10 +28,6 @@ fn create_tokio_runtime() -> tokio::runtime::Runtime {
         .expect("Failed to build Tokio runtime")
 }
 
-/// Binds a TCP listener that accepts both IPv4 and IPv6 clients on a single socket.
-/// `IPV6_V6ONLY` defaults to `true` on macOS/BSD/Windows, so binding `[::]` alone would
-/// silently stay IPv6-only there even though it works as dual-stack on Linux — this clears
-/// it explicitly so the controller behaves the same on every platform it might run on.
 fn bind_dual_stack(addr: &str) -> io::Result<std::net::TcpListener> {
     let addr: SocketAddr = addr
         .parse()
@@ -62,8 +58,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let cfg = config::load("config.toml".as_ref())?;
 
     let rt = create_tokio_runtime();
-    let mut spotify = Spotify::new();
-    spotify.init(&rt)?;
+    let spotify = Spotify::new();
     let spotify: Arc<dyn ISpotify> = Arc::new(spotify);
 
     let mut pipeline = Pipeline::<WsLedSocket>::new(spotify);

@@ -19,7 +19,7 @@ impl PlaybackEventListener {
         Self { stream }
     }
 
-    pub async fn run(mut self, mut handler: impl PlaybackEventHandler) {
+    pub async fn run(mut self, handler: &mut impl PlaybackEventHandler) {
         while let Some(msg) = self.stream.next().await {
             let mapped_msg = msg.map_err(SpotifyError::Librespot);
             handler.on_song_changed(mapped_msg).await;

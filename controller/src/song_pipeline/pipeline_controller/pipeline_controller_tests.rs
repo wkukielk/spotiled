@@ -27,11 +27,43 @@ fn controller() -> PipelineController<MockLedSocket> {
 #[tokio::test]
 async fn connect_is_noop_when_already_active() {
     let mut controller = controller();
-    controller.active = Some(ActiveSession::new(tokio::spawn(async {}), "example.local"));
+    controller.active = Some(ActiveSession::new(
+        tokio::spawn(async {
+            tokio::time::sleep(std::time::Duration::from_secs(60)).await;
+        }),
+        "example.local",
+    ));
 
     let result = controller.connect("example.local").await;
 
     assert!(result.is_ok());
+}
+
+#[tokio::test]
+async fn connect_reconnects_when_previous_task_already_finished() {
+    let _guard = lock_connect_context();
+    let connect_ctx = MockLedSocket::connect_context();
+    connect_ctx
+        .expect()
+        .return_once(|_| Ok(MockLedSocket::default()));
+
+    let mut spotify = MockISpotify::new();
+    spotify
+        .expect_get_playback_event_stream()
+        .times(1)
+        .return_once(|| Ok(Box::pin(stream::empty())));
+
+    let mut controller = controller_with(spotify);
+    let handle = tokio::spawn(async {});
+    while !handle.is_finished() {
+        tokio::task::yield_now().await;
+    }
+    controller.active = Some(ActiveSession::new(handle, "example.local"));
+
+    let result = controller.connect("example.local").await;
+
+    assert!(result.is_ok());
+    assert!(controller.active.is_some());
 }
 
 #[tokio::test]
@@ -64,7 +96,7 @@ async fn connect_propagates_error_when_playback_stream_unavailable() {
     spotify
         .expect_get_playback_event_stream()
         .times(1)
-        .return_once(|| Err(SpotifyError::NotInit));
+        .return_once(|| Err(SpotifyError::NoCache));
 
     let mut controller = controller_with(spotify);
 
@@ -142,7 +174,7 @@ async fn authorize_propagates_spotify_error() {
     spotify
         .expect_authorize()
         .times(1)
-        .return_once(|_, _| Err(SpotifyError::NotInit));
+        .return_once(|_, _| Err(SpotifyError::NoCache));
 
     let mut controller = controller_with(spotify);
 

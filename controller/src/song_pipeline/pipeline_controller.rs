@@ -1,7 +1,10 @@
 use std::marker::PhantomData;
 use std::sync::Arc;
+use std::time::Duration;
 
 use async_trait::async_trait;
+use librespot::core::dealer::manager::BoxedStreamResult;
+use librespot::core::mercury::MercuryResponse;
 use tokio::task::JoinHandle;
 
 use super::Controller;
@@ -13,6 +16,7 @@ use crate::spotify::ISpotify;
 use crate::spotify::playback_event_listener::PlaybackEventListener;
 
 const LED_SOCKET_PORT: u16 = 8000;
+const RECONNECT_DELAY: Duration = Duration::from_secs(3);
 
 struct ActiveSession{
     pub handle: JoinHandle<()>,
@@ -62,6 +66,16 @@ where
         let spoti = Arc::clone(&self.spotify);
         Ok(Handler::<S>::new(spoti, socket))
     }
+
+    async fn reconnect_stream(spotify: &Arc<dyn ISpotify>) -> BoxedStreamResult<MercuryResponse> {
+        loop {
+            tokio::time::sleep(RECONNECT_DELAY).await;
+            match spotify.get_playback_event_stream().await {
+                Ok(stream) => return stream,
+                Err(err) => log::warn!("failed to reconnect playback event stream: {err}"),
+            }
+        }
+    }
 }
 
 #[async_trait]
@@ -70,17 +84,25 @@ where
     S: LedSocket + 'static,
 {
     async fn connect(&mut self, hostname: &str) -> Result<(), SongPipelineError> {
-        if let Some(active) = &self.active && active.hostname == hostname {
+        if let Some(active) = &self.active
+            && active.hostname == hostname
+            && !active.handle.is_finished()
+        {
             return Ok(());
         }
         log::info!("connect {hostname}");
 
-        let handler = self.create_handler(hostname).await?;
+        let mut handler = self.create_handler(hostname).await?;
         let stream = self.spotify.get_playback_event_stream().await?;
-        let event_listener = PlaybackEventListener::new(stream);
+        let spotify = Arc::clone(&self.spotify);
 
         let handle = tokio::spawn(async move {
-            event_listener.run(handler).await;
+            let mut stream = stream;
+            loop {
+                PlaybackEventListener::new(stream).run(&mut handler).await;
+                log::warn!("playback event stream ended, reconnecting");
+                stream = Self::reconnect_stream(&spotify).await;
+            }
         });
         self.active = Some(ActiveSession::new(handle, hostname));
 

@@ -69,7 +69,7 @@ fn extract_cover_uri_errors_on_empty_payload() {
 
 #[test]
 fn extract_cover_uri_propagates_dealer_error() {
-    let result = DftCoverFetcher::extract_cover_uri(Err(SpotifyError::NotInit));
+    let result = DftCoverFetcher::extract_cover_uri(Err(SpotifyError::NoCache));
 
     assert!(matches!(result, Err(SongPipelineError::SpotifyError(_))));
 }
@@ -126,7 +126,7 @@ async fn fetch_errors_when_spotify_lookup_fails() {
     spotify
         .expect_get_audio_item()
         .times(1)
-        .return_once(|_| Err(SpotifyError::NotInit));
+        .return_once(|_| Err(SpotifyError::NoCache));
 
     let fetcher = DftCoverFetcher::new(Arc::new(spotify));
 

@@ -23,46 +23,21 @@ use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum SpotifyError {
-    #[error("Need to init Spotify before")]
-    NotInit,
-
     #[error("Spotify internal error: {0}")]
     Librespot(#[from] LibrespotError),
 
     #[error("Failed to exchange authorization code for access token: {0}")]
     AuthExchange(String),
+
+    #[error("No cache found")]
+    NoCache,
 }
 
 const CACHE_PATH: &str = ".cache";
 const CACHE_PATH_AUDIO: &str = ".cache/files";
-// Must match the redirect_uri a frontend uses when it builds the Spotify
-// authorization URL itself (mirroring what OAuthClientBuilder does), since
-// Spotify validates it against the one used to request the auth code.
 const OAUTH_REDIRECT_URI: &str = "http://127.0.0.1:8898/login";
 const OAUTH_AUTH_URL: &str = "https://accounts.spotify.com/authorize";
 const OAUTH_TOKEN_URL: &str = "https://accounts.spotify.com/api/token";
-
-#[cfg_attr(test, mockall::automock)]
-trait OAuthCredentialsProvider {
-    fn fetch(&self, client_id: &str) -> Result<Credentials>;
-}
-
-struct LibrespotOAuthProvider;
-
-impl OAuthCredentialsProvider for LibrespotOAuthProvider {
-    fn fetch(&self, client_id: &str) -> Result<Credentials> {
-        let token = librespot::oauth::OAuthClientBuilder::new(
-            client_id,
-            OAUTH_REDIRECT_URI,
-            vec!["streaming"],
-        )
-        .open_in_browser()
-        .build()?
-        .get_access_token()?;
-
-        Ok(Credentials::with_access_token(token.access_token))
-    }
-}
 
 pub struct AudioItem {
     pub covers: Vec<CoverImage>,
@@ -71,7 +46,6 @@ pub struct AudioItem {
 #[cfg_attr(test, mockall::automock)]
 #[async_trait]
 pub trait ISpotify: Send + Sync {
-    fn init(&mut self, rt: &tokio::runtime::Runtime) -> Result<()>;
     async fn get_playback_event_stream(
         &self,
     ) -> Result<BoxedStreamResult<MercuryResponse>, SpotifyError>;
@@ -86,12 +60,7 @@ pub struct Spotify {
 
 impl Spotify {
     const HM_URL: &str = "hm://herodotus/uri/spotify:list:play-history:v1/resume-point-revision";
-    // librespot percent-encodes each path segment (except the first) of an
-    // incoming Mercury push's URI before matching it against subscriptions
-    // (see librespot-core mercury/mod.rs, MercuryManager::complete_request).
-    // HM_URL's segments contain literal colons, which aren't in librespot's
-    // "safe" character set, so the subscription has to be encoded the same
-    // way or the prefix match silently fails.
+
     fn encode_mercury_uri(uri: &str) -> String {
         let mut parts = uri.split('/');
         std::iter::once(parts.next().unwrap_or_default().to_string())
@@ -125,25 +94,12 @@ impl Spotify {
         cache.ok()
     }
 
-    fn resolve_credentials(
-        cached: Option<Credentials>,
-        client_id: &str,
-        oauth: &impl OAuthCredentialsProvider,
-    ) -> Result<Credentials> {
-        match cached {
-            Some(credentials) => Ok(credentials),
-            None => oauth.fetch(client_id),
-        }
-    }
-
-    fn get_credentials(&self) -> Result<Credentials> {
-        let session_config = SessionConfig::default();
+    fn get_credentials(&self) -> Result<Credentials, SpotifyError> {
         let cached_credentials = self.cache.as_ref().and_then(|c| c.credentials());
-        Spotify::resolve_credentials(
-            cached_credentials,
-            &session_config.client_id,
-            &LibrespotOAuthProvider {},
-        )
+        match cached_credentials {
+            Some(credentials) => Ok(credentials),
+            None => Err(SpotifyError::NoCache)
+        }
     }
 
     async fn connect(
@@ -157,8 +113,20 @@ impl Spotify {
         Ok(session)
     }
 
-    // token_url is a parameter (rather than always OAUTH_TOKEN_URL) so tests
-    // can point it at a mock server instead of the real Spotify backend.
+    async fn session_or_reconnect(&self) -> Result<Session, SpotifyError> {
+        let current = self.session.read().unwrap().clone();
+        if let Some(session) = current
+            && !session.is_invalid()
+        {
+            return Ok(session);
+        }
+
+        let credentials = self.get_credentials()?;
+        let session = Spotify::connect(self.cache.clone(), credentials).await?;
+        *self.session.write().unwrap() = Some(session.clone());
+        Ok(session)
+    }
+
     async fn exchange_authorization_code(
         client_id: &str,
         auth_code: &str,
@@ -193,22 +161,10 @@ impl Spotify {
 
 #[async_trait]
 impl ISpotify for Spotify {
-    fn init(&mut self, rt: &tokio::runtime::Runtime) -> Result<()> {
-        let credentials = self.get_credentials()?;
-        let session = rt.block_on(Spotify::connect(self.cache.clone(), credentials))?;
-        *self.session.write().unwrap() = Some(session);
-        Ok(())
-    }
-
     async fn get_playback_event_stream(
         &self,
     ) -> Result<BoxedStreamResult<MercuryResponse>, SpotifyError> {
-        let session = self
-            .session
-            .read()
-            .unwrap()
-            .clone()
-            .ok_or(SpotifyError::NotInit)?;
+        let session = self.session_or_reconnect().await?;
         let uri = Spotify::encode_mercury_uri(Spotify::HM_URL);
         let mut receiver = session.mercury().listen_for(uri).await;
         let stream = poll_fn(move |cx| receiver.poll_recv(cx)).map(Ok);
@@ -216,12 +172,7 @@ impl ISpotify for Spotify {
     }
 
     async fn get_audio_item(&self, uri: &str) -> Result<AudioItem, SpotifyError> {
-        let session = self
-            .session
-            .read()
-            .unwrap()
-            .clone()
-            .ok_or(SpotifyError::NotInit)?;
+        let session = self.session_or_reconnect().await?;
         let spotify_uri = SpotifyUri::from_uri(uri)?;
         let audio_item = LibrespotAudioItem::get_file(&session, spotify_uri).await?;
         Ok(AudioItem {
