@@ -38,9 +38,25 @@ impl MdnsService {
 /// `::1`/`127.0.0.1` addresses, so on macOS — where `lo0` also carries the link-local address
 /// `fe80::1` — it would otherwise advertise that alongside the real one.)
 fn advertised_ips() -> io::Result<Vec<IpAddr>> {
-    Ok(if_addrs::get_if_addrs()?
+    let ips: Vec<IpAddr> = if_addrs::get_if_addrs()?
         .into_iter()
         .filter(|iface| !iface.name.starts_with("lo") && iface.ip().is_ipv4())
         .map(|iface| iface.ip())
-        .collect())
+        .collect();
+
+    // libmdns treats an *empty* allow-list as "no restriction" rather than "advertise
+    // nothing" (see `add_ip_rr` in libmdns's fsm.rs), so silently passing one through here
+    // would defeat the IPv4-only filtering below and let it fall back to advertising every
+    // interface, IPv6 link-locals included. This list is captured once at startup, so that
+    // state would then persist for the life of the process. Fail loudly instead so a
+    // transient no-IPv4-yet moment (e.g. Wi-Fi still associating) doesn't get silently
+    // upgraded into "no restriction, ever" once mDNS starts advertising.
+    if ips.is_empty() {
+        return Err(io::Error::new(
+            io::ErrorKind::NotFound,
+            "no non-loopback IPv4 interfaces found; refusing to start mDNS unrestricted",
+        ));
+    }
+
+    Ok(ips)
 }
