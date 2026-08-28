@@ -10,6 +10,7 @@
 import Network
 import Observation
 import SpotiLEDKit
+import SpotiLEDProvisioning
 import SwiftUI
 
 @Observable
@@ -98,6 +99,43 @@ final class PreviewControllerDiscovery: DeviceDiscovering {
     }
 
     func onStateChanged(_ handler: @escaping (DeviceDiscoveryState) -> Void) {}
+}
+
+@Observable
+final class PreviewDeviceProvisioning: DeviceProvisioning {
+    var state: ProvisioningState = .idle
+    var devices: [BLEDevice] = []
+    private let fakeDeviceNames: [String]
+    private let shouldSucceed: Bool
+
+    init(fakeDeviceNames: [String] = ["PROV_AABBCC"], shouldSucceed: Bool = true) {
+        self.fakeDeviceNames = fakeDeviceNames
+        self.shouldSucceed = shouldSucceed
+    }
+
+    func startScan() {
+        state = .scanning
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(0.6))
+            devices = fakeDeviceNames.map { .preview(id: $0) }
+            state = .idle
+        }
+    }
+
+    func stopScan() {}
+
+    func provision(device: BLEDevice, ssid: String, password: String) async throws {
+        state = .connecting(device.id)
+        try? await Task.sleep(for: .seconds(0.6))
+        state = .provisioning(device.id)
+        try? await Task.sleep(for: .seconds(0.6))
+        if shouldSucceed {
+            state = .success
+        } else {
+            state = .failed("preview failure")
+            throw ProvisioningError.disconnected
+        }
+    }
 }
 
 struct SelectControllerDismissHarness: View {

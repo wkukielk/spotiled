@@ -67,7 +67,8 @@ template <WiFiManagerTypes T> int WiFiManager<T>::connect_without_prov() {
 }
 
 template <WiFiManagerTypes T> void WiFiManager<T>::switch_to_prov() {
-    provisioning.emplace(event_group, "ESP_PROV");
+    auto name = provisioning::get_service_name();
+    provisioning.emplace(event_group, name);
     handler.off();
 }
 

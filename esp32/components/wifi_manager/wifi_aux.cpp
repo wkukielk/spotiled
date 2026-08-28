@@ -75,11 +75,11 @@ void print_qr(const char *name, const char *transport) {
              QRCODE_BASE_URL, payload);
 }
 
-int get_service_name(char *service_name, size_t len) {
+std::string get_service_name() {
     uint8_t eth_mac[6];
     const char *ssid_prefix = "PROV_";
     esp_wifi_get_mac(WIFI_IF_STA, eth_mac);
-    return snprintf(service_name, len, "%s%02X%02X%02X", ssid_prefix,
-                    eth_mac[3], eth_mac[4], eth_mac[5]);
+    return straux::strprintf("%s%02X%02X%02X", ssid_prefix, eth_mac[3],
+                             eth_mac[4], eth_mac[5]);
 }
 } // namespace provisioning

@@ -8,7 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		288630D6B79DE91909A0CCDE /* Mockable in Frameworks */ = {isa = PBXBuildFile; productRef = 6A95EC16137A76A118AC6257 /* Mockable */; };
-		821DDD543014D8E500B53FD5 /* ESPProvision in Frameworks */ = {isa = PBXBuildFile; productRef = 821DDD533014D8E500B53FD5 /* ESPProvision */; };
+		9A1B2C3D4E5F60718293A4B7 /* SpotiLEDProvisioning in Frameworks */ = {isa = PBXBuildFile; productRef = 9A1B2C3D4E5F60718293A4B6 /* SpotiLEDProvisioning */; };
 		82F278AD3013D64C00B6CCFD /* integration.xctestplan in Resources */ = {isa = PBXBuildFile; fileRef = 82F278AC3013D64C00B6CCFD /* integration.xctestplan */; };
 		82F278AF3013D67300B6CCFD /* unit.xctestplan in Resources */ = {isa = PBXBuildFile; fileRef = 82F278AE3013D67300B6CCFD /* unit.xctestplan */; };
 		BC50EE4C62CB42A8D48494B7 /* Mockable in Frameworks */ = {isa = PBXBuildFile; productRef = 91C1629046E692B16D06E8CA /* Mockable */; };
@@ -78,7 +78,7 @@
 			files = (
 				288630D6B79DE91909A0CCDE /* Mockable in Frameworks */,
 				E0CF3BDECBF9B2F12250F0E5 /* SpotiLEDKit in Frameworks */,
-				821DDD543014D8E500B53FD5 /* ESPProvision in Frameworks */,
+				9A1B2C3D4E5F60718293A4B7 /* SpotiLEDProvisioning in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -144,7 +144,7 @@
 			packageProductDependencies = (
 				6A95EC16137A76A118AC6257 /* Mockable */,
 				7EA9354E2E58DAF83F157EF8 /* SpotiLEDKit */,
-				821DDD533014D8E500B53FD5 /* ESPProvision */,
+				9A1B2C3D4E5F60718293A4B6 /* SpotiLEDProvisioning */,
 			);
 			productName = "spotiled-connect";
 			productReference = 82241708300CE2E1002D4F42 /* spotiled-connect.app */;
@@ -231,7 +231,7 @@
 			packageReferences = (
 				4FDD1C1820A2A4CF34BC03EA /* XCRemoteSwiftPackageReference "Mockable" */,
 				3CD3E6ACF9DC1CB86AF9AAA4 /* XCLocalSwiftPackageReference "SpotiLEDKit" */,
-				821DDD523014D8E500B53FD5 /* XCRemoteSwiftPackageReference "esp-idf-provisioning-ios" */,
+				9A1B2C3D4E5F60718293A4B5 /* XCLocalSwiftPackageReference "SpotiLEDProvisioning" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 82241709300CE2E1002D4F42 /* Products */;
@@ -442,6 +442,7 @@
 				GCC_WARN_INHIBIT_ALL_WARNINGS = NO;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "spotiled-connect/Info.plist";
+				INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription = "This app uses Bluetooth to find and provision ESP32 devices.";
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "This app uses your local network to discover Spotiled controllers.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -478,6 +479,7 @@
 				GCC_WARN_INHIBIT_ALL_WARNINGS = NO;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "spotiled-connect/Info.plist";
+				INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription = "This app uses Bluetooth to find and provision ESP32 devices.";
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "This app uses your local network to discover Spotiled controllers.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -628,6 +630,10 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = SpotiLEDKit;
 		};
+		9A1B2C3D4E5F60718293A4B5 /* XCLocalSwiftPackageReference "SpotiLEDProvisioning" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = SpotiLEDProvisioning;
+		};
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCRemoteSwiftPackageReference section */
@@ -637,14 +643,6 @@
 			requirement = {
 				kind = upToNextMajorVersion;
 				minimumVersion = 0.6.4;
-			};
-		};
-		821DDD523014D8E500B53FD5 /* XCRemoteSwiftPackageReference "esp-idf-provisioning-ios" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/espressif/esp-idf-provisioning-ios.git";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 3.1.0;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
@@ -660,10 +658,10 @@
 			package = 3CD3E6ACF9DC1CB86AF9AAA4 /* XCLocalSwiftPackageReference "SpotiLEDKit" */;
 			productName = SpotiLEDKit;
 		};
-		821DDD533014D8E500B53FD5 /* ESPProvision */ = {
+		9A1B2C3D4E5F60718293A4B6 /* SpotiLEDProvisioning */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 821DDD523014D8E500B53FD5 /* XCRemoteSwiftPackageReference "esp-idf-provisioning-ios" */;
-			productName = ESPProvision;
+			package = 9A1B2C3D4E5F60718293A4B5 /* XCLocalSwiftPackageReference "SpotiLEDProvisioning" */;
+			productName = SpotiLEDProvisioning;
 		};
 		91C1629046E692B16D06E8CA /* Mockable */ = {
 			isa = XCSwiftPackageProductDependency;

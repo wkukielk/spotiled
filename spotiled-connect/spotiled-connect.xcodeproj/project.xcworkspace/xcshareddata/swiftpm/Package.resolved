@@ -1,5 +1,5 @@
 {
-  "originHash" : "e06bbc878e2a025f6cd31fe59bb7f7ef66e590af29d1fbe0dfa28ef4303d6059",
+  "originHash" : "0e15b0fe53a47f0604ce7ee16ae3a8decece56335c70b3e1743ee67bc7232848",
   "pins" : [
     {
       "identity" : "esp-idf-provisioning-ios",
