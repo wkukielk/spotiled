@@ -137,6 +137,28 @@ async fn unknown_command_replies_with_error_and_closes_connection() {
 }
 
 #[tokio::test]
+async fn new_connection_preempts_a_stale_client_without_closing_it_cleanly() {
+    let mut controller = MockController::new();
+    controller.expect_connect().times(1).return_once(|_| Ok(()));
+    controller.expect_disconnect().returning(|| Ok(()));
+
+    let addr = spawn_server(controller).await;
+    let mut stale = connect_client(addr).await;
+
+    // The stale client never sends a close frame and is just left dangling, simulating a
+    // client that vanished (e.g. dropped Wi-Fi) without a clean WebSocket shutdown.
+    let mut newer = connect_client(addr).await;
+    newer
+        .send(WsMessage::Text("connect spotiled-esp32.local".into()))
+        .await
+        .unwrap();
+    expect_text(&mut newer, r#"{"ack":"ok"}"#).await;
+
+    // The server should have dropped the stale connection in favor of the new one.
+    expect_connection_closed(&mut stale).await;
+}
+
+#[tokio::test]
 async fn client_disconnecting_without_explicit_disconnect_command_leaves_controller_connected() {
     let (tx, mut rx) = mpsc::unbounded_channel::<()>();
     let mut controller = MockController::new();

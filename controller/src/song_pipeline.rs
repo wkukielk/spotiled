@@ -77,33 +77,60 @@ where
     }
 }
 
+enum Event {
+    Message(Option<Result<WsMessage, tokio_tungstenite::tungstenite::Error>>),
+    NewConnection(std::io::Result<(TcpStream, std::net::SocketAddr)>),
+}
+
 impl<C> WsServer<C>
 where
     C: Controller,
 {
     pub async fn serve(&mut self, listener: TcpListener) -> Result<()> {
+        let mut current: Option<WebSocketStream<TcpStream>> = None;
+
         loop {
-            let (stream, _) = listener.accept().await?;
-            match tokio_tungstenite::accept_async(stream).await {
-                Ok(ws) => self.handle_client(ws).await,
-                Err(err) => log::warn!("WebSocket handshake failed: {err}"),
+            match Self::next_event(&mut current, &listener).await {
+                Event::Message(Some(Ok(message))) => {
+                    let ws = current.as_mut().expect("message implies an active connection");
+                    if let LoopStatus::Break = self.handle_message(message, ws).await {
+                        current = None;
+                    }
+                }
+                Event::Message(_) => {
+                    current = None;
+                }
+                Event::NewConnection(Ok((stream, _))) => {
+                    Self::accept_new_connection(stream, &mut current).await;
+                }
+                Event::NewConnection(Err(err)) => return Err(err.into()),
             }
         }
     }
 
-    async fn handle_client(&mut self, mut ws: WebSocketStream<TcpStream>) {
-        while let Some(message) = ws.next().await {
-            match message {
-                Ok(message) => {
-                    if let LoopStatus::Break = self.handle_message(message, &mut ws).await {
-                        break;
-                    }
-                }
-                Err(_) => {
-                    log::warn!("Error message");
-                    break;
-                }
+    async fn next_event(current: &mut Option<WebSocketStream<TcpStream>>, listener: &TcpListener) -> Event {
+        let next_message = async {
+            match current.as_mut() {
+                Some(ws) => ws.next().await,
+                None => std::future::pending().await,
             }
+        };
+
+        tokio::select! {
+            message = next_message => Event::Message(message),
+            accepted = listener.accept() => Event::NewConnection(accepted),
+        }
+    }
+
+    async fn accept_new_connection(stream: TcpStream, current: &mut Option<WebSocketStream<TcpStream>>) {
+        match tokio_tungstenite::accept_async(stream).await {
+            Ok(new_ws) => {
+                if current.is_some() {
+                    log::info!("New client connected, replacing previous session");
+                }
+                *current = Some(new_ws);
+            }
+            Err(err) => log::warn!("WebSocket handshake failed: {err}"),
         }
     }
 

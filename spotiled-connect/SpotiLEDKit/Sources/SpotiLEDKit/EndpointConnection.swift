@@ -35,6 +35,8 @@ public protocol EndpointConnecting: AnyObject {
 
 @Observable
 public final class WebSocketEndpointConnection: EndpointConnecting, @unchecked Sendable {
+    private static let connectTimeout: TimeInterval = 8
+
     public private(set) var state: EndpointConnectionState = .disconnected
 
     private var connection: NWConnection?
@@ -86,6 +88,20 @@ public final class WebSocketEndpointConnection: EndpointConnecting, @unchecked S
             }
         }
         connection.start(queue: .main)
+        scheduleConnectTimeout(for: connection, name: name)
+    }
+
+    /// A dropped SYN with no response never reaches `.failed` on its own — `NWConnection` has no
+    /// built-in connect timeout, so without this a silently-lost handshake leaves `state` stuck
+    /// at `.connecting` (and the UI spinning) indefinitely.
+    private func scheduleConnectTimeout(for connection: NWConnection, name: String) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + Self.connectTimeout) { [weak self, weak connection] in
+            guard let self, let connection, self.connection === connection else { return }
+            guard case .connecting = self.state else { return }
+            connection.cancel()
+            self.state = .failed(name: name)
+            self.failPendingReply(with: EndpointConnectionError.connectionFailed)
+        }
     }
 
     public func disconnect() {

@@ -6,10 +6,12 @@
 //
 
 import SwiftUI
+import UIKit
 import SpotiLEDKit
 
 struct DiscoveredDeviceListView<RowContent: View>: View {
     @State private var browser: DeviceBrowser
+    @Environment(\.openURL) private var openURL
     private let title: String
     private let emptyMessage: String
     private let rowContent: (DiscoveredDevice) -> RowContent
@@ -29,7 +31,7 @@ struct DiscoveredDeviceListView<RowContent: View>: View {
     var body: some View {
         Group {
             if browser.discoveredDevices.isEmpty {
-                ContentUnavailableView(emptyMessage, systemImage: "wifi")
+                emptyStateView
             } else {
                 List(browser.discoveredDevices) { controller in
                     rowContent(controller)
@@ -42,6 +44,36 @@ struct DiscoveredDeviceListView<RowContent: View>: View {
         }
         .onDisappear {
             browser.stop()
+        }
+    }
+
+    @ViewBuilder
+    private var emptyStateView: some View {
+        switch browser.state {
+        case .searching:
+            ContentUnavailableView(emptyMessage, systemImage: "wifi")
+        case .localNetworkPermissionDenied:
+            ContentUnavailableView {
+                Label("Local Network Access Needed", systemImage: "wifi.exclamationmark")
+            } description: {
+                Text("Allow local network access for SpotiLED Connect in Settings to discover devices.")
+            } actions: {
+                Button("Open Settings") {
+                    if let url = URL(string: UIApplication.openSettingsURLString) {
+                        openURL(url)
+                    }
+                }
+            }
+        case .failed(let message):
+            ContentUnavailableView {
+                Label("Search Failed", systemImage: "exclamationmark.triangle")
+            } description: {
+                Text(message)
+            } actions: {
+                Button("Retry") {
+                    browser.start()
+                }
+            }
         }
     }
 }

@@ -96,6 +96,8 @@ final class PreviewControllerDiscovery: DeviceDiscovering {
     func onDevicesChanged(_ handler: @escaping ([DiscoveredDevice]) -> Void) {
         self.handler = handler
     }
+
+    func onStateChanged(_ handler: @escaping (DeviceDiscoveryState) -> Void) {}
 }
 
 struct SelectControllerDismissHarness: View {
