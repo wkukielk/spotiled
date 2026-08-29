@@ -28,7 +28,9 @@ impl CommandProcessor {
         command: &str,
     ) -> Result<serde_json::Value, SongPipelineError> {
         let mut parts = command.split_whitespace();
-        match parts.next() {
+        let cmd = parts.next();
+        cmd.as_ref().inspect(|c| log::info!("{}", c));
+        match cmd {
             Some("connect") => {
                 let hostname = get_next_part(&mut parts)?;
                 controller.connect(hostname).await?;
@@ -44,7 +46,10 @@ impl CommandProcessor {
                 controller.authorize(auth_code, code_verifier).await?;
                 Ok(Self::ack())
             }
-            Some("status") => Ok(serde_json::json!({ "username": controller.status() })),
+            Some("status") => {
+                let username = controller.display_name().await?;
+                Ok(serde_json::json!({ "username": username }))
+            }
             _ => Err(SongPipelineError::UnknownCommand),
         }
     }

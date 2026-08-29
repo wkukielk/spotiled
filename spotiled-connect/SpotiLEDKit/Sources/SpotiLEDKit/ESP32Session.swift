@@ -38,6 +38,7 @@ public protocol ControllerSessionManaging: AnyObject {
 @Observable
 public final class ControllerESP32Session: ControllerSessionManaging {
     private let connection: any EndpointConnecting
+    private let sendGate = AsyncMutex()
     public private(set) var esp32State: ESP32ConnectionState = .disconnected
 
     public var controllerState: EndpointConnectionState { connection.state }
@@ -58,7 +59,7 @@ public final class ControllerESP32Session: ControllerSessionManaging {
     public func connectESP32(hostname: String) async throws {
         esp32State = .connecting(host: hostname)
         do {
-            let reply = try await connection.send("connect \(hostname)")
+            let reply = try await send("connect \(hostname)")
             if let message = Self.errorMessage(in: reply) {
                 esp32State = .failed(host: hostname, message: message)
                 throw ESP32SessionError.rejected(message)
@@ -73,7 +74,7 @@ public final class ControllerESP32Session: ControllerSessionManaging {
     }
 
     public func disconnectESP32() async throws {
-        let reply = try await connection.send("disconnect")
+        let reply = try await send("disconnect")
         if let message = Self.errorMessage(in: reply) {
             throw ESP32SessionError.rejected(message)
         }
@@ -81,14 +82,14 @@ public final class ControllerESP32Session: ControllerSessionManaging {
     }
 
     public func authorizeSpotify(code: String, codeVerifier: String) async throws {
-        let reply = try await connection.send("authorize \(code) \(codeVerifier)")
+        let reply = try await send("authorize \(code) \(codeVerifier)")
         if let message = Self.errorMessage(in: reply) {
             throw ESP32SessionError.rejected(message)
         }
     }
 
     public func spotifyStatus() async throws -> String? {
-        let reply = try await connection.send("status")
+        let reply = try await send("status")
         if let message = Self.errorMessage(in: reply) {
             throw ESP32SessionError.rejected(message)
         }
@@ -97,6 +98,12 @@ public final class ControllerESP32Session: ControllerSessionManaging {
             return nil
         }
         return decoded.username
+    }
+
+    private func send(_ message: String) async throws -> String {
+        try await sendGate.withLock {
+            try await connection.send(message)
+        }
     }
 
     private struct ControllerReply: Decodable {

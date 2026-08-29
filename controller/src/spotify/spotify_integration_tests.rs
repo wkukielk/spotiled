@@ -21,16 +21,20 @@ fn get_playback_event_stream_connects_lazily_using_cached_credentials() {
 
 #[test]
 #[ignore = "hits the real Spotify backend; run with `cargo test -- --ignored`"]
-fn status_reports_username_after_connecting() {
+fn display_name_reports_name_after_connecting() {
     let (rt, spotify) = real_spotify_session();
 
-    assert_eq!(spotify.status(), None, "no session established yet");
+    assert_eq!(
+        rt.block_on(spotify.display_name()).unwrap(),
+        None,
+        "no session established yet"
+    );
 
     let _stream = rt
         .block_on(spotify.get_playback_event_stream())
         .expect("requires valid cached credentials in .cache");
 
-    assert!(spotify.status().is_some());
+    assert!(rt.block_on(spotify.display_name()).unwrap().is_some());
 }
 
 #[test]

@@ -31,6 +31,9 @@ pub enum SpotifyError {
 
     #[error("No cache found")]
     NoCache,
+
+    #[error("Failed to parse Spotify profile response: {0}")]
+    ProfileParse(#[from] serde_json::Error),
 }
 
 const CACHE_PATH: &str = ".cache";
@@ -39,6 +42,11 @@ const OAUTH_REDIRECT_URI: &str = "http://127.0.0.1:8898/login";
 const OAUTH_AUTH_URL: &str = "https://accounts.spotify.com/authorize";
 const OAUTH_TOKEN_URL: &str = "https://accounts.spotify.com/api/token";
 
+#[derive(serde::Deserialize)]
+struct UserProfileView {
+    name: Option<String>,
+}
+
 pub struct AudioItem {
     pub covers: Vec<CoverImage>,
 }
@@ -46,10 +54,7 @@ pub struct AudioItem {
 #[cfg_attr(test, mockall::automock)]
 #[async_trait]
 pub trait ISpotify: Send + Sync {
-    /// The connected account's canonical Spotify username, or `None` if not connected.
-    /// Never attempts to (re)connect — a status check should never itself trigger a network
-    /// round-trip.
-    fn status(&self) -> Option<String>;
+    async fn display_name(&self) -> Result<Option<String>, SpotifyError>;
     async fn get_playback_event_stream(
         &self,
     ) -> Result<BoxedStreamResult<MercuryResponse>, SpotifyError>;
@@ -165,12 +170,24 @@ impl Spotify {
 
 #[async_trait]
 impl ISpotify for Spotify {
-    fn status(&self) -> Option<String> {
-        match self.session.read().unwrap().clone() {
-            Some(session) if !session.is_invalid()
-                => Some(session.user_data().canonical_username),
-            _ => None,
-        }
+    async fn display_name(&self) -> Result<Option<String>, SpotifyError> {
+        let Ok(session) = self.session_or_reconnect().await else {
+            return Ok(None);
+        };
+
+        let username = session.user_data().canonical_username;
+        let response = session
+            .spclient()
+            .get_user_profile(&username, None, None)
+            .await?;
+
+        let profile: UserProfileView = serde_json::from_slice(&response).inspect_err(|_| {
+            log::warn!(
+                "unrecognized user profile response shape: {}",
+                String::from_utf8_lossy(&response)
+            );
+        })?;
+        Ok(profile.name)
     }
 
     async fn get_playback_event_stream(

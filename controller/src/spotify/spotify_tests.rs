@@ -2,14 +2,14 @@ use super::*;
 use wiremock::matchers::{method, path};
 use wiremock::{Mock, MockServer, ResponseTemplate};
 
-#[test]
-fn status_is_none_before_any_session_exists() {
+#[tokio::test]
+async fn display_name_is_none_before_any_session_exists() {
     let spotify = Spotify {
         cache: None,
         session: RwLock::new(None),
     };
 
-    assert_eq!(spotify.status(), None);
+    assert_eq!(spotify.display_name().await.unwrap(), None);
 }
 
 #[test]

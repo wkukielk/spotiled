@@ -4,6 +4,20 @@
 
 #include <algorithm>
 
+struct CommandLogger {
+    void operator()(const server::FadeLed &cmd) const {
+        ESP_LOGI("CommandHandler", "FadeLed target=(%d,%d,%d)",
+                 (int)cmd.target.r, (int)cmd.target.g, (int)cmd.target.b);
+    }
+
+    void operator()(const server::PulsateLed &cmd) const {
+        ESP_LOGI("CommandHandler",
+                 "PulsateLed target=(%d,%d,%d) duration_ms=%d",
+                 (int)cmd.target.r, (int)cmd.target.g, (int)cmd.target.b,
+                 (int)cmd.duration_ms);
+    }
+};
+
 template <I_Animatable LEDC>
 server::Response CommandHandler<LEDC>::process(server::Message msg) {
     auto &[buf, len] = msg;
@@ -12,7 +26,11 @@ server::Response CommandHandler<LEDC>::process(server::Message msg) {
     auto cmd = server::parse({reinterpret_cast<const char *>(buf.get()), len});
     if (!cmd)
         return server::Response::invalid_command;
-    return std::visit([this](auto &&c) { return handle(c); }, *cmd);
+    auto visitor = [this](auto &&c) {
+        CommandLogger{}(c);
+        return this->handle(c);
+    };
+    return std::visit(visitor, *cmd);
 }
 
 template <I_Animatable LEDC>

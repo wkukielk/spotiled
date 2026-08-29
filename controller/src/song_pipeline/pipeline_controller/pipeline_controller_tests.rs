@@ -152,17 +152,20 @@ fn disconnect_is_noop_without_active_task() {
     assert!(result.is_ok());
 }
 
-#[test]
-fn status_delegates_to_spotify() {
+#[tokio::test]
+async fn display_name_delegates_to_spotify() {
     let mut spotify = MockISpotify::new();
     spotify
-        .expect_status()
+        .expect_display_name()
         .times(1)
-        .return_once(|| Some("someuser".to_string()));
+        .return_once(|| Ok(Some("someuser".to_string())));
 
     let controller = controller_with(spotify);
 
-    assert_eq!(controller.status(), Some("someuser".to_string()));
+    assert_eq!(
+        controller.display_name().await.unwrap(),
+        Some("someuser".to_string())
+    );
 }
 
 #[tokio::test]

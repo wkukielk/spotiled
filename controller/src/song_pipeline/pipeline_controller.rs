@@ -123,8 +123,8 @@ where
         Ok(())
     }
 
-    fn status(&self) -> Option<String> {
-        self.spotify.status()
+    async fn display_name(&self) -> Result<Option<String>, SongPipelineError> {
+        Ok(self.spotify.display_name().await?)
     }
 }
 
