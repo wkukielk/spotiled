@@ -31,6 +31,8 @@ public protocol ControllerSessionManaging: AnyObject {
     func connectESP32(hostname: String) async throws
     func disconnectESP32() async throws
     func authorizeSpotify(code: String, codeVerifier: String) async throws
+    /// The connected Spotify account's username, or `nil` if the controller isn't connected.
+    func spotifyStatus() async throws -> String?
 }
 
 @Observable
@@ -85,9 +87,25 @@ public final class ControllerESP32Session: ControllerSessionManaging {
         }
     }
 
+    public func spotifyStatus() async throws -> String? {
+        let reply = try await connection.send("status")
+        if let message = Self.errorMessage(in: reply) {
+            throw ESP32SessionError.rejected(message)
+        }
+        guard let data = reply.data(using: .utf8),
+              let decoded = try? JSONDecoder().decode(StatusReply.self, from: data) else {
+            return nil
+        }
+        return decoded.username
+    }
+
     private struct ControllerReply: Decodable {
         let ack: String?
         let error: String?
+    }
+
+    private struct StatusReply: Decodable {
+        let username: String?
     }
 
     private static func errorMessage(in reply: String) -> String? {

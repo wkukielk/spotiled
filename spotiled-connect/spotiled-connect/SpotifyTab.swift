@@ -8,6 +8,20 @@
 import SwiftUI
 import SpotiLEDKit
 
+/// Whether the controller has an active Spotify session, and the account's username if so.
+/// A dedicated type instead of a plain `Bool` + `String?` pair, since those two would otherwise
+/// carry the same information twice and could disagree.
+private enum SpotifyStatus: Equatable {
+    case checking
+    case connected(username: String)
+    case notConnected
+
+    var isConnected: Bool {
+        if case .connected = self { return true }
+        return false
+    }
+}
+
 struct SpotifyTab: View {
     @Environment(SelectedESP32Store.self) private var esp32Store
     @Environment(\.esp32Session) private var session
@@ -16,7 +30,7 @@ struct SpotifyTab: View {
     @State private var connectionError: String?
     @State private var spotifyAuthorizer: any SpotifyAuthorizing = SpotifyPKCEAuthorizer()
     @State private var isAuthorizingSpotify = false
-    @State private var isSpotifyAuthorized = false
+    @State private var spotifyStatus: SpotifyStatus = .checking
     @State private var spotifyError: String?
 
     var body: some View {
@@ -35,15 +49,12 @@ struct SpotifyTab: View {
                     .foregroundStyle(.red)
             }
 
-            Button(isSpotifyAuthorized ? "Reconnect Spotify" : "Connect Spotify") {
+            Button(spotifyStatus.isConnected ? "Reconnect Spotify" : "Connect Spotify") {
                 Task { await authorizeSpotify() }
             }
             .disabled(isAuthorizingSpotify)
 
-            if isSpotifyAuthorized {
-                Label("Spotify connected", systemImage: "checkmark.circle")
-                    .foregroundStyle(.green)
-            }
+            spotifyStatusView
             if let spotifyError {
                 Text(spotifyError)
                     .foregroundStyle(.red)
@@ -63,6 +74,35 @@ struct SpotifyTab: View {
                 connectionError = "Failed to connect to \(device.name): \(error)"
             }
         }
+        .task {
+            await refreshSpotifyStatus()
+        }
+    }
+
+    @ViewBuilder
+    private var spotifyStatusView: some View {
+        switch spotifyStatus {
+        case .checking:
+            Label("Checking connection status…", systemImage: "ellipsis.circle")
+                .foregroundStyle(.secondary)
+        case .connected(let username):
+            Label("Spotify connected as \(username)", systemImage: "checkmark.circle")
+                .foregroundStyle(.green)
+        case .notConnected:
+            EmptyView()
+        }
+    }
+
+    private func refreshSpotifyStatus() async {
+        do {
+            if let username = try await session.spotifyStatus() {
+                spotifyStatus = .connected(username: username)
+            } else {
+                spotifyStatus = .notConnected
+            }
+        } catch {
+            spotifyStatus = .notConnected
+        }
     }
 
     private func authorizeSpotify() async {
@@ -77,9 +117,9 @@ struct SpotifyTab: View {
                 }
             }
             try await session.authorizeSpotify(code: result.code, codeVerifier: result.codeVerifier)
-            isSpotifyAuthorized = true
+            await refreshSpotifyStatus()
         } catch {
-            isSpotifyAuthorized = false
+            spotifyStatus = .notConnected
             spotifyError = "Failed to connect Spotify: \(error)"
         }
     }

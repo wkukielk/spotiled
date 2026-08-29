@@ -46,15 +46,21 @@ final class PreviewFailingConnection: ControllerSessionManaging {
     func authorizeSpotify(code: String, codeVerifier: String) async throws {
         throw ESP32SessionError.rejected("preview failure")
     }
+
+    func spotifyStatus() async throws -> String? {
+        throw ESP32SessionError.rejected("preview failure")
+    }
 }
 
 @Observable
 final class PreviewControllerConnection: ControllerSessionManaging {
     var controllerState: EndpointConnectionState
     var esp32State: ESP32ConnectionState = .disconnected
+    var spotifyUsername: String?
 
-    init(state: EndpointConnectionState) {
+    init(state: EndpointConnectionState, spotifyUsername: String? = nil) {
         self.controllerState = state
+        self.spotifyUsername = spotifyUsername
     }
 
     func connect(to endpoint: NWEndpoint, name: String) {
@@ -74,6 +80,10 @@ final class PreviewControllerConnection: ControllerSessionManaging {
     }
 
     func authorizeSpotify(code: String, codeVerifier: String) async throws {}
+
+    func spotifyStatus() async throws -> String? {
+        spotifyUsername
+    }
 }
 
 final class PreviewControllerDiscovery: DeviceDiscovering {

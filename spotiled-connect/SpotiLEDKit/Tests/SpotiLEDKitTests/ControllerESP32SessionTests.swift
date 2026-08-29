@@ -133,4 +133,35 @@ struct ControllerESP32SessionTests {
             try await session.authorizeSpotify(code: "auth-code", codeVerifier: "verifier")
         }
     }
+
+    @Test func spotifyStatusSendsStatusCommandAndReturnsUsername() async throws {
+        let connection = MockEndpointConnecting(policy: .relaxed)
+        given(connection).send(.any).willReturn(#"{"username":"someuser"}"#)
+        let session = ControllerESP32Session(connection: connection)
+
+        let username = try await session.spotifyStatus()
+
+        verify(connection).send(.value("status")).called(.once)
+        #expect(username == "someuser")
+    }
+
+    @Test func spotifyStatusReturnsNilWhenNotConnected() async throws {
+        let connection = MockEndpointConnecting(policy: .relaxed)
+        given(connection).send(.any).willReturn(#"{"username":null}"#)
+        let session = ControllerESP32Session(connection: connection)
+
+        let username = try await session.spotifyStatus()
+
+        #expect(username == nil)
+    }
+
+    @Test func spotifyStatusThrowsOnControllerRejection() async {
+        let connection = MockEndpointConnecting(policy: .relaxed)
+        given(connection).send(.any).willReturn(#"{"error":"boom"}"#)
+        let session = ControllerESP32Session(connection: connection)
+
+        await #expect(throws: ESP32SessionError.rejected("boom")) {
+            try await session.spotifyStatus()
+        }
+    }
 }

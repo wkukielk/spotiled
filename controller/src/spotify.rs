@@ -167,7 +167,8 @@ impl Spotify {
 impl ISpotify for Spotify {
     fn status(&self) -> Option<String> {
         match self.session.read().unwrap().clone() {
-            Some(session) if !session.is_invalid() => Some(session.username()),
+            Some(session) if !session.is_invalid()
+                => Some(session.user_data().canonical_username),
             _ => None,
         }
     }
