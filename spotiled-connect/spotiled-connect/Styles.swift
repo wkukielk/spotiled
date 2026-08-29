@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SpotiLEDKit
 
 struct PrimaryActionButtonStyle: PrimitiveButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
@@ -26,6 +27,20 @@ extension PrimitiveButtonStyle where Self == PrimaryActionButtonStyle {
 extension Color {
     static let cardBackground = Color(uiColor: .secondarySystemBackground)
     static let cardBorder = Color(uiColor: .separator)
+}
+
+struct SelectedESP32Label: View {
+    let device: DiscoveredDevice?
+
+    var body: some View {
+        if let device {
+            Label("Selected: \(device.name)", systemImage: "checkmark.circle.fill")
+                .foregroundStyle(.green)
+        } else {
+            Label("No ESP32 selected", systemImage: "wifi.slash")
+                .foregroundStyle(.secondary)
+        }
+    }
 }
 
 struct LabeledNumberField: View {

@@ -13,6 +13,11 @@ import Mockable
 public struct SpotifyAuthorizationResult: Sendable, Equatable {
     public let code: String
     public let codeVerifier: String
+
+    public init(code: String, codeVerifier: String) {
+        self.code = code
+        self.codeVerifier = codeVerifier
+    }
 }
 
 public enum SpotifyAuthorizationError: Error, Equatable {
@@ -129,10 +134,7 @@ final class SpotifyRedirectListener: @unchecked Sendable {
     private static let queue = DispatchQueue(label: "SpotifyRedirectListener")
 
     private let listener: NWListener
-    private let lock = NSLock()
-    private var continuation: CheckedContinuation<[URLQueryItem], Error>?
-    private var pendingResult: Result<[URLQueryItem], Error>?
-    private var isFinished = false
+    private let redirectResult = OneShotContinuation<[URLQueryItem]>()
 
     init(port: NWEndpoint.Port) throws {
         let parameters = NWParameters.tcp
@@ -176,17 +178,7 @@ final class SpotifyRedirectListener: @unchecked Sendable {
     }
 
     func awaitRedirect() async throws -> [URLQueryItem] {
-        try await withCheckedThrowingContinuation { continuation in
-            lock.lock()
-            if let pendingResult {
-                self.pendingResult = nil
-                lock.unlock()
-                continuation.resume(with: pendingResult)
-                return
-            }
-            self.continuation = continuation
-            lock.unlock()
-        }
+        try await redirectResult.wait()
     }
 
     private func handle(_ connection: NWConnection, expectedPath: String) {
@@ -196,8 +188,8 @@ final class SpotifyRedirectListener: @unchecked Sendable {
                 self.finish(.failure(error))
                 return
             }
-            guard let data, let text = String(data: data, encoding: .utf8),
-                  let requestLine = text.split(separator: "\r\n", maxSplits: 1).first else {
+            guard let data, let text = String(data: data, encoding: .utf8) else { return }
+            guard let requestLine = text.split(separator: "\r\n", maxSplits: 1).first else {
                 self.finish(.failure(SpotifyAuthorizationError.invalidRedirect))
                 return
             }
@@ -207,30 +199,20 @@ final class SpotifyRedirectListener: @unchecked Sendable {
     }
 
     private func finish(_ result: Result<[URLQueryItem], Error>) {
-        lock.lock()
-        guard !isFinished else {
-            lock.unlock()
-            return
-        }
-        isFinished = true
-        let continuationToResume = continuation
-        continuation = nil
-        if continuationToResume == nil {
-            pendingResult = result
-        }
-        lock.unlock()
-
+        guard redirectResult.finish(result) else { return }
         listener.newConnectionHandler = nil
         listener.stateUpdateHandler = nil
         listener.cancel()
-        continuationToResume?.resume(with: result)
     }
 
     private static func queryItems(fromRequestLine requestLine: String, expectedPath: String) throws -> [URLQueryItem] {
         let parts = requestLine.split(separator: " ")
-        guard parts.count >= 2,
-              let components = URLComponents(string: String(parts[1])),
-              components.path == expectedPath else {
+        guard parts.count >= 2 else {
+            throw SpotifyAuthorizationError.invalidRedirect
+        }
+        let url = String(parts[1])
+        let components = URLComponents(string: url)
+        guard let components, components.path == expectedPath else {
             throw SpotifyAuthorizationError.invalidRedirect
         }
         return components.queryItems ?? []

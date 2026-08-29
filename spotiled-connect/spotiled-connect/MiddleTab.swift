@@ -95,7 +95,7 @@ struct MiddleTab: View {
                 .font(.system(size: 32))
 
             VStack(spacing: 8) {
-                esp32Status
+                SelectedESP32Label(device: esp32Store.device)
                 Button(esp32Store.device == nil ? "Select ESP32" : "Change ESP32") {
                     isSelectingESP32 = true
                 }
@@ -104,17 +104,6 @@ struct MiddleTab: View {
         .padding(8)
         .background(Color.cardBackground)
         .border(Color.cardBorder, width: 1)
-    }
-
-    @ViewBuilder
-    private var esp32Status: some View {
-        if let device = esp32Store.device {
-            Label("Selected: \(device.name)", systemImage: "checkmark.circle.fill")
-                .foregroundStyle(.green)
-        } else {
-            Label("No ESP32 selected", systemImage: "wifi.slash")
-                .foregroundStyle(.secondary)
-        }
     }
 }
 

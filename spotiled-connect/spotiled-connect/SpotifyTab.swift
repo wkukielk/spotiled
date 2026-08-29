@@ -8,9 +8,6 @@
 import SwiftUI
 import SpotiLEDKit
 
-/// Whether the controller has an active Spotify session, and the account's username if so.
-/// A dedicated type instead of a plain `Bool` + `String?` pair, since those two would otherwise
-/// carry the same information twice and could disagree.
 private enum SpotifyStatus: Equatable {
     case checking
     case connected(username: String)
@@ -28,28 +25,25 @@ struct SpotifyTab: View {
     @Environment(\.openURL) private var openURL
     @State private var hostResolver = DeviceHostResolver()
     @State private var connectionError: String?
-    @State private var spotifyAuthorizer: any SpotifyAuthorizing = SpotifyPKCEAuthorizer()
+    @State private var spotifyAuthorizer: any SpotifyAuthorizing
     @State private var isAuthorizingSpotify = false
     @State private var spotifyStatus: SpotifyStatus = .checking
     @State private var spotifyError: String?
 
+    init(spotifyAuthorizer: any SpotifyAuthorizing = SpotifyPKCEAuthorizer()) {
+        _spotifyAuthorizer = State(initialValue: spotifyAuthorizer)
+    }
+
     var body: some View {
         VStack(spacing: 16) {
             Text("Spotify mode")
-                .navigationTitle("Manual mode")
-            if let device = esp32Store.device {
-                Text("Target: \(device.name)")
-                    .foregroundStyle(.secondary)
-            } else {
-                Text("No ESP32 selected")
-                    .foregroundStyle(.secondary)
-            }
+            SelectedESP32Label(device: esp32Store.device)
             if let connectionError {
-                Text(connectionError)
-                    .foregroundStyle(.red)
+                Text(connectionError).foregroundStyle(.red)
             }
 
-            Button(spotifyStatus.isConnected ? "Reconnect Spotify" : "Connect Spotify") {
+            let btnTxt = spotifyStatus.isConnected ? "Reconnect Spotify" : "Connect Spotify"
+            Button(btnTxt, role: spotifyStatus.isConnected ? .destructive : nil) {
                 Task { await authorizeSpotify() }
             }
             .disabled(isAuthorizingSpotify)
@@ -60,6 +54,7 @@ struct SpotifyTab: View {
                     .foregroundStyle(.red)
             }
         }
+        .buttonStyle(.appPrimary)
         .padding(.horizontal)
         .task(id: esp32Store.device) {
             connectionError = nil
@@ -89,7 +84,8 @@ struct SpotifyTab: View {
             Label("Spotify connected as \(username)", systemImage: "checkmark.circle")
                 .foregroundStyle(.green)
         case .notConnected:
-            EmptyView()
+            Label("Spotify not connected", systemImage: "xmark.circle.fill")
+                .foregroundStyle(.secondary)
         }
     }
 
@@ -101,6 +97,7 @@ struct SpotifyTab: View {
                 spotifyStatus = .notConnected
             }
         } catch {
+            print("\(error)")
             spotifyStatus = .notConnected
         }
     }
@@ -125,9 +122,21 @@ struct SpotifyTab: View {
     }
 }
 
-#Preview {
+#Preview("Default") {
     SpotifyTab()
         .environment(SelectedESP32Store())
+}
+
+#Preview("Spotify connect succeeds") {
+    SpotifyTab(spotifyAuthorizer: PreviewSpotifyAuthorizer.success())
+        .environment(SelectedESP32Store())
+        .environment(\.esp32Session, PreviewControllerConnection(state: .disconnected))
+}
+
+#Preview("Spotify connect fails") {
+    SpotifyTab(spotifyAuthorizer: PreviewSpotifyAuthorizer.failure())
+        .environment(SelectedESP32Store())
+        .environment(\.esp32Session, PreviewControllerConnection(state: .disconnected))
 }
 
 

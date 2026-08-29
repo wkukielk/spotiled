@@ -12,6 +12,7 @@ import Observation
 import SpotiLEDKit
 import SpotiLEDProvisioning
 import SwiftUI
+import ESPProvision
 
 @Observable
 final class PreviewFailingConnection: ControllerSessionManaging {
@@ -54,6 +55,8 @@ final class PreviewFailingConnection: ControllerSessionManaging {
 
 @Observable
 final class PreviewControllerConnection: ControllerSessionManaging {
+    private static let fallbackSpotifyUsername = "user"
+
     var controllerState: EndpointConnectionState
     var esp32State: ESP32ConnectionState = .disconnected
     var spotifyUsername: String?
@@ -79,7 +82,9 @@ final class PreviewControllerConnection: ControllerSessionManaging {
         esp32State = .disconnected
     }
 
-    func authorizeSpotify(code: String, codeVerifier: String) async throws {}
+    func authorizeSpotify(code: String, codeVerifier: String) async throws {
+        spotifyUsername = spotifyUsername ?? Self.fallbackSpotifyUsername
+    }
 
     func spotifyStatus() async throws -> String? {
         spotifyUsername
@@ -110,6 +115,18 @@ final class PreviewControllerDiscovery: DeviceDiscovering {
 
     func onStateChanged(_ handler: @escaping (DeviceDiscoveryState) -> Void) {}
 }
+
+private final class NoOpESPBLEDeviceControlling: ESPBLEDeviceControlling {
+    func connect(delegate: ESPDeviceConnectionDelegate?) async throws {}
+    func provision(ssid: String, passPhrase: String) async throws {}
+}
+
+public extension BLEDevice {
+    static func preview(id: String) -> BLEDevice {
+        BLEDevice(id: id, controller: NoOpESPBLEDeviceControlling())
+    }
+}
+
 
 @Observable
 final class PreviewDeviceProvisioning: DeviceProvisioning {
@@ -145,6 +162,25 @@ final class PreviewDeviceProvisioning: DeviceProvisioning {
             state = .failed("preview failure")
             throw ProvisioningError.disconnected
         }
+    }
+}
+
+struct PreviewSpotifyAuthorizer: SpotifyAuthorizing {
+    private let result: Result<SpotifyAuthorizationResult, Error>
+
+    static func success(code: String = "preview-code", codeVerifier: String = "preview-verifier") -> PreviewSpotifyAuthorizer {
+        PreviewSpotifyAuthorizer(result: .success(SpotifyAuthorizationResult(code: code, codeVerifier: codeVerifier)))
+    }
+
+    static func failure(_ error: Error = SpotifyAuthorizationError.denied("preview failure")) -> PreviewSpotifyAuthorizer {
+        PreviewSpotifyAuthorizer(result: .failure(error))
+    }
+
+    func requestAuthorizationCode(
+        openURL: @escaping @Sendable (URL) -> Void
+    ) async throws -> SpotifyAuthorizationResult {
+        try? await Task.sleep(for: .seconds(0.6))
+        return try result.get()
     }
 }
 

@@ -31,13 +31,7 @@ struct ManualTab: View {
         VStack {
             Text("Manual mode")
                 .navigationTitle("Manual mode")
-            if let device = esp32Store.device {
-                Text("Target: \(device.name)")
-                    .foregroundStyle(.secondary)
-            } else {
-                Text("No ESP32 selected")
-                    .foregroundStyle(.secondary)
-            }
+            SelectedESP32Label(device: esp32Store.device)
             ColorPicker("Color", selection: $controller.color, supportsOpacity: false)
 
             Picker("Animation", selection: $selectedAnimation) {

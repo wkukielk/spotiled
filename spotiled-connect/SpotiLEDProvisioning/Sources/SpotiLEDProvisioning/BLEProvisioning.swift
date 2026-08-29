@@ -1,19 +1,7 @@
-//
-//  BLEProvisioning.swift
-//  SpotiLEDProvisioning
-//
-//  Wraps ESPProvision (esp-idf-provisioning-ios) BLE provisioning behind a small,
-//  Mockable-friendly seam so the app's provisioning flow logic is unit-testable
-//  without real BLE hardware.
-//
-
 import ESPProvision
 import Mockable
 import Observation
 
-/// The subset of `ESPDevice` that provisioning actually drives, bridged to async/await.
-/// `connect`/`provision` on the real SDK are completion-handler based; the `ESPDevice`
-/// conformance below does the continuation-wrapping so this seam stays a plain async API.
 @Mockable
 public protocol ESPBLEDeviceControlling: AnyObject {
     func connect(delegate: ESPDeviceConnectionDelegate?) async throws
@@ -38,9 +26,6 @@ extension ESPDevice: ESPBLEDeviceControlling {
 
     public func provision(ssid: String, passPhrase: String) async throws {
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-            // `provision`'s completion handler fires more than once (`.configApplied` then
-            // `.success`/`.failure`) — a continuation traps if resumed twice, so only the
-            // first terminal status may resume it.
             var didComplete = false
             provision(ssid: ssid, passPhrase: passPhrase, threadOperationalDataset: nil) { status in
                 switch status {
@@ -74,19 +59,6 @@ public struct BLEDevice: Identifiable, Equatable {
     }
 }
 
-private final class NoOpESPBLEDeviceControlling: ESPBLEDeviceControlling {
-    func connect(delegate: ESPDeviceConnectionDelegate?) async throws {}
-    func provision(ssid: String, passPhrase: String) async throws {}
-}
-
-public extension BLEDevice {
-    /// A device stub with a no-op controller — lets SwiftUI previews construct `BLEDevice`
-    /// values without depending on `ESPProvision` types directly.
-    static func preview(id: String) -> BLEDevice {
-        BLEDevice(id: id, controller: NoOpESPBLEDeviceControlling())
-    }
-}
-
 public enum ProvisioningState: Equatable, Sendable {
     case idle
     case scanning
@@ -100,8 +72,6 @@ public enum ProvisioningError: Error, Equatable {
     case disconnected
 }
 
-/// Proof-of-possession for the firmware's provisioning security scheme (protocomm security
-/// version 1 with an empty POP).
 final class EmptyProofOfPossessionDelegate: ESPDeviceConnectionDelegate {
     func getProofOfPossesion(forDevice: ESPDevice, completionHandler: @escaping (String) -> Void) {
         completionHandler("")
