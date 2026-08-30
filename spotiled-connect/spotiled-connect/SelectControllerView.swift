@@ -20,7 +20,7 @@ struct SelectControllerView: View {
 
     var body: some View {
         DiscoveredDeviceListView(
-            browser: browser,
+            scanner: browser,
             title: "Select controller",
             emptyMessage: "Searching for controllers…"
         ) { controller in

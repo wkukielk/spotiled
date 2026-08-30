@@ -9,54 +9,57 @@ import SwiftUI
 import UIKit
 import SpotiLEDKit
 
-struct DiscoveredDeviceListView<RowContent: View>: View {
-    @State private var browser: DeviceBrowser
+struct DiscoveredDeviceListView<Scanner: DeviceScanning, RowContent: View>: View {
+    @State private var scanner: Scanner
     @Environment(\.openURL) private var openURL
     private let title: String
     private let emptyMessage: String
-    private let rowContent: (DiscoveredDevice) -> RowContent
+    private let emptySystemImage: String
+    private let rowContent: (Scanner.Device) -> RowContent
 
     init(
-        browser: DeviceBrowser,
+        scanner: Scanner,
         title: String,
         emptyMessage: String,
-        @ViewBuilder rowContent: @escaping (DiscoveredDevice) -> RowContent
+        emptySystemImage: String = "wifi",
+        @ViewBuilder rowContent: @escaping (Scanner.Device) -> RowContent
     ) {
-        _browser = State(initialValue: browser)
+        _scanner = State(initialValue: scanner)
         self.title = title
         self.emptyMessage = emptyMessage
+        self.emptySystemImage = emptySystemImage
         self.rowContent = rowContent
     }
 
     var body: some View {
         Group {
-            if browser.discoveredDevices.isEmpty {
+            if scanner.discoveredDevices.isEmpty {
                 emptyStateView
             } else {
-                List(browser.discoveredDevices) { controller in
-                    rowContent(controller)
+                List(scanner.discoveredDevices) { device in
+                    rowContent(device)
                 }
             }
         }
         .navigationTitle(title)
         .task {
-            browser.start()
+            scanner.start()
         }
         .onDisappear {
-            browser.stop()
+            scanner.stop()
         }
     }
 
     @ViewBuilder
     private var emptyStateView: some View {
-        switch browser.state {
+        switch scanner.discoveryPhase {
         case .searching:
-            ContentUnavailableView(emptyMessage, systemImage: "wifi")
-        case .localNetworkPermissionDenied:
+            ContentUnavailableView(emptyMessage, systemImage: emptySystemImage)
+        case .permissionDenied(let title, let message, let systemImage):
             ContentUnavailableView {
-                Label("Local Network Access Needed", systemImage: "wifi.exclamationmark")
+                Label(title, systemImage: systemImage)
             } description: {
-                Text("Allow local network access for SpotiLED Connect in Settings to discover devices.")
+                Text(message)
             } actions: {
                 Button("Open Settings") {
                     if let url = URL(string: UIApplication.openSettingsURLString) {
@@ -71,7 +74,7 @@ struct DiscoveredDeviceListView<RowContent: View>: View {
                 Text(message)
             } actions: {
                 Button("Retry") {
-                    browser.start()
+                    scanner.start()
                 }
             }
         }

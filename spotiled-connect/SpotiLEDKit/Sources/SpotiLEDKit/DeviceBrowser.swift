@@ -10,9 +10,7 @@ import Network
 import Mockable
 import dnssd
 
-/// Surfaces why a `DeviceBrowser`'s list might be staying empty, since `NWBrowser` otherwise
-/// fails silently — e.g. denied Local Network permission (`NoAuth`) looks identical in the UI to
-/// "still searching" unless something reports the underlying `NWBrowser.State`.
+
 public enum DeviceDiscoveryState: Equatable, Sendable {
     case searching
     case localNetworkPermissionDenied

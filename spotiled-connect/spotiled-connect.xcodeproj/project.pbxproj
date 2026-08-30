@@ -8,9 +8,9 @@
 
 /* Begin PBXBuildFile section */
 		288630D6B79DE91909A0CCDE /* Mockable in Frameworks */ = {isa = PBXBuildFile; productRef = 6A95EC16137A76A118AC6257 /* Mockable */; };
-		9A1B2C3D4E5F60718293A4B7 /* SpotiLEDProvisioning in Frameworks */ = {isa = PBXBuildFile; productRef = 9A1B2C3D4E5F60718293A4B6 /* SpotiLEDProvisioning */; };
 		82F278AD3013D64C00B6CCFD /* integration.xctestplan in Resources */ = {isa = PBXBuildFile; fileRef = 82F278AC3013D64C00B6CCFD /* integration.xctestplan */; };
 		82F278AF3013D67300B6CCFD /* unit.xctestplan in Resources */ = {isa = PBXBuildFile; fileRef = 82F278AE3013D67300B6CCFD /* unit.xctestplan */; };
+		9A1B2C3D4E5F60718293A4B7 /* SpotiLEDProvisioning in Frameworks */ = {isa = PBXBuildFile; productRef = 9A1B2C3D4E5F60718293A4B6 /* SpotiLEDProvisioning */; };
 		BC50EE4C62CB42A8D48494B7 /* Mockable in Frameworks */ = {isa = PBXBuildFile; productRef = 91C1629046E692B16D06E8CA /* Mockable */; };
 		E0CF3BDECBF9B2F12250F0E5 /* SpotiLEDKit in Frameworks */ = {isa = PBXBuildFile; productRef = 7EA9354E2E58DAF83F157EF8 /* SpotiLEDKit */; };
 /* End PBXBuildFile section */
@@ -658,15 +658,15 @@
 			package = 3CD3E6ACF9DC1CB86AF9AAA4 /* XCLocalSwiftPackageReference "SpotiLEDKit" */;
 			productName = SpotiLEDKit;
 		};
-		9A1B2C3D4E5F60718293A4B6 /* SpotiLEDProvisioning */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 9A1B2C3D4E5F60718293A4B5 /* XCLocalSwiftPackageReference "SpotiLEDProvisioning" */;
-			productName = SpotiLEDProvisioning;
-		};
 		91C1629046E692B16D06E8CA /* Mockable */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 4FDD1C1820A2A4CF34BC03EA /* XCRemoteSwiftPackageReference "Mockable" */;
 			productName = Mockable;
+		};
+		9A1B2C3D4E5F60718293A4B6 /* SpotiLEDProvisioning */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 9A1B2C3D4E5F60718293A4B5 /* XCLocalSwiftPackageReference "SpotiLEDProvisioning" */;
+			productName = SpotiLEDProvisioning;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
