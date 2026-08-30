@@ -151,6 +151,10 @@ final class PreviewDeviceProvisioning: DeviceProvisioning {
 
     func stopScan() {}
 
+    func resetState() {
+        state = .idle
+    }
+
     func provision(device: BLEDevice, ssid: String, password: String) async throws {
         state = .connecting(device.id)
         try? await Task.sleep(for: .seconds(0.6))

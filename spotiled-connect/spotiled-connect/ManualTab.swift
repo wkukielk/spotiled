@@ -42,7 +42,7 @@ struct ManualTab: View {
             .pickerStyle(.menu)
 
             animationPanel
-            ReprovisionPanel(connection: esp32Connection)
+            ReprovisionPanel(connection: esp32Connection, esp32Store: esp32Store)
         }
         .padding(.horizontal)
         .onAppear {
@@ -97,7 +97,7 @@ private struct PulsateAnimationPanel: View {
 
 private struct ReprovisionPanel: View {
     let connection: any DirectESP32Connecting
-
+    let esp32Store: SelectedESP32Store
     @State private var showConfirmation = false
 
     private var isConnected: Bool {
@@ -124,6 +124,7 @@ private struct ReprovisionPanel: View {
             Button("Reprovision", role: .destructive) {
                 Task {
                     try? await connection.reprovision()
+                    esp32Store.device = nil
                 }
             }
             Button("Cancel", role: .cancel) {}

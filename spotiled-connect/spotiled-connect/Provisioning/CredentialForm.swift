@@ -8,7 +8,6 @@ import SpotiLEDProvisioning
 
 struct CredentialForm: View {
     let device: BLEDevice
-    let errorMessage: String?
     @Binding var ssid: String
     @Binding var password: String
     let onSubmit: () -> Void
@@ -18,10 +17,6 @@ struct CredentialForm: View {
         VStack(spacing: 16) {
             Text(device.id)
                 .foregroundStyle(.secondary)
-            if let errorMessage {
-                Text(errorMessage)
-                    .foregroundStyle(.red)
-            }
             TextField("WiFi network name", text: $ssid)
                 .textFieldStyle(.roundedBorder)
                 .textInputAutocapitalization(.never)
@@ -40,19 +35,7 @@ struct CredentialForm: View {
 #Preview {
     CredentialForm(
         device: .preview(id: "PROV_AABBCC"),
-        errorMessage: nil,
         ssid: .constant(""),
-        password: .constant(""),
-        onSubmit: {},
-        onChooseDifferentDevice: {}
-    )
-}
-
-#Preview("With error") {
-    CredentialForm(
-        device: .preview(id: "PROV_AABBCC"),
-        errorMessage: "Failed to connect",
-        ssid: .constant("MyWiFi"),
         password: .constant(""),
         onSubmit: {},
         onChooseDifferentDevice: {}

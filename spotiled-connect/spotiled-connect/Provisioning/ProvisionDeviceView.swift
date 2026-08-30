@@ -52,24 +52,37 @@ where Provisioning.Device == BLEDevice {
             successView
         case .connecting, .provisioning:
             progressView
-        default:
+        case .failed:
+            failureView
+        case .idle, .scanning:
             credentialForm(for: device)
         }
     }
 
     private func credentialForm(for device: BLEDevice) -> some View {
-        var errorMessage: String? {
-            if case .failed(let message) = provisioning.state { return message }
-            return nil
-        }
-        return CredentialForm(
+        CredentialForm(
             device: device,
-            errorMessage: errorMessage,
             ssid: $ssid,
             password: $password,
             onSubmit: { submit(device: device) },
             onChooseDifferentDevice: { selectedDevice = nil }
         )
+    }
+
+    private var failureView: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "wifi.exclamationmark")
+                .font(.system(size: 48))
+                .foregroundStyle(.red)
+            Text("Couldn't connect to Wi-Fi")
+            Text("Double-check the network name and password, then try again.")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+            Button("Try Again") { provisioning.resetState() }
+        }
+        .padding()
+        .buttonStyle(.appPrimary)
     }
 
     private var progressView: some View {

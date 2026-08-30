@@ -31,7 +31,6 @@ public protocol ControllerSessionManaging: AnyObject {
     func connectESP32(hostname: String) async throws
     func disconnectESP32() async throws
     func authorizeSpotify(code: String, codeVerifier: String) async throws
-    /// The connected Spotify account's username, or `nil` if the controller isn't connected.
     func spotifyStatus() async throws -> String?
 }
 

@@ -1,3 +1,4 @@
+import CoreBluetooth
 import ESPProvision
 import Mockable
 import Observation
@@ -8,17 +9,43 @@ public protocol ESPBLEDeviceControlling: AnyObject {
     func provision(ssid: String, passPhrase: String) async throws
 }
 
+/// ESPDevice never reports a mid-flight BLE disconnect through its `connect`/`provision`
+/// completion handlers (`peripheralDisconnected` only forwards to `bleDelegate`), so without this
+/// a device that drops the BLE link after a failed provisioning attempt leaves our continuation
+/// waiting forever instead of throwing.
+private struct ESPDisconnectObserver: ESPBLEDelegate {
+    let onDisconnect: (Error?) -> Void
+
+    func peripheralConnected() {}
+
+    func peripheralDisconnected(peripheral: CBPeripheral, error: Error?) {
+        onDisconnect(error)
+    }
+
+    func peripheralFailedToConnect(peripheral: CBPeripheral?, error: Error?) {}
+}
+
 extension ESPDevice: ESPBLEDeviceControlling {
     public func connect(delegate: ESPDeviceConnectionDelegate?) async throws {
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            var didComplete = false
+            func finish(_ result: Result<Void, Error>) {
+                guard !didComplete else { return }
+                didComplete = true
+                bleDelegate = nil
+                continuation.resume(with: result)
+            }
+            bleDelegate = ESPDisconnectObserver { error in
+                finish(.failure(error ?? ProvisioningError.disconnected))
+            }
             connect(delegate: delegate) { status in
                 switch status {
                 case .connected:
-                    continuation.resume()
+                    finish(.success(()))
                 case .failedToConnect(let error):
-                    continuation.resume(throwing: error)
+                    finish(.failure(error))
                 case .disconnected:
-                    continuation.resume(throwing: ProvisioningError.disconnected)
+                    finish(.failure(ProvisioningError.disconnected))
                 }
             }
         }
@@ -27,18 +54,23 @@ extension ESPDevice: ESPBLEDeviceControlling {
     public func provision(ssid: String, passPhrase: String) async throws {
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
             var didComplete = false
+            func finish(_ result: Result<Void, Error>) {
+                guard !didComplete else { return }
+                didComplete = true
+                bleDelegate = nil
+                continuation.resume(with: result)
+            }
+            bleDelegate = ESPDisconnectObserver { error in
+                finish(.failure(error ?? ProvisioningError.disconnected))
+            }
             provision(ssid: ssid, passPhrase: passPhrase, threadOperationalDataset: nil) { status in
                 switch status {
                 case .configApplied:
                     break
                 case .success:
-                    guard !didComplete else { return }
-                    didComplete = true
-                    continuation.resume()
+                    finish(.success(()))
                 case .failure(let error):
-                    guard !didComplete else { return }
-                    didComplete = true
-                    continuation.resume(throwing: error)
+                    finish(.failure(error))
                 }
             }
         }
@@ -89,6 +121,7 @@ public protocol DeviceProvisioning: AnyObject, Observable {
     func startScan()
     func stopScan()
     func provision(device: BLEDevice, ssid: String, password: String) async throws
+    func resetState()
 }
 
 @Observable
@@ -123,6 +156,10 @@ public final class ESPBLEProvisioning: DeviceProvisioning {
 
     public func stopScan() {
         ESPProvisionManager.shared.stopScan()
+    }
+
+    public func resetState() {
+        state = .idle
     }
 
     public func provision(device: BLEDevice, ssid: String, password: String) async throws {

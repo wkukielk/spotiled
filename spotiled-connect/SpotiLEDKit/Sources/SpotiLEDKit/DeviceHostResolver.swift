@@ -7,9 +7,6 @@
 
 import Network
 
-/// Resolves a discovered device's `NWEndpoint` to a plain host string that a third party which
-/// isn't on this device — like the controller — can dial directly, since it can't reuse the
-/// Bonjour resolution this app already did locally.
 public struct DeviceHostResolver: Sendable {
     private let resolver = EndpointResolver()
 

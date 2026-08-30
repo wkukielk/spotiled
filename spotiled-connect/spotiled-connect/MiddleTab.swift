@@ -25,7 +25,7 @@ struct MiddleTab: View {
                     ProvisionDeviceView(provisioning: ESPBLEProvisioning())
                 }
                 .navigationDestination(isPresented: $isSelectingESP32) {
-                    SelectESP32View { esp32Store.device = $0 }
+                    SelectESP32View()
                 }
                 .navigationDestination(isPresented: $isSelectingController) {
                     SelectControllerView()
