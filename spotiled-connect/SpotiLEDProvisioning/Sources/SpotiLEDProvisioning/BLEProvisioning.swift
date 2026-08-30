@@ -83,7 +83,7 @@ final class EmptyProofOfPossessionDelegate: ESPDeviceConnectionDelegate {
 }
 
 @Mockable
-public protocol DeviceProvisioning: AnyObject {
+public protocol DeviceProvisioning: AnyObject, Observable {
     var state: ProvisioningState { get }
     var devices: [BLEDevice] { get }
     func startScan()

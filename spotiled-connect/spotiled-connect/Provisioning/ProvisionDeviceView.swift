@@ -8,62 +8,40 @@
 import SwiftUI
 import SpotiLEDProvisioning
 
-struct ProvisionDeviceView: View {
-    @State private var provisioning: any DeviceProvisioning
+struct ProvisionDeviceView<Provisioning: DeviceProvisioning & DeviceScanning>: View
+where Provisioning.Device == BLEDevice {
+    @State private var provisioning: Provisioning
     @State private var selectedDevice: BLEDevice?
     @State private var ssid = ""
     @State private var password = ""
     @Environment(\.dismiss) private var dismiss
 
-    @MainActor
-    init(provisioning: (any DeviceProvisioning)? = nil) {
-        _provisioning = State(initialValue: provisioning ?? ESPBLEProvisioning())
+    init(provisioning: Provisioning) {
+        _provisioning = State(initialValue: provisioning)
     }
 
     var body: some View {
         content
-            .navigationTitle("Provision device")
-            .task { provisioning.startScan() }
-            .onDisappear { provisioning.stopScan() }
     }
 
     @ViewBuilder
     private var content: some View {
         if let selectedDevice {
             deviceFlow(for: selectedDevice)
+                .navigationTitle("Provision device")
         } else {
-            deviceList
-        }
-    }
-
-    @ViewBuilder
-    private var deviceList: some View {
-        if provisioning.devices.isEmpty {
-            scanEmptyStateView
-        } else {
-            List(provisioning.devices) { device in
+            DiscoveredDeviceListView(
+                scanner: provisioning,
+                title: "Provision device",
+                emptyMessage: "Searching for devices…",
+                emptySystemImage: "dot.radiowaves.left.and.right"
+            ) { device in
                 Button {
                     selectedDevice = device
                 } label: {
                     Text(device.id)
                 }
             }
-        }
-    }
-
-    @ViewBuilder
-    private var scanEmptyStateView: some View {
-        switch provisioning.state {
-        case .failed(let message):
-            ContentUnavailableView {
-                Label("Search Failed", systemImage: "exclamationmark.triangle")
-            } description: {
-                Text(message)
-            } actions: {
-                Button("Retry") { provisioning.startScan() }
-            }
-        default:
-            ContentUnavailableView("Searching for devices…", systemImage: "dot.radiowaves.left.and.right")
         }
     }
 
@@ -80,29 +58,18 @@ struct ProvisionDeviceView: View {
     }
 
     private func credentialForm(for device: BLEDevice) -> some View {
-        VStack(spacing: 16) {
-            Text(device.id)
-                .foregroundStyle(.secondary)
-            if case .failed(let message) = provisioning.state {
-                Text(message)
-                    .foregroundStyle(.red)
-            }
-            TextField("WiFi network name", text: $ssid)
-                .textFieldStyle(.roundedBorder)
-                .textInputAutocapitalization(.never)
-                .autocorrectionDisabled()
-            SecureField("WiFi password", text: $password)
-                .textFieldStyle(.roundedBorder)
-            Button("Provision") {
-                submit(device: device)
-            }
-            .disabled(ssid.isEmpty)
-            Button("Choose a different device", role: .cancel) {
-                selectedDevice = nil
-            }
+        var errorMessage: String? {
+            if case .failed(let message) = provisioning.state { return message }
+            return nil
         }
-        .padding()
-        .buttonStyle(.appPrimary)
+        return CredentialForm(
+            device: device,
+            errorMessage: errorMessage,
+            ssid: $ssid,
+            password: $password,
+            onSubmit: { submit(device: device) },
+            onChooseDifferentDevice: { selectedDevice = nil }
+        )
     }
 
     private var progressView: some View {

@@ -43,7 +43,7 @@ extension DeviceBrowser: DeviceScanning {
     }
 }
 
-extension ESPBLEProvisioning: DeviceScanning {
+extension DeviceProvisioning {
     var discoveredDevices: [BLEDevice] { devices }
 
     var discoveryPhase: DiscoveryPhase {
@@ -58,3 +58,5 @@ extension ESPBLEProvisioning: DeviceScanning {
     func start() { startScan() }
     func stop() { stopScan() }
 }
+
+extension ESPBLEProvisioning: DeviceScanning {}

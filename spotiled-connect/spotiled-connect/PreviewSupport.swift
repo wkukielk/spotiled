@@ -165,6 +165,8 @@ final class PreviewDeviceProvisioning: DeviceProvisioning {
     }
 }
 
+extension PreviewDeviceProvisioning: DeviceScanning {}
+
 struct PreviewSpotifyAuthorizer: SpotifyAuthorizing {
     private let result: Result<SpotifyAuthorizationResult, Error>
 

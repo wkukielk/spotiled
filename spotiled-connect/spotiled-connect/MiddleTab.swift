@@ -7,6 +7,7 @@
 
 import SwiftUI
 import SpotiLEDKit
+import SpotiLEDProvisioning
 import Network
 
 
@@ -21,7 +22,7 @@ struct MiddleTab: View {
         NavigationStack {
             homePage
                 .navigationDestination(isPresented: $isProvisioningDevice) {
-                    ProvisionDeviceView()
+                    ProvisionDeviceView(provisioning: ESPBLEProvisioning())
                 }
                 .navigationDestination(isPresented: $isSelectingESP32) {
                     SelectESP32View { esp32Store.device = $0 }
