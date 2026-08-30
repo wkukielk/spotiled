@@ -2,6 +2,7 @@
 #include "server/command_handler.hpp"
 #endif
 
+#include "global.hpp"
 #include <algorithm>
 
 struct CommandLogger {
@@ -19,6 +20,10 @@ struct CommandLogger {
 
     void operator()(const server::Reprovision &) const {
         ESP_LOGI("CommandHandler", "Reprovision");
+    }
+
+    void operator()(const server::RenameEsp &cmd) const {
+        ESP_LOGI("CommandHandler", "RenameEsp name=%s", cmd.name.c_str());
     }
 };
 
@@ -62,4 +67,11 @@ template <I_Animatable LEDC>
 server::Response CommandHandler<LEDC>::handle(const server::Reprovision &) {
     runtime_notifier.notify(from_ws_server<master::ReprovisionRequest>());
     return server::Response::ok;
+}
+
+template <I_Animatable LEDC>
+server::Response CommandHandler<LEDC>::handle(const server::RenameEsp &cmd) {
+    return mdns_().set_instance_name(cmd.name.c_str()) == ESP_OK
+               ? server::Response::ok
+               : server::Response::fail;
 }

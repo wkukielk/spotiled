@@ -12,13 +12,13 @@
 struct Config {
     backend_config_t backend_cfg;
     u_ptr<I_WiFiManager> wifi_mgr;
-    u_ptr<I_mDNS> mdns;
+    u_ptr<I_mDNSFacade> mdns;
     u_ptr<I_FullOTA> ota;
 };
 
 class Configurer {
   public:
-    explicit Configurer(I_NVS &cfgnvs, I_NVS &encnvs);
+    explicit Configurer(I_NVS &cfgnvs, I_NVS &nvs, I_NVS &encnvs);
     void preconfigure() const;
     Config get_config() const;
 

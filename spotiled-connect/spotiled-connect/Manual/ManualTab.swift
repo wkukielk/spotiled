@@ -19,6 +19,7 @@ struct ManualTab: View {
     @State private var esp32Connection = DirectESP32Connection()
     @State private var autoBrowser = DeviceBrowser(discovery: BonjourServiceDiscovery(serviceType: "_s-led-auto._tcp"))
     @State private var selectedAnimation: ManualAnimation = .pulsate
+    @State private var showDeviceSettings = false
     @Environment(SelectedESP32Store.self) private var esp32Store
     @Environment(\.esp32Session) private var session
 
@@ -28,23 +29,35 @@ struct ManualTab: View {
     }
 
     var body: some View {
-        VStack {
-            Text("Manual mode")
-                .navigationTitle("Manual mode")
-            SelectedESP32Label(device: esp32Store.device)
-            ColorPicker("Color", selection: $controller.color, supportsOpacity: false)
+        NavigationStack {
+            VStack {
+                SelectedESP32Label(device: esp32Store.device)
+                ColorPicker("Color", selection: $controller.color, supportsOpacity: false)
 
-            Picker("Animation", selection: $selectedAnimation) {
-                ForEach(ManualAnimation.allCases) { animation in
-                    Text(animation.rawValue).tag(animation)
+                Picker("Animation", selection: $selectedAnimation) {
+                    ForEach(ManualAnimation.allCases) { animation in
+                        Text(animation.rawValue).tag(animation)
+                    }
+                }
+                .pickerStyle(.menu)
+
+                animationPanel
+            }
+            .padding(.horizontal)
+            .navigationTitle("Manual mode")
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        showDeviceSettings = true
+                    } label: {
+                        Image(systemName: "gearshape")
+                    }
                 }
             }
-            .pickerStyle(.menu)
-
-            animationPanel
-            ReprovisionPanel(connection: esp32Connection, esp32Store: esp32Store)
+            .sheet(isPresented: $showDeviceSettings) {
+                DeviceSettingsSheet(connection: esp32Connection, esp32Store: esp32Store)
+            }
         }
-        .padding(.horizontal)
         .onAppear {
             autoBrowser.start()
         }
@@ -92,45 +105,6 @@ private struct PulsateAnimationPanel: View {
         .padding(8)
         .background(Color.cardBackground)
         .border(Color.cardBorder, width: 1)
-    }
-}
-
-private struct ReprovisionPanel: View {
-    let connection: any DirectESP32Connecting
-    let esp32Store: SelectedESP32Store
-    @State private var showConfirmation = false
-
-    private var isConnected: Bool {
-        if case .connected = connection.state { return true }
-        return false
-    }
-
-    var body: some View {
-        VStack(spacing: 8) {
-            Button("Reprovision device", role: .destructive) {
-                showConfirmation = true
-            }
-            .disabled(!isConnected)
-            .buttonStyle(.appPrimary)
-        }
-        .padding(8)
-        .background(Color.cardBackground)
-        .border(Color.cardBorder, width: 1)
-        .confirmationDialog(
-            "Reprovision this device?",
-            isPresented: $showConfirmation,
-            titleVisibility: .visible
-        ) {
-            Button("Reprovision", role: .destructive) {
-                Task {
-                    try? await connection.reprovision()
-                    esp32Store.device = nil
-                }
-            }
-            Button("Cancel", role: .cancel) {}
-        } message: {
-            Text("The device will disconnect from WiFi and restart in pairing mode. You'll need to provision it again to reconnect.")
-        }
     }
 }
 

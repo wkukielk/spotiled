@@ -2,7 +2,7 @@
 #define GLOBAL_HPP
 
 #include "I_WiFi.hpp"
-#include "I_mDNS.hpp"
+#include "I_mDNSFacade.hpp"
 #include "errors.hpp"
 #include "nvs.hpp"
 #include "time_aux.hpp"
@@ -13,20 +13,20 @@ class Global {
   public:
     static void set_time(std::unique_ptr<I_Time> &&time);
     static void set_nvs(std::unique_ptr<I_NVS> &&nvs);
-    static void set_mdns(std::unique_ptr<I_mDNS> &&mdns);
+    static void set_mdns(std::unique_ptr<I_mDNSFacade> &&mdns);
     static I_Time &get_time() { return *time; }
     static I_NVS &get_nvs() { return *nvs; }
-    static I_mDNS &get_mdns() { return *mdns; }
+    static I_mDNSFacade &get_mdns() { return *mdns; }
 
   private:
     static std::unique_ptr<I_Time> time;
     static std::unique_ptr<I_NVS> nvs;
-    static std::unique_ptr<I_mDNS> mdns;
+    static std::unique_ptr<I_mDNSFacade> mdns;
 };
 
 inline I_Time &time_() { return Global::get_time(); }
 inline I_NVS &nvs_() { return Global::get_nvs(); }
-inline I_mDNS &mdns_() { return Global::get_mdns(); }
+inline I_mDNSFacade &mdns_() { return Global::get_mdns(); }
 
 class Netif {
   public:
@@ -81,11 +81,11 @@ class NVSHandle {
 
 class MDNSHandle {
   public:
-    MDNSHandle(std::unique_ptr<I_mDNS> mdns)
+    MDNSHandle(std::unique_ptr<I_mDNSFacade> mdns)
         : mdns{Global::set_mdns, std::move(mdns)} {}
 
   private:
-    GlobalHandle<I_mDNS> mdns;
+    GlobalHandle<I_mDNSFacade> mdns;
 };
 
 #endif

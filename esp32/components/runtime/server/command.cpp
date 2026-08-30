@@ -41,6 +41,13 @@ std::optional<Command> parse_pulsate(const cJSON *root) {
                       static_cast<uint32_t>(duration->valueint)};
 }
 
+std::optional<Command> parse_rename(const cJSON *root) {
+    auto name = cJSON_GetObjectItem(root, "name");
+    if (!cJSON_IsString(name) || cJSON_GetStringValue(name)[0] == '\0')
+        return std::nullopt;
+    return RenameEsp{name->valuestring};
+}
+
 } // namespace
 
 std::optional<Command> parse(std::string_view text) {
@@ -57,6 +64,8 @@ std::optional<Command> parse(std::string_view text) {
         return parse_pulsate(root.get());
     if (cmd_str == "reprovision")
         return Reprovision{};
+    if (cmd_str == "rename")
+        return parse_rename(root.get());
     return std::nullopt;
 }
 

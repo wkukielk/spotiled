@@ -64,6 +64,8 @@ esp_err_t NVS::erase() {
 std::string NVS::read(K key) const {
     UTIL_THROW(!key, NullError);
     auto handle = open(NVS_READONLY);
+    if (!handle)
+        return {};
     auto size = size_t{};
     auto err = get_string_size(*handle, key, std::ref(size));
     if (err == ESP_ERR_NVS_NOT_FOUND)
@@ -107,6 +109,8 @@ int NVS::read_time_t(K key, time_t &value) const {
 u_ptr<nvs::NVSHandle> NVS::open(nvs_open_mode_t mode) const {
     esp_err_t err{};
     auto handle = _NVS::open(part.data(), mode, &err);
+    if (mode == NVS_READONLY && err == ESP_ERR_NVS_NOT_FOUND)
+        return nullptr;
     UTIL_THROW(err, NVSError, "open");
     return handle;
 }

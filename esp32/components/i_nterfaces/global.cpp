@@ -16,7 +16,7 @@ Netif::~Netif() {
 
 std::unique_ptr<I_Time> Global::time{};
 std::unique_ptr<I_NVS> Global::nvs{};
-std::unique_ptr<I_mDNS> Global::mdns{};
+std::unique_ptr<I_mDNSFacade> Global::mdns{};
 
 void Global::set_nvs(std::unique_ptr<I_NVS> &&nvs) {
     Global::nvs = std::move(nvs);
@@ -26,6 +26,6 @@ void Global::set_time(std::unique_ptr<I_Time> &&time) {
     Global::time = std::move(time);
 }
 
-void Global::set_mdns(std::unique_ptr<I_mDNS> &&mdns) {
+void Global::set_mdns(std::unique_ptr<I_mDNSFacade> &&mdns) {
     Global::mdns = std::move(mdns);
 }

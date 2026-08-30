@@ -4,6 +4,7 @@
 #include "rgb.hpp"
 #include <memory>
 #include <optional>
+#include <string>
 #include <string_view>
 #include <utility>
 #include <variant>
@@ -25,7 +26,11 @@ struct PulsateLed {
 
 struct Reprovision {};
 
-using Command = std::variant<FadeLed, PulsateLed, Reprovision>;
+struct RenameEsp {
+    std::string name;
+};
+
+using Command = std::variant<FadeLed, PulsateLed, Reprovision, RenameEsp>;
 
 std::optional<Command> parse(std::string_view text);
 

@@ -1,5 +1,6 @@
 idf_component_register(
     SRCS "MockDftEventLoop.cpp"
+         "test_PersistentMDNS.cpp"
     INCLUDE_DIRS "include"
     REQUIRES i_nterfaces
     WHOLE_ARCHIVE

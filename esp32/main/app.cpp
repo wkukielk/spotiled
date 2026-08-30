@@ -13,12 +13,12 @@ App::App(AppHandles &&handles) : handles{move(handles)} {}
 App App::create() {
     auto cfgnvs = NVS{"cfg"};
     auto encnvs = NVS{"encnvs"};
-    auto cfg_reader = Configurer{cfgnvs, encnvs};
+    auto nvs = NVSHandle{mkuptr<NVS>()};
+    auto cfg_reader = Configurer{cfgnvs, nvs_(), encnvs};
     cfg_reader.preconfigure();
 
     auto eloop = Handle<DftEventLoop>{};
     auto netif = Netif{};
-    auto nvs = NVSHandle{mkuptr<NVS>()};
     auto time = TimeHandle{mkuptr<Time>()};
     auto led = Handle<LED>{};
 

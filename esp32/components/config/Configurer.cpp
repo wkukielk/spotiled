@@ -1,9 +1,9 @@
 #include "Configurer.hpp"
 #include "WiFiManagerFactory.hpp"
 
-Configurer::Configurer(I_NVS &cfgnvs, I_NVS &encnvs)
-    : wifi_mgr_factory{cfgnvs}, mdns_configurer{cfgnvs}, log_configurer{cfgnvs},
-      backend_configurer{cfgnvs, encnvs} {}
+Configurer::Configurer(I_NVS &cfgnvs, I_NVS &nvs, I_NVS &encnvs)
+    : wifi_mgr_factory{cfgnvs}, mdns_configurer{cfgnvs, nvs},
+      log_configurer{cfgnvs}, backend_configurer{cfgnvs, encnvs} {}
 
 void Configurer::preconfigure() const { log_configurer.configure(); }
 

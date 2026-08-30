@@ -17,6 +17,7 @@ public protocol DirectESP32Connecting: AnyObject {
     func disconnect()
     func pulsate(color: RGBColor, durationMs: Int32) async throws
     func reprovision() async throws
+    func rename(to name: String) async throws
 }
 
 @Observable
@@ -48,6 +49,11 @@ public final class DirectESP32Connection: DirectESP32Connecting {
         try await connection.sendOneWay(String(decoding: data, as: UTF8.self))
     }
 
+    public func rename(to name: String) async throws {
+        let data = try JSONEncoder().encode(RenameCommand(name: name))
+        try await connection.sendOneWay(String(decoding: data, as: UTF8.self))
+    }
+
     private struct PulsateCommand: Encodable {
         let cmd = "pulsate"
         let r: UInt8
@@ -63,5 +69,10 @@ public final class DirectESP32Connection: DirectESP32Connecting {
 
     private struct ReprovisionCommand: Encodable {
         let cmd = "reprovision"
+    }
+
+    private struct RenameCommand: Encodable {
+        let cmd = "rename"
+        let name: String
     }
 }
