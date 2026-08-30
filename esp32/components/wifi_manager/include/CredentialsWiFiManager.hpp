@@ -24,6 +24,7 @@ class CredentialsWiFiManager : public I_WiFiManager {
     int connect() override;
     int disconnect() override;
     bool is_connected() override;
+    int reprovision() override;
 
   private:
     std::string ssid{};

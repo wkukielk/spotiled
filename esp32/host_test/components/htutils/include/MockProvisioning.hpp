@@ -10,6 +10,7 @@ class MockProvisioningIsProvisioned {
     MockProvisioningIsProvisioned(MockEventGroup &, std::string_view) {};
     bool is_provisioned() const { return true; }
     MOCK_METHOD(int, connect, ());
+    MOCK_METHOD(int, request_reprovision, ());
 };
 
 class MockProvisioningNotProvisioned {
@@ -18,6 +19,7 @@ class MockProvisioningNotProvisioned {
     MockProvisioningNotProvisioned(MockEventGroup &, std::string_view) {};
     bool is_provisioned() const { return false; }
     MOCK_METHOD(int, connect, ());
+    MOCK_METHOD(int, request_reprovision, ());
 };
 
 static_assert(I_Provisioning<MockProvisioningIsProvisioned>);

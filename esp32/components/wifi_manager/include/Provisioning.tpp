@@ -49,3 +49,7 @@ template <ProvisioningTypes T> int Provisioning<T>::hot_reset() {
 template <ProvisioningTypes T> int Provisioning<T>::reset() {
     return wifi_prov.reset_provisioning();
 }
+
+template <ProvisioningTypes T> int Provisioning<T>::request_reprovision() {
+    return reset();
+}

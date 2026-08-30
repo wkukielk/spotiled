@@ -48,11 +48,18 @@ TEST(ParseTest, PulsateLedNonPositiveDuration) {
                      .has_value());
 }
 
+TEST(ParseTest, Reprovision) {
+    auto result = server::parse(R"({"cmd":"reprovision"})");
+    ASSERT_TRUE(result.has_value());
+    EXPECT_NE(std::get_if<server::Reprovision>(&*result), nullptr);
+}
+
 // --- CommandHandler ---
 
 class CommandHandlerTest : public Test {
   protected:
-    TestableCommandHandler handler{};
+    MockRuntimeNotifiable notifier{};
+    TestableCommandHandler handler{notifier};
     MockLEDC &ledc = handler.get_ledc();
 };
 
@@ -99,6 +106,19 @@ TEST_F(CommandHandlerTest, PulsateLedSubMillisecondHalfPeriodFloorsToOne) {
         R"({"cmd":"pulsate","r":255,"g":0,"b":128,"duration_ms":1})"));
     EXPECT_EQ(response, server::Response::ok);
     EXPECT_EQ(spec.step_ms, 1);
+}
+
+TEST_F(CommandHandlerTest, ReprovisionNotifiesRuntime) {
+    std::unique_ptr<master::Data> sent;
+    EXPECT_CALL(notifier, notify(_))
+        .WillOnce([&](std::unique_ptr<master::Data> &&data) {
+            sent = std::move(data);
+        });
+    auto response = handler.process(
+        MockWSServer::make_message(R"({"cmd":"reprovision"})"));
+    EXPECT_EQ(response, server::Response::ok);
+    ASSERT_TRUE(sent);
+    EXPECT_TRUE(std::holds_alternative<master::ReprovisionRequest>(*sent));
 }
 
 // --- ServerThread::perform ---

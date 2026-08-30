@@ -17,6 +17,7 @@ class I_WiFiManager {
     virtual int connect() = 0;
     virtual int disconnect() = 0;
     virtual bool is_connected() = 0;
+    virtual int reprovision() = 0;
 };
 
 template <typename T>
@@ -41,6 +42,7 @@ template <WiFiManagerTypes T> class WiFiManager : public I_WiFiManager {
     int connect() override;
     int disconnect() override;
     bool is_connected() override;
+    int reprovision() override;
 
   protected:
     int connect_without_prov();

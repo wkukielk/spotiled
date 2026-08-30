@@ -16,6 +16,10 @@ struct CommandLogger {
                  (int)cmd.target.r, (int)cmd.target.g, (int)cmd.target.b,
                  (int)cmd.duration_ms);
     }
+
+    void operator()(const server::Reprovision &) const {
+        ESP_LOGI("CommandHandler", "Reprovision");
+    }
 };
 
 template <I_Animatable LEDC>
@@ -45,5 +49,17 @@ server::Response CommandHandler<LEDC>::handle(const server::PulsateLed &cmd) {
     uint32_t half_period_ms = std::max<uint32_t>(1, cmd.duration_ms / 2);
     ledc.start_animation(
         led::AnimationSpec{{cmd.target, RGB{0, 0, 0}}, half_period_ms});
+    return server::Response::ok;
+}
+
+template <I_Animatable LEDC>
+template <typename D>
+std::unique_ptr<master::Data> CommandHandler<LEDC>::from_ws_server() {
+    return std::make_unique<master::Data>(D{runtime::TaskID::WS_SERVER});
+}
+
+template <I_Animatable LEDC>
+server::Response CommandHandler<LEDC>::handle(const server::Reprovision &) {
+    runtime_notifier.notify(from_ws_server<master::ReprovisionRequest>());
     return server::Response::ok;
 }

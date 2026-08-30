@@ -10,6 +10,7 @@ class MockWiFiManager : public I_WiFiManager {
     MOCK_METHOD(int, connect, (), (override));
     MOCK_METHOD(int, disconnect, (), (override));
     MOCK_METHOD(bool, is_connected, (), (override));
+    MOCK_METHOD(int, reprovision, (), (override));
 };
 
 #endif

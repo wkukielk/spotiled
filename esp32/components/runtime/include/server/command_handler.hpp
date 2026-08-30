@@ -2,19 +2,26 @@
 #define SERVER_COMMAND_HANDLER_HPP
 
 #include "animator.hpp"
+#include "runtime_data.hpp"
 #include "server/command.hpp"
+#include "util.hpp"
 
 template <I_Animatable LEDC> class CommandHandler {
   public:
-    explicit CommandHandler(LEDC &ledc) : ledc{ledc} {};
+    CommandHandler(LEDC &ledc, util::Notifiable<master::Data> &runtime_notifier)
+        : ledc{ledc}, runtime_notifier{runtime_notifier} {};
     server::Response process(server::Message msg);
 
   protected:
     LEDC &ledc;
+    util::Notifiable<master::Data> &runtime_notifier;
 
   private:
     server::Response handle(const server::FadeLed &);
     server::Response handle(const server::PulsateLed &);
+    server::Response handle(const server::Reprovision &);
+
+    template <typename D> static std::unique_ptr<master::Data> from_ws_server();
 };
 
 template <typename T>

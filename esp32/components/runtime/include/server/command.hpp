@@ -23,7 +23,9 @@ struct PulsateLed {
     uint32_t duration_ms;
 };
 
-using Command = std::variant<FadeLed, PulsateLed>;
+struct Reprovision {};
+
+using Command = std::variant<FadeLed, PulsateLed, Reprovision>;
 
 std::optional<Command> parse(std::string_view text);
 

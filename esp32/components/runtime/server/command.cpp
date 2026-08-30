@@ -55,6 +55,8 @@ std::optional<Command> parse(std::string_view text) {
         return parse_fade(root.get());
     if (cmd_str == "pulsate")
         return parse_pulsate(root.get());
+    if (cmd_str == "reprovision")
+        return Reprovision{};
     return std::nullopt;
 }
 

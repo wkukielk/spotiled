@@ -38,6 +38,10 @@ class DataPrinter {
     const char *operator()(const master::ErrorData &) const noexcept {
         return "error";
     }
+    const char *
+    operator()(const master::ReprovisionRequest &) const noexcept {
+        return "reprovision request";
+    }
 };
 } // namespace master
 

@@ -46,7 +46,7 @@ template <typename T>
 Runtime<T>::Runtime(InnerConfig<T_OTAClient> &&cfg)
     : wifi_mgr{std::move(cfg.wifi_mgr)}, egroup{},
       ota_thread{std::move(cfg.ota_client), get_ota_join_group(egroup)}, ledc{},
-      server_thread{mkuptr<T_ServerHandler>(ledc),
+      server_thread{mkuptr<T_ServerHandler>(ledc, *this),
                     get_server_join_group(egroup)},
       udp_thread{mkuptr<T_UDPHandler>(ledc), get_udp_join_group(egroup)},
       queue{4} {}
@@ -95,6 +95,7 @@ template <typename T> std::unique_ptr<master::Data> Runtime<T>::pop_queue() {
 }
 
 template <typename T> esp_err_t Runtime<T>::process(master::Data &data) {
-    (void)data;
+    if (std::holds_alternative<master::ReprovisionRequest>(data))
+        wifi_mgr->reprovision();
     return ESP_OK;
 }

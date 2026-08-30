@@ -2,12 +2,15 @@
 #define TESTABLE_COMMAND_HANDLER_HPP
 
 #include "MockLEDCHolder.hpp"
+#include "MockRuntimeNotifiable.hpp"
 #include "server/command_handler.hpp"
 
 class TestableCommandHandler : private detail::MockLEDCHolder,
                                public CommandHandler<MockLEDC> {
   public:
-    TestableCommandHandler() : CommandHandler{mock_ledc} {}
+    explicit TestableCommandHandler(
+        util::Notifiable<master::Data> &runtime_notifier)
+        : CommandHandler{mock_ledc, runtime_notifier} {}
     MockLEDC &get_ledc() { return mock_ledc; }
 };
 

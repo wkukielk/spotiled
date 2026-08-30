@@ -49,3 +49,9 @@ template <CredentialsWiFiManagerTypes T>
 bool CredentialsWiFiManager<T>::is_connected() {
     return event_group.get() & wifi::success_bit;
 }
+
+template <CredentialsWiFiManagerTypes T>
+int CredentialsWiFiManager<T>::reprovision() {
+    ESP_LOGE("CredentialsWiFiManager", "Reprovisioning is not supported");
+    return ESP_ERR_NOT_SUPPORTED;
+}

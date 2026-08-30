@@ -4,6 +4,7 @@
 
 #include "WiFiEventHandler.hpp"
 #include "esp_log.h"
+#include "esp_system.h"
 #include "global.hpp"
 #include "wifi_aux.hpp"
 
@@ -64,6 +65,15 @@ template <WiFiManagerTypes T> int WiFiManager<T>::connect_without_prov() {
     ESP_LOGI("WiFiManager", "Connecting...");
     UTIL_THROW(WiFi::get().start(), WiFiManagerError, "WiFi start");
     return wifi::await_connection(event_group);
+}
+
+template <WiFiManagerTypes T> int WiFiManager<T>::reprovision() {
+    if (!provisioning.has_value())
+        switch_to_prov();
+    auto status = provisioning->request_reprovision();
+    if (status == ESP_OK)
+        esp_restart();
+    return status;
 }
 
 template <WiFiManagerTypes T> void WiFiManager<T>::switch_to_prov() {
