@@ -12,7 +12,6 @@ template <typename T>
 concept I_Provisioning = requires(T t, const T ct) {
     { ct.is_provisioned() } -> std::same_as<bool>;
     { t.connect() } -> std::same_as<int>;
-    { t.request_reprovision() } -> std::same_as<int>;
 } && std::is_constructible_v<T, typename T::EventGroup &, std::string_view>;
 
 template <typename T>
@@ -37,7 +36,6 @@ template <ProvisioningTypes T> class Provisioning {
     Provisioning(EventGroup &event_group, std::string_view prov_name);
     bool is_provisioned() const;
     int connect();
-    int request_reprovision();
 
   protected:
     void start();

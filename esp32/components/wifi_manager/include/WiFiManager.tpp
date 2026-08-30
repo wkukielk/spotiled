@@ -68,9 +68,14 @@ template <WiFiManagerTypes T> int WiFiManager<T>::connect_without_prov() {
 }
 
 template <WiFiManagerTypes T> int WiFiManager<T>::reprovision() {
-    if (!provisioning.has_value())
-        switch_to_prov();
-    auto status = provisioning->request_reprovision();
+    handler.off();
+    auto disconnect_status = WiFi::get().disconnect();
+    time_().delay_ms(100);
+    wifi_config_t empty_cfg{};
+    auto status = WiFi::get().set_config(WiFiIF::STA, &empty_cfg);
+    ESP_LOGI("WiFiManager", "reprovision: disconnect=0x%x set_config=0x%x",
+             disconnect_status, status);
+    ESP_LOGI("WiFiManager", "%s", esp_err_to_name(status));
     if (status == ESP_OK)
         esp_restart();
     return status;

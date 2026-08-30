@@ -10,6 +10,7 @@ class MockWiFi {
     esp_err_t deinit() noexcept { return ESP_OK; }
     MOCK_METHOD(esp_err_t, start, (), (noexcept));
     MOCK_METHOD(esp_err_t, stop, (), (noexcept));
+    MOCK_METHOD(esp_err_t, disconnect, (), (noexcept));
     MOCK_METHOD(esp_err_t, set_config, (WiFiIF ifx, wifi_config_t *conf),
                 (noexcept));
     MOCK_METHOD(esp_err_t, set_mode, (WiFiMode mode), (noexcept));

@@ -17,6 +17,7 @@ class WiFi {
     esp_err_t init() noexcept { return init(&wifi::cfg); }
     esp_err_t start() noexcept { return esp_wifi_start(); }
     esp_err_t stop() noexcept { return esp_wifi_stop(); }
+    esp_err_t disconnect() noexcept { return esp_wifi_disconnect(); }
     esp_err_t set_config(WiFiIF ifx, wifi_config_t *conf) noexcept {
         return esp_wifi_set_config((wifi_interface_t)ifx, conf);
     }

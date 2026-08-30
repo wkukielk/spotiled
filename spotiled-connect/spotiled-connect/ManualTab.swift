@@ -42,6 +42,7 @@ struct ManualTab: View {
             .pickerStyle(.menu)
 
             animationPanel
+            ReprovisionPanel(connection: esp32Connection)
         }
         .padding(.horizontal)
         .onAppear {
@@ -91,6 +92,44 @@ private struct PulsateAnimationPanel: View {
         .padding(8)
         .background(Color.cardBackground)
         .border(Color.cardBorder, width: 1)
+    }
+}
+
+private struct ReprovisionPanel: View {
+    let connection: any DirectESP32Connecting
+
+    @State private var showConfirmation = false
+
+    private var isConnected: Bool {
+        if case .connected = connection.state { return true }
+        return false
+    }
+
+    var body: some View {
+        VStack(spacing: 8) {
+            Button("Reprovision device", role: .destructive) {
+                showConfirmation = true
+            }
+            .disabled(!isConnected)
+            .buttonStyle(.appPrimary)
+        }
+        .padding(8)
+        .background(Color.cardBackground)
+        .border(Color.cardBorder, width: 1)
+        .confirmationDialog(
+            "Reprovision this device?",
+            isPresented: $showConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("Reprovision", role: .destructive) {
+                Task {
+                    try? await connection.reprovision()
+                }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("The device will disconnect from WiFi and restart in pairing mode. You'll need to provision it again to reconnect.")
+        }
     }
 }
 

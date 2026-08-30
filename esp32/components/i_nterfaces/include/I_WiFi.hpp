@@ -42,6 +42,7 @@ concept I_WiFi = requires(T t, WiFiIF ifx, wifi_config_t *conf, WiFiMode mode,
                           WiFiPSType ps, uint8_t mac[6]) {
     { t.start() } noexcept -> std::same_as<esp_err_t>;
     { t.stop() } noexcept -> std::same_as<esp_err_t>;
+    { t.disconnect() } noexcept -> std::same_as<esp_err_t>;
     { t.set_config(ifx, conf) } noexcept -> std::same_as<esp_err_t>;
     { t.set_mode(mode) } noexcept -> std::same_as<esp_err_t>;
     { t.set_ps(ps) } noexcept -> std::same_as<esp_err_t>;
