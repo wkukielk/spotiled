@@ -2,8 +2,10 @@ mod config;
 mod dom_color;
 mod led_socket;
 mod mdns_service;
+mod pairing;
 mod song_pipeline;
 mod spotify;
+mod tls_identity;
 
 use anyhow::Result;
 use led_socket::WsLedSocket;
@@ -18,6 +20,7 @@ use socket2::{Domain, Socket, Type};
 use std::error::Error;
 use std::io;
 use std::net::SocketAddr;
+use std::path::Path;
 use std::sync::Arc;
 use tokio::net::TcpListener;
 
@@ -66,12 +69,14 @@ fn main() -> Result<(), Box<dyn Error>> {
     let instance_name = get_hostname();
     log::info!("{}", instance_name);
 
+    let (tls_acceptor, fingerprint) = tls_identity::load_or_generate(Path::new("data"), &instance_name)?;
+
     rt.block_on(async {
         let listener = TcpListener::from_std(bind_dual_stack(&cfg.bind_address)?)?;
         let port = listener.local_addr()?.port();
         let _mdns = MdnsService::new("_s-led-controler._tcp", &instance_name, port)?;
 
-        pipeline.serve(listener).await
+        pipeline.serve_tls(listener, tls_acceptor, fingerprint).await
     })?;
 
     Ok(())
