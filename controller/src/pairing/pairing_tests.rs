@@ -1,4 +1,6 @@
 use super::*;
+use crate::status::{self, ControllerStatus};
+use serial_test::serial;
 use tokio_tungstenite::{accept_async, client_async};
 
 fn cert_fp() -> [u8; 32] {
@@ -80,12 +82,20 @@ async fn handshake(
 }
 
 #[tokio::test]
+#[serial]
 async fn confirming_completes_pairing() {
     let (mut ws, handle) = spawn_pair().await;
     let (client_pub, server_pub, shared) = handshake(&mut ws).await;
 
-    // Sanity check: the client can derive the exact SAS the server just logged.
-    let _sas = compute_sas(&client_pub, &server_pub, &shared, &cert_fp());
+    let expected_sas = compute_sas(&client_pub, &server_pub, &shared, &cert_fp());
+    let expected_status = ControllerStatus::Pairing { sas: expected_sas };
+    timeout(Duration::from_secs(1), async {
+        while status::get() != expected_status {
+            tokio::time::sleep(Duration::from_millis(1)).await;
+        }
+    })
+    .await
+    .expect("server never published the pairing SAS");
 
     send_json(&mut ws, &serde_json::json!({ "type": "confirm" }))
         .await
@@ -95,9 +105,11 @@ async fn confirming_completes_pairing() {
     assert_eq!(reply, r#"{"type":"paired"}"#);
 
     handle.await.unwrap();
+    assert_eq!(status::get(), ControllerStatus::Running);
 }
 
 #[tokio::test]
+#[serial]
 async fn rejecting_replies_rejected() {
     let (mut ws, handle) = spawn_pair().await;
     handshake(&mut ws).await;
@@ -110,6 +122,7 @@ async fn rejecting_replies_rejected() {
     assert_eq!(reply, r#"{"type":"rejected"}"#);
 
     handle.await.unwrap();
+    assert_eq!(status::get(), ControllerStatus::Running);
 }
 
 #[tokio::test]

@@ -1,23 +1,25 @@
 mod config;
 mod dom_color;
+mod gui;
 mod led_socket;
 mod mdns_service;
 mod pairing;
 mod song_pipeline;
 mod spotify;
+mod status;
 mod tls_identity;
 
 use anyhow::Result;
 use led_socket::WsLedSocket;
 use mdns_service::MdnsService;
 use song_pipeline::Pipeline;
+use status::ControllerStatus;
 
 use log::LevelFilter;
 
 use spotify::ISpotify;
 use spotify::Spotify;
 use socket2::{Domain, Socket, Type};
-use std::error::Error;
 use std::io;
 use std::net::SocketAddr;
 use std::path::Path;
@@ -51,13 +53,24 @@ fn get_hostname() -> String {
     instance_name_local.split(".").next().unwrap().to_string()
 }
 
-fn main() -> Result<(), Box<dyn Error>> {
+fn main() -> eframe::Result {
     env_logger::builder()
         .filter_level(LevelFilter::Info)
         .filter_module("librespot", LevelFilter::Debug)
         .filter_module("libmdns::fsm", LevelFilter::Error)
         .init();
 
+    std::thread::spawn(|| {
+        if let Err(err) = run_controller() {
+            log::error!("controller failed: {err:#}");
+            status::set(ControllerStatus::Error(format!("{err:#}")));
+        }
+    });
+
+    gui::run()
+}
+
+fn run_controller() -> Result<()> {
     let cfg = config::load("config.toml".as_ref())?;
 
     let rt = create_tokio_runtime();
@@ -76,8 +89,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         let port = listener.local_addr()?.port();
         let _mdns = MdnsService::new("_s-led-controler._tcp", &instance_name, port)?;
 
+        status::set(ControllerStatus::Running);
         pipeline.serve_tls(listener, tls_acceptor, fingerprint).await
-    })?;
-
-    Ok(())
+    })
 }

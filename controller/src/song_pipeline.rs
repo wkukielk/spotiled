@@ -62,7 +62,6 @@ pub(crate) trait Controller: Send + Sync {
         code_verifier: &str,
     ) -> Result<(), SongPipelineError>;
     fn disconnect(&mut self) -> Result<(), SongPipelineError>;
-    /// The connected Spotify account's human-readable display name, or `None` if not connected.
     async fn display_name(&self) -> Result<Option<String>, SongPipelineError>;
 }
 
@@ -94,10 +93,6 @@ impl<C> WsServer<C>
 where
     C: Controller,
 {
-    /// Plain (no TLS) WebSocket server: accepts and upgrades connections in the background,
-    /// feeding them into the same single-active-connection command loop `serve_tls` uses. Kept
-    /// separate from `serve_tls` so tests can exercise the command protocol without needing a
-    /// real TLS handshake.
     pub async fn serve(&mut self, listener: TcpListener) -> Result<()> {
         let (tx, rx) = mpsc::channel(8);
         tokio::spawn(async move {
@@ -122,10 +117,6 @@ where
         self.serve_from(rx).await
     }
 
-    /// Production entry point: TLS-wraps every accepted connection, then routes it by request
-    /// path. `/pair` runs the SAS pairing handshake (`pairing::run_pairing`) to completion and
-    /// never touches the main command loop below; any other path is handed to that loop exactly
-    /// like a connection accepted by `serve()` would be.
     pub async fn serve_tls(
         &mut self,
         listener: TcpListener,

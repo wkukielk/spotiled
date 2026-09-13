@@ -12,19 +12,11 @@ use tokio_tungstenite::WebSocketStream;
 use tokio_tungstenite::tungstenite::Message as WsMessage;
 use x25519_dalek::{EphemeralSecret, PublicKey};
 
+use crate::status::{self, ControllerStatus};
+
 const HANDSHAKE_TIMEOUT: Duration = Duration::from_secs(30);
 const CONFIRM_TIMEOUT: Duration = Duration::from_secs(60);
 
-/// SAS = SHA256(client_pub || server_pub || shared_secret || cert_fp), first 4 bytes as a
-/// big-endian u32 mod 1_000_000, zero-padded to 6 digits, grouped "123 456".
-///
-/// `cert_fp` is never exchanged as a `/pair` message field — this whole exchange already happens
-/// *inside* the TLS connection, so both sides already know which certificate is in play: the
-/// server from its own identity, the client from the certificate its own TLS stack presented
-/// during the handshake it just completed. Sending it as JSON would add nothing (a relaying MITM
-/// running two separate TLS legs could just forward the server's honest value straight through)
-/// and inviting the client to trust an in-band claim instead of its own TLS-layer observation is
-/// exactly the mistake that would let such a relay through undetected.
 pub fn compute_sas(
     client_pub: &[u8; 32],
     server_pub: &[u8; 32],
@@ -55,17 +47,6 @@ enum PairingMessage {
     Reject,
 }
 
-/// Handles one `/pair` connection end to end: a client-commits/server-replies/client-reveals
-/// ephemeral X25519 handshake, SAS logging, then waits for the client's confirm/reject. Runs
-/// independently of the main command connection and never touches it.
-///
-/// Only the client commits (`SHA256(c_pub)`) before revealing its real key — that alone is
-/// enough: we only ever generate our own ephemeral key *after* seeing the client's commitment
-/// hash, never the raw value, so our choice can't be influenced by (or grind against) theirs; and
-/// the client, having already committed before it ever sees our key, can't retroactively pick a
-/// different one either. A grinding attacker would need ~2^20 tries (cheap, offline-fast) to
-/// force a chosen SAS if either side could choose its key after seeing the other's — this closes
-/// that off for both sides with a single one-way commitment.
 pub async fn run_pairing<S>(mut ws: WebSocketStream<S>, cert_fp: [u8; 32])
 where
     S: AsyncRead + AsyncWrite + Unpin,
@@ -73,6 +54,7 @@ where
     if let Err(err) = run_pairing_inner(&mut ws, cert_fp).await {
         log::warn!("pairing attempt failed: {err:#}");
     }
+    status::set(ControllerStatus::Running);
     let _ = ws.close(None).await;
 }
 
@@ -80,13 +62,10 @@ async fn run_pairing_inner<S>(ws: &mut WebSocketStream<S>, cert_fp: [u8; 32]) ->
 where
     S: AsyncRead + AsyncWrite + Unpin,
 {
-    // The client commits first; we only ever see the hash at this point, never the raw key.
     let client_commit = timeout(HANDSHAKE_TIMEOUT, recv_commit(ws))
         .await
         .context("timed out waiting for client commit")??;
 
-    // We generate our own ephemeral key having seen nothing but that commitment hash, so we
-    // can send it straight away — there's no need for us to also commit-then-reveal.
     let secret = EphemeralSecret::random();
     let server_pub = PublicKey::from(&secret);
     send_json(
@@ -95,8 +74,6 @@ where
     )
     .await?;
 
-    // Now that the client has seen our key, it reveals its own — verify it against the
-    // commitment it sent before it could have known ours.
     let client_pub_bytes = timeout(HANDSHAKE_TIMEOUT, recv_reveal(ws))
         .await
         .context("timed out waiting for client reveal")??;
@@ -115,6 +92,7 @@ where
         &cert_fp,
     );
     log::info!("Pairing requested. Verification code: {sas}");
+    status::set(ControllerStatus::Pairing { sas });
 
     let confirmed = timeout(CONFIRM_TIMEOUT, recv_confirm(ws))
         .await

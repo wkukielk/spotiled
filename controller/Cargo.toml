@@ -36,6 +36,7 @@ rcgen = "0.14.10"
 sha2 = "0.11.0"
 x25519-dalek = { version = "3.0.0", features = ["getrandom"] }
 base64 = "0.23.1"
+eframe = "0.36.2"
 
 [build-dependencies]
 cmake = "0.1.58"
@@ -43,5 +44,6 @@ cxx-build = "1.0.194"
 
 [dev-dependencies]
 mockall = "0.14.0"
+serial_test = "4.0.1"
 tempfile = "3.27.0"
 wiremock = "0.6.5"
