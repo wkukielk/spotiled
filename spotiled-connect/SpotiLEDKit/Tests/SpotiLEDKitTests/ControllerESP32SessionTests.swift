@@ -5,19 +5,46 @@
 //  Created by wkuki on 10/08/2026.
 //
 
+import Foundation
 import Testing
 import Mockable
 @testable import SpotiLEDKit
 
 struct ControllerESP32SessionTests {
 
-    @Test func connectDelegatesToConnection() {
+    @Test func connectDelegatesToConnectionUsingThePinnedFingerprint() {
         let connection = MockEndpointConnecting(policy: .relaxed)
-        let session = ControllerESP32Session(connection: connection)
+        let trustStore = Self.makeTrustStore()
+        let fingerprint = Data([1, 2, 3])
+        trustStore.pin(fingerprint, for: "Controller")
+        let session = ControllerESP32Session(connection: connection, trustStore: trustStore)
 
         session.connect(to: .hostPort(host: "192.168.1.10", port: 80), name: "Controller")
 
-        verify(connection).connect(to: .value(.hostPort(host: "192.168.1.10", port: 80)), name: .value("Controller"), path: .value("/")).called(.once)
+        verify(connection).connect(
+            to: .value(.hostPort(host: "192.168.1.10", port: 80)),
+            name: .value("Controller"),
+            path: .value("/"),
+            tls: .any
+        ).called(.once)
+    }
+
+    @Test func isPairedReflectsTrustStore() {
+        let connection = MockEndpointConnecting(policy: .relaxed)
+        let trustStore = Self.makeTrustStore()
+        let session = ControllerESP32Session(connection: connection, trustStore: trustStore)
+
+        #expect(session.isPaired(name: "Controller") == false)
+
+        trustStore.pin(Data([1, 2, 3]), for: "Controller")
+
+        #expect(session.isPaired(name: "Controller") == true)
+    }
+
+    private static func makeTrustStore(function: String = #function) -> ControllerTrustStore {
+        let defaults = UserDefaults(suiteName: function)!
+        defaults.removePersistentDomain(forName: function)
+        return ControllerTrustStore(defaults: defaults)
     }
 
     @Test func disconnectDelegatesToConnectionAndResetsESP32State() async throws {

@@ -141,3 +141,15 @@ async fn revealing_a_key_that_does_not_match_the_commitment_aborts_the_connectio
     assert!(next_text(&mut ws).await.is_err());
     handle.await.unwrap();
 }
+
+/// Golden vector shared with `ControllerPairingTests.swift` on the iOS side — if this ever
+/// fails, the two `compute_sas` implementations have drifted apart and pairing will show
+/// different codes on each end.
+#[test]
+fn compute_sas_matches_the_swift_client_golden_vector() {
+    let a = [1u8; 32];
+    let b = [2u8; 32];
+    let s = [3u8; 32];
+    let fp = [4u8; 32];
+    assert_eq!(compute_sas(&a, &b, &s, &fp), "061 920");
+}

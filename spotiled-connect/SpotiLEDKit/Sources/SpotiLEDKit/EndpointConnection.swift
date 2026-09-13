@@ -5,10 +5,12 @@
 //  Created by wkuki on 25/07/2026.
 //
 
+import CryptoKit
 import Foundation
 import Network
 import Observation
 import Mockable
+import Security
 
 public enum EndpointConnectionState: Equatable, Sendable {
     case disconnected
@@ -24,13 +26,31 @@ public enum EndpointConnectionError: Error, Equatable {
     case unexpectedMessage
 }
 
+/// How a connection should handle TLS trust. `.insecure` is today's plaintext behavior (used for
+/// the direct ESP32 connection). `.pairing`/`.pinned` are for the controller connection: `.pairing`
+/// is TOFU — any certificate is accepted, but its SHA-256 fingerprint is reported out so the
+/// pairing flow can show it as a SAS and, once confirmed, pin it; `.pinned` only completes the
+/// handshake if the presented certificate's fingerprint matches exactly.
+public enum ControllerTLSPolicy {
+    case insecure
+    case pairing(onFingerprint: (Data) -> Void)
+    case pinned(Data)
+}
+
 @Mockable
 public protocol EndpointConnecting: AnyObject {
     var state: EndpointConnectionState { get }
-    func connect(to endpoint: NWEndpoint, name: String, path: String)
+    func connect(to endpoint: NWEndpoint, name: String, path: String, tls: ControllerTLSPolicy)
     func disconnect()
     func send(_ message: String) async throws -> String
     func sendOneWay(_ message: String) async throws
+}
+
+public extension EndpointConnecting {
+    /// Convenience for callers that don't need TLS (e.g. the direct ESP32 connection).
+    func connect(to endpoint: NWEndpoint, name: String, path: String) {
+        connect(to: endpoint, name: name, path: path, tls: .insecure)
+    }
 }
 
 @Observable
@@ -46,25 +66,39 @@ public final class WebSocketEndpointConnection: EndpointConnecting, @unchecked S
 
     public init() {}
 
-    public func connect(to endpoint: NWEndpoint, name: String, path: String) {
+    public func connect(to endpoint: NWEndpoint, name: String, path: String, tls: ControllerTLSPolicy) {
         disconnect()
         state = .connecting(name: name)
 
-        resolver.resolve(endpoint, path: path) { [weak self] resolvedEndpoint in
+        let secure = Self.isSecure(tls)
+        resolver.resolve(endpoint, path: path, secure: secure) { [weak self] resolvedEndpoint in
             guard let self else { return }
             guard let resolvedEndpoint else {
                 self.state = .failed(name: name)
                 return
             }
-            self.startWebSocketConnection(to: resolvedEndpoint, name: name)
+            self.startWebSocketConnection(to: resolvedEndpoint, name: name, tls: tls)
         }
     }
 
-    private func startWebSocketConnection(to endpoint: NWEndpoint, name: String) {
+    private static func isSecure(_ tls: ControllerTLSPolicy) -> Bool {
+        if case .insecure = tls { return false }
+        return true
+    }
+
+    private func startWebSocketConnection(to endpoint: NWEndpoint, name: String, tls: ControllerTLSPolicy) {
         let webSocketOptions = NWProtocolWebSocket.Options()
         webSocketOptions.autoReplyPing = true
 
-        let parameters = NWParameters.tcp
+        let parameters: NWParameters
+        switch tls {
+        case .insecure:
+            parameters = .tcp
+        case .pairing, .pinned:
+            let tlsOptions = NWProtocolTLS.Options()
+            Self.configureVerifyBlock(tlsOptions, tls: tls)
+            parameters = NWParameters(tls: tlsOptions, tcp: .init())
+        }
         parameters.defaultProtocolStack.applicationProtocols.insert(webSocketOptions, at: 0)
 
         let connection = NWConnection(to: endpoint, using: parameters)
@@ -86,6 +120,34 @@ public final class WebSocketEndpointConnection: EndpointConnecting, @unchecked S
         }
         connection.start(queue: .main)
         scheduleConnectTimeout(for: connection, name: name)
+    }
+
+    /// Installs a TLS verify block that never consults the system trust store — trust here is
+    /// established either out-of-band (`.pairing`, confirmed by SAS) or by exact pin match
+    /// (`.pinned`), never by a certificate authority, since the controller's certificate is
+    /// self-signed.
+    private static func configureVerifyBlock(_ tlsOptions: NWProtocolTLS.Options, tls: ControllerTLSPolicy) {
+        let secOptions = tlsOptions.securityProtocolOptions
+        sec_protocol_options_set_verify_block(secOptions, { _, secTrustRef, complete in
+            let trust = sec_trust_copy_ref(secTrustRef).takeRetainedValue()
+            guard let chain = SecTrustCopyCertificateChain(trust) as? [SecCertificate],
+                  let leaf = chain.first else {
+                complete(false)
+                return
+            }
+            let der = SecCertificateCopyData(leaf) as Data
+            let fingerprint = Data(SHA256.hash(data: der))
+
+            switch tls {
+            case .insecure:
+                complete(true)
+            case .pairing(let onFingerprint):
+                onFingerprint(fingerprint)
+                complete(true)
+            case .pinned(let pinned):
+                complete(fingerprint == pinned)
+            }
+        }, DispatchQueue.main)
     }
 
     /// A dropped SYN with no response never reaches `.failed` on its own — `NWConnection` has no

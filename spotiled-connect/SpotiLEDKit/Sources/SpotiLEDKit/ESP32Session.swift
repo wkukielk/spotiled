@@ -26,6 +26,7 @@ public enum ESP32SessionError: Error, Equatable {
 public protocol ControllerSessionManaging: AnyObject {
     var controllerState: EndpointConnectionState { get }
     var esp32State: ESP32ConnectionState { get }
+    func isPaired(name: String) -> Bool
     func connect(to endpoint: NWEndpoint, name: String)
     func disconnect()
     func connectESP32(hostname: String) async throws
@@ -37,17 +38,34 @@ public protocol ControllerSessionManaging: AnyObject {
 @Observable
 public final class ControllerESP32Session: ControllerSessionManaging {
     private let connection: any EndpointConnecting
+    private let trustStore: ControllerTrustStore
     private let sendGate = AsyncMutex()
     public private(set) var esp32State: ESP32ConnectionState = .disconnected
 
     public var controllerState: EndpointConnectionState { connection.state }
 
-    public init(connection: any EndpointConnecting = WebSocketEndpointConnection()) {
+    public init(
+        connection: any EndpointConnecting = WebSocketEndpointConnection(),
+        trustStore: ControllerTrustStore = ControllerTrustStore()
+    ) {
         self.connection = connection
+        self.trustStore = trustStore
     }
 
+    public func isPaired(name: String) -> Bool {
+        trustStore.pinnedFingerprint(for: name) != nil
+    }
+
+    /// Requires `name` to already be paired (see `isPaired(name:)`) — callers must run
+    /// `ControllerPairingSession` first for a controller with no pinned fingerprint. This never
+    /// falls back to an unverified connection, since that would silently drop the protection
+    /// pairing exists for.
     public func connect(to endpoint: NWEndpoint, name: String) {
-        connection.connect(to: endpoint, name: name, path: "/")
+        guard let fingerprint = trustStore.pinnedFingerprint(for: name) else {
+            assertionFailure("connect(to:name:) called for an unpaired controller: \(name)")
+            return
+        }
+        connection.connect(to: endpoint, name: name, path: "/", tls: .pinned(fingerprint))
     }
 
     public func disconnect() {

@@ -21,10 +21,13 @@ final class EndpointResolver: @unchecked Sendable {
 
     /// Calls `completion` with the resolved `.url` endpoint, or `nil` if resolution failed —
     /// callers must treat `nil` as a connection failure rather than falling back to the
-    /// unresolved endpoint, since that would silently connect to "/" instead of `path`.
-    func resolve(_ endpoint: NWEndpoint, path: String, completion: @escaping (NWEndpoint?) -> Void) {
+    /// unresolved endpoint, since that would silently connect to "/" instead of `path`. `secure`
+    /// only affects the scheme in the resulting URL (used to shape the WebSocket upgrade
+    /// request) — actual transport security is controlled separately, by the `NWParameters` the
+    /// caller builds the connection with.
+    func resolve(_ endpoint: NWEndpoint, path: String, secure: Bool = false, completion: @escaping (NWEndpoint?) -> Void) {
         resolveAddress(endpoint) { resolved in
-            completion(resolved.flatMap { Self.webSocketEndpoint(from: $0, path: path) })
+            completion(resolved.flatMap { Self.webSocketEndpoint(from: $0, path: path, secure: secure) })
         }
     }
 
@@ -99,16 +102,18 @@ final class EndpointResolver: @unchecked Sendable {
         connection = nil
     }
 
-    private static func webSocketEndpoint(from endpoint: NWEndpoint, path: String) -> NWEndpoint? {
-        guard case .hostPort(let host, let port) = endpoint, let url = webSocketURL(host: host, port: port, path: path) else {
+    private static func webSocketEndpoint(from endpoint: NWEndpoint, path: String, secure: Bool) -> NWEndpoint? {
+        guard case .hostPort(let host, let port) = endpoint,
+              let url = webSocketURL(host: host, port: port, path: path, secure: secure) else {
             return nil
         }
         return .url(url)
     }
 
-    private static func webSocketURL(host: NWEndpoint.Host, port: NWEndpoint.Port, path: String) -> URL? {
+    private static func webSocketURL(host: NWEndpoint.Host, port: NWEndpoint.Port, path: String, secure: Bool) -> URL? {
         guard let hostString = hostString(from: host) else { return nil }
-        return URL(string: "ws://\(hostString):\(port.rawValue)\(path)")
+        let scheme = secure ? "wss" : "ws"
+        return URL(string: "\(scheme)://\(hostString):\(port.rawValue)\(path)")
     }
 
     private static func hostString(from host: NWEndpoint.Host) -> String? {

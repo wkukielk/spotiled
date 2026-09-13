@@ -13,6 +13,7 @@ struct SelectControllerView: View {
     private let browser: DeviceBrowser
     @Environment(\.esp32Session) private var session
     @Environment(\.dismiss) private var dismiss
+    @State private var pairingTarget: DiscoveredDevice?
 
     init(browser: DeviceBrowser = DeviceBrowser()) {
         self.browser = browser
@@ -34,6 +35,11 @@ struct SelectControllerView: View {
                     break
             }
         }
+        .sheet(item: $pairingTarget) { controller in
+            PairControllerView(endpoint: controller.endpoint, name: controller.name) {
+                session.connect(to: controller.endpoint, name: controller.name)
+            }
+        }
     }
 
     private func listItem(_ controller: DiscoveredDevice) -> some View {
@@ -51,7 +57,11 @@ struct SelectControllerView: View {
     }
 
     private func selectController(_ controller: DiscoveredDevice) {
-        session.connect(to: controller.endpoint, name: controller.name)
+        if session.isPaired(name: controller.name) {
+            session.connect(to: controller.endpoint, name: controller.name)
+        } else {
+            pairingTarget = controller
+        }
     }
 
     private func isConnecting(to controller: DiscoveredDevice) -> Bool {

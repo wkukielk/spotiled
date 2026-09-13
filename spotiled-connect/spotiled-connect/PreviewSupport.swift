@@ -24,6 +24,8 @@ final class PreviewFailingConnection: ControllerSessionManaging {
         self.failAfter = failAfter
     }
 
+    func isPaired(name: String) -> Bool { true }
+
     func connect(to endpoint: NWEndpoint, name: String) {
         controllerState = .connecting(name: name)
         Task { @MainActor in
@@ -65,6 +67,8 @@ final class PreviewControllerConnection: ControllerSessionManaging {
         self.controllerState = state
         self.spotifyUsername = spotifyUsername
     }
+
+    func isPaired(name: String) -> Bool { true }
 
     func connect(to endpoint: NWEndpoint, name: String) {
         controllerState = .connecting(name: name)
@@ -188,6 +192,19 @@ struct PreviewSpotifyAuthorizer: SpotifyAuthorizing {
         try? await Task.sleep(for: .seconds(0.6))
         return try result.get()
     }
+}
+
+@Observable
+final class PreviewPairing: ControllerPairing {
+    var state: PairingState
+
+    init(state: PairingState) {
+        self.state = state
+    }
+
+    func begin(endpoint: NWEndpoint, name: String) {}
+    func confirm() async {}
+    func reject() async {}
 }
 
 struct SelectControllerDismissHarness: View {
