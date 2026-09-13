@@ -73,13 +73,16 @@ struct MiddleTab: View {
         case .failed(let name):
             Label("Failed to connect to \(name)", systemImage: "xmark.circle.fill")
                 .foregroundStyle(.red)
+        case .certificateMismatch(let name):
+            Label("\(name)'s certificate changed", systemImage: "exclamationmark.triangle.fill")
+                .foregroundStyle(.orange)
         }
     }
 
     @ViewBuilder
     private var connectionActions: some View {
         switch session.controllerState {
-        case .disconnected, .failed:
+        case .disconnected, .failed, .certificateMismatch:
             Button("Select controller") { isSelectingController = true }
         case .connecting:
             Button("Cancel", role: .cancel) { session.disconnect() }

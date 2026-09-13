@@ -41,6 +41,17 @@ struct ControllerESP32SessionTests {
         #expect(session.isPaired(name: "Controller") == true)
     }
 
+    @Test func forgetPairingClearsTheTrustStore() {
+        let connection = MockEndpointConnecting(policy: .relaxed)
+        let trustStore = Self.makeTrustStore()
+        trustStore.pin(Data([1, 2, 3]), for: "Controller")
+        let session = ControllerESP32Session(connection: connection, trustStore: trustStore)
+
+        session.forgetPairing(name: "Controller")
+
+        #expect(session.isPaired(name: "Controller") == false)
+    }
+
     private static func makeTrustStore(function: String = #function) -> ControllerTrustStore {
         let defaults = UserDefaults(suiteName: function)!
         defaults.removePersistentDomain(forName: function)

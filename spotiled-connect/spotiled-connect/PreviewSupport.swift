@@ -26,11 +26,58 @@ final class PreviewFailingConnection: ControllerSessionManaging {
 
     func isPaired(name: String) -> Bool { true }
 
+    func forgetPairing(name: String) {}
+
     func connect(to endpoint: NWEndpoint, name: String) {
         controllerState = .connecting(name: name)
         Task { @MainActor in
             try? await Task.sleep(for: failAfter)
             controllerState = .failed(name: name)
+        }
+    }
+
+    func disconnect() {
+        controllerState = .disconnected
+    }
+
+    func connectESP32(hostname: String) async throws {
+        throw ESP32SessionError.rejected("preview failure")
+    }
+
+    func disconnectESP32() async throws {
+        esp32State = .disconnected
+    }
+
+    func authorizeSpotify(code: String, codeVerifier: String) async throws {
+        throw ESP32SessionError.rejected("preview failure")
+    }
+
+    func spotifyStatus() async throws -> String? {
+        throw ESP32SessionError.rejected("preview failure")
+    }
+}
+
+@Observable
+final class PreviewCertificateMismatchConnection: ControllerSessionManaging {
+    var controllerState: EndpointConnectionState = .disconnected
+    var esp32State: ESP32ConnectionState = .disconnected
+    private let mismatchAfter: Duration
+
+    init(mismatchAfter: Duration = .seconds(0.6)) {
+        self.mismatchAfter = mismatchAfter
+    }
+
+    func isPaired(name: String) -> Bool { true }
+
+    func forgetPairing(name: String) {
+        controllerState = .disconnected
+    }
+
+    func connect(to endpoint: NWEndpoint, name: String) {
+        controllerState = .connecting(name: name)
+        Task { @MainActor in
+            try? await Task.sleep(for: mismatchAfter)
+            controllerState = .certificateMismatch(name: name)
         }
     }
 
@@ -69,6 +116,8 @@ final class PreviewControllerConnection: ControllerSessionManaging {
     }
 
     func isPaired(name: String) -> Bool { true }
+
+    func forgetPairing(name: String) {}
 
     func connect(to endpoint: NWEndpoint, name: String) {
         controllerState = .connecting(name: name)

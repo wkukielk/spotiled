@@ -27,6 +27,7 @@ public protocol ControllerSessionManaging: AnyObject {
     var controllerState: EndpointConnectionState { get }
     var esp32State: ESP32ConnectionState { get }
     func isPaired(name: String) -> Bool
+    func forgetPairing(name: String)
     func connect(to endpoint: NWEndpoint, name: String)
     func disconnect()
     func connectESP32(hostname: String) async throws
@@ -54,6 +55,13 @@ public final class ControllerESP32Session: ControllerSessionManaging {
 
     public func isPaired(name: String) -> Bool {
         trustStore.pinnedFingerprint(for: name) != nil
+    }
+
+    /// Drops the pinned fingerprint for `name` — the deliberate, explicit step required before a
+    /// controller whose certificate changed (e.g. after `.certificateMismatch`) can be re-paired.
+    /// Never called automatically on connection failure; see `EndpointConnectionState`.
+    public func forgetPairing(name: String) {
+        trustStore.forget(name)
     }
 
     /// Requires `name` to already be paired (see `isPaired(name:)`) — callers must run
