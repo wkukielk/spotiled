@@ -23,10 +23,13 @@ struct SpotifyTab: View {
     @Environment(SelectedESP32Store.self) private var esp32Store
     @Environment(\.esp32Session) private var session
     @Environment(\.openURL) private var openURL
+    @Environment(\.scenePhase) private var scenePhase
     @State private var hostResolver = DeviceHostResolver()
     @State private var connectionError: String?
     @State private var spotifyAuthorizer: any SpotifyAuthorizing
     @State private var isAuthorizingSpotify = false
+    @State private var authorizationTask: Task<Void, Never>?
+    @State private var didBackgroundDuringAuthorization = false
     @State private var spotifyStatus: SpotifyStatus = .checking
     @State private var spotifyError: String?
 
@@ -44,7 +47,7 @@ struct SpotifyTab: View {
 
             let btnTxt = spotifyStatus.isConnected ? "Reconnect Spotify" : "Connect Spotify"
             Button(btnTxt, role: spotifyStatus.isConnected ? .destructive : nil) {
-                Task { await authorizeSpotify() }
+                authorizationTask = Task { await authorizeSpotify() }
             }
             .disabled(isAuthorizingSpotify)
 
@@ -71,6 +74,14 @@ struct SpotifyTab: View {
         }
         .task {
             await refreshSpotifyStatus()
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            if newPhase == .background, isAuthorizingSpotify {
+                didBackgroundDuringAuthorization = true
+            } else if newPhase == .active, didBackgroundDuringAuthorization {
+                didBackgroundDuringAuthorization = false
+                authorizationTask?.cancel()
+            }
         }
     }
 
@@ -115,6 +126,9 @@ struct SpotifyTab: View {
             }
             try await session.authorizeSpotify(code: result.code, codeVerifier: result.codeVerifier)
             await refreshSpotifyStatus()
+        } catch is CancellationError {
+            spotifyStatus = .notConnected
+            spotifyError = "Spotify connection was cancelled"
         } catch {
             spotifyStatus = .notConnected
             spotifyError = "Failed to connect Spotify: \(error)"

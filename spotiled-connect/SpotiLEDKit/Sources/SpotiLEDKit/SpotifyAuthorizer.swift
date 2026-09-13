@@ -178,7 +178,11 @@ final class SpotifyRedirectListener: @unchecked Sendable {
     }
 
     func awaitRedirect() async throws -> [URLQueryItem] {
-        try await redirectResult.wait()
+        try await withTaskCancellationHandler {
+            try await redirectResult.wait()
+        } onCancel: {
+            finish(.failure(CancellationError()))
+        }
     }
 
     private func handle(_ connection: NWConnection, expectedPath: String) {
