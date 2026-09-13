@@ -37,6 +37,7 @@ sha2 = "0.11.0"
 x25519-dalek = { version = "3.0.0", features = ["getrandom"] }
 base64 = "0.23.1"
 eframe = "0.36.2"
+dirs = "7.0.0"
 
 [build-dependencies]
 cmake = "0.1.58"

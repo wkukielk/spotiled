@@ -22,7 +22,7 @@ use spotify::Spotify;
 use socket2::{Domain, Socket, Type};
 use std::io;
 use std::net::SocketAddr;
-use std::path::Path;
+use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::net::TcpListener;
 
@@ -53,12 +53,26 @@ fn get_hostname() -> String {
     instance_name_local.split(".").next().unwrap().to_string()
 }
 
+fn app_support_dir() -> PathBuf {
+    dirs::config_dir()
+        .unwrap_or_else(|| PathBuf::from("."))
+        .join("spotiled_controller")
+}
+
 fn main() -> eframe::Result {
     env_logger::builder()
         .filter_level(LevelFilter::Info)
         .filter_module("librespot", LevelFilter::Debug)
         .filter_module("libmdns::fsm", LevelFilter::Error)
         .init();
+
+    if std::env::var_os("SPOTILED_HEADLESS").is_some() {
+        if let Err(err) = run_controller() {
+            log::error!("controller failed: {err:#}");
+            std::process::exit(1);
+        }
+        return Ok(());
+    }
 
     std::thread::spawn(|| {
         if let Err(err) = run_controller() {
@@ -71,7 +85,8 @@ fn main() -> eframe::Result {
 }
 
 fn run_controller() -> Result<()> {
-    let cfg = config::load("config.toml".as_ref())?;
+    let base = app_support_dir();
+    let cfg = config::load(&base.join("config.toml"))?;
 
     let rt = create_tokio_runtime();
     let spotify = Spotify::new();
@@ -82,7 +97,7 @@ fn run_controller() -> Result<()> {
     let instance_name = get_hostname();
     log::info!("{}", instance_name);
 
-    let (tls_acceptor, fingerprint) = tls_identity::load_or_generate(Path::new("data"), &instance_name)?;
+    let (tls_acceptor, fingerprint) = tls_identity::load_or_generate(&base.join("data"), &instance_name)?;
 
     rt.block_on(async {
         let listener = TcpListener::from_std(bind_dual_stack(&cfg.bind_address)?)?;
