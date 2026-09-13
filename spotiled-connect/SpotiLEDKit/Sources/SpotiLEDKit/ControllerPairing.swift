@@ -14,8 +14,6 @@ import Mockable
 public enum PairingState: Equatable, Sendable {
     case idle
     case connecting
-    /// `code` is the same 6-digit, space-grouped format the controller logs
-    /// (`pairing::compute_sas` on the Rust side) — the user compares the two by eye.
     case awaitingConfirmation(code: String)
     case paired
     case rejectedByUser
@@ -30,11 +28,6 @@ public protocol ControllerPairing: AnyObject {
     func reject() async
 }
 
-/// Drives the client side of the controller's `/pair` handshake: connects with TOFU trust
-/// (`.pairing`), performs the client-commits/server-reveals ephemeral X25519 exchange described
-/// in the controller's `pairing.rs`, derives the SAS for the user to compare against the
-/// controller's log, and — once confirmed — pins the certificate fingerprint it observed so
-/// future connections can use `.pinned` instead of running this flow again.
 @Observable
 public final class ControllerPairingSession: ControllerPairing {
     private let connection: any EndpointConnecting
@@ -82,8 +75,6 @@ public final class ControllerPairingSession: ControllerPairing {
         let clientPub = privateKey.publicKey.rawRepresentation
 
         do {
-            // The server only ever sees this hash before generating its own key — see the
-            // "commit-then-reveal" note in pairing.rs for why that ordering matters.
             let commitHash = Data(SHA256.hash(data: clientPub))
             let replyText = try await connection.send(PairingWireMessage(type: "commit", hash: commitHash.base64EncodedString()).encoded())
 
@@ -146,10 +137,6 @@ public final class ControllerPairingSession: ControllerPairing {
         }
     }
 
-    /// Must byte-for-byte match `pairing::compute_sas` in the controller's `pairing.rs` — see
-    /// `compute_sas_matches_the_swift_client_golden_vector` there and
-    /// `computeSASMatchesTheRustGoldenVector` in `ControllerPairingTests` for the shared fixture
-    /// that pins both implementations to the same output.
     static func computeSAS(clientPub: Data, serverPub: Data, shared: Data, certFingerprint: Data) -> String {
         var hasher = SHA256()
         hasher.update(data: clientPub)

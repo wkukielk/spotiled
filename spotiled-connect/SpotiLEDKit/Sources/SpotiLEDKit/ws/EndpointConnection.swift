@@ -17,10 +17,6 @@ public enum EndpointConnectionState: Equatable, Sendable {
     case connecting(name: String)
     case connected(name: String)
     case failed(name: String)
-    /// The peer presented a certificate that doesn't match the one pinned for this controller —
-    /// distinct from `.failed` so the UI can tell a changed identity (reset/reinstalled
-    /// controller, or a MITM) apart from an ordinary network failure, and requires an explicit
-    /// "forget and re-pair" action rather than silently retrying.
     case certificateMismatch(name: String)
 }
 
@@ -29,17 +25,6 @@ public enum EndpointConnectionError: Error, Equatable {
     case sendInProgress
     case connectionFailed
     case unexpectedMessage
-}
-
-/// How a connection should handle TLS trust. `.insecure` is today's plaintext behavior (used for
-/// the direct ESP32 connection). `.pairing`/`.pinned` are for the controller connection: `.pairing`
-/// is TOFU — any certificate is accepted, but its SHA-256 fingerprint is reported out so the
-/// pairing flow can show it as a SAS and, once confirmed, pin it; `.pinned` only completes the
-/// handshake if the presented certificate's fingerprint matches exactly.
-public enum ControllerTLSPolicy {
-    case insecure
-    case pairing(onFingerprint: (Data) -> Void)
-    case pinned(Data)
 }
 
 @Mockable
@@ -52,7 +37,6 @@ public protocol EndpointConnecting: AnyObject {
 }
 
 public extension EndpointConnecting {
-    /// Convenience for callers that don't need TLS (e.g. the direct ESP32 connection).
     func connect(to endpoint: NWEndpoint, name: String, path: String) {
         connect(to: endpoint, name: name, path: path, tls: .insecure)
     }
@@ -82,7 +66,7 @@ public final class WebSocketEndpointConnection: EndpointConnecting, @unchecked S
                 self.state = .failed(name: name)
                 return
             }
-            self.startWebSocketConnection(to: resolvedEndpoint, name: name, tls: tls)
+            self.startWebSocketConnection(to: resolvedEndpoint, name: name, policy: tls)
         }
     }
 
@@ -91,41 +75,24 @@ public final class WebSocketEndpointConnection: EndpointConnecting, @unchecked S
         return true
     }
 
-    private func startWebSocketConnection(to endpoint: NWEndpoint, name: String, tls: ControllerTLSPolicy) {
-        let webSocketOptions = NWProtocolWebSocket.Options()
-        webSocketOptions.autoReplyPing = true
-
-        // Both scoped to this one connection attempt (not properties on `self`) and captured by
-        // the closures built below, so a superseded attempt can never leak its mismatch result
-        // into a later one. `pendingConnection` lets the verify block — which runs before the
-        // `NWConnection` below even exists — reach back and cancel it the moment a mismatch is
-        // detected, rather than leaving the handshake to hang until `scheduleConnectTimeout` gives
-        // up on it several seconds later.
+    private func startWebSocketConnection(to endpoint: NWEndpoint, name: String, policy: ControllerTLSPolicy) {
         var pinnedFingerprintMismatchDetected = false
         var pendingConnection: NWConnection?
 
-        let parameters: NWParameters
-        switch tls {
-        case .insecure:
-            parameters = .tcp
-        case .pairing, .pinned:
-            let tlsOptions = NWProtocolTLS.Options()
-            Self.configureVerifyBlock(tlsOptions, tls: tls) {
+        let parametersProvider : ConnectionParametersProvider = switch policy {
+            case .insecure: InsecureConnectionParametersProvider()
+            case .pairing(onFingerprint: let fingerprint): PairingConnectionParametersProvider(onFingerprint: fingerprint)
+            case .pinned(let fingerprint): PinnedConnectionParametersProvider(pinned: fingerprint) {
                 pinnedFingerprintMismatchDetected = true
                 pendingConnection?.cancel()
             }
-            parameters = NWParameters(tls: tlsOptions, tcp: .init())
         }
-        parameters.defaultProtocolStack.applicationProtocols.insert(webSocketOptions, at: 0)
+        let parameters = addWSParams(parametersProvider.getParameters())
 
         let connection = NWConnection(to: endpoint, using: parameters)
         pendingConnection = connection
         self.connection = connection
         connection.stateUpdateHandler = { [weak self] connectionState in
-            // Only the connection this handler was installed for may still update `state` — once
-            // `connect()` replaces `self.connection`, this one is stale and every further callback
-            // it receives (including a delayed `.cancelled` from our own `cancel()` below) must be
-            // ignored, or it can race with and overwrite whatever the new attempt just decided.
             guard let self, self.connection === connection else { return }
             switch connectionState {
             case .ready:
@@ -146,46 +113,6 @@ public final class WebSocketEndpointConnection: EndpointConnecting, @unchecked S
         scheduleConnectTimeout(for: connection, name: name)
     }
 
-    /// Installs a TLS verify block that never consults the system trust store — trust here is
-    /// established either out-of-band (`.pairing`, confirmed by SAS) or by exact pin match
-    /// (`.pinned`), never by a certificate authority, since the controller's certificate is
-    /// self-signed.
-    private static func configureVerifyBlock(_ tlsOptions: NWProtocolTLS.Options, tls: ControllerTLSPolicy, onMismatch: @escaping () -> Void) {
-        let secOptions = tlsOptions.securityProtocolOptions
-        sec_protocol_options_set_verify_block(secOptions, { _, secTrustRef, complete in
-            let trust = sec_trust_copy_ref(secTrustRef).takeRetainedValue()
-            guard let chain = SecTrustCopyCertificateChain(trust) as? [SecCertificate],
-                  let leaf = chain.first else {
-                complete(false)
-                return
-            }
-            let der = SecCertificateCopyData(leaf) as Data
-            let fingerprint = Data(SHA256.hash(data: der))
-
-            switch tls {
-            case .insecure:
-                complete(true)
-            case .pairing(let onFingerprint):
-                onFingerprint(fingerprint)
-                complete(true)
-            case .pinned(let pinned):
-                let matches = fingerprint == pinned
-                if !matches {
-                    onMismatch()
-                }
-                complete(matches)
-            }
-        }, DispatchQueue.main)
-    }
-
-    /// A dropped SYN with no response never reaches `.failed` on its own — `NWConnection` has no
-    /// built-in connect timeout, so without this a silently-lost handshake leaves `state` stuck at
-    /// `.connecting` (and the UI spinning) indefinitely. A `.pinned` mismatch no longer relies on
-    /// this: the verify block cancels the connection itself the instant it rejects a certificate,
-    /// so this is purely a fallback for a peer that never responds at all. It only forces the
-    /// cancel — it deliberately does *not* set `state` itself, so `stateUpdateHandler`'s
-    /// `.cancelled` branch (the single place that knows about `pinnedFingerprintMismatchDetected`)
-    /// stays the one source of truth for what the resulting state actually is.
     private func scheduleConnectTimeout(for connection: NWConnection, name: String) {
         DispatchQueue.main.asyncAfter(deadline: .now() + Self.connectTimeout) { [weak self, weak connection] in
             guard let self, let connection, self.connection === connection else { return }

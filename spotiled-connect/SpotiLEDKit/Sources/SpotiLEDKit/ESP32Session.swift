@@ -73,7 +73,7 @@ public final class ControllerESP32Session: ControllerSessionManaging {
             assertionFailure("connect(to:name:) called for an unpaired controller: \(name)")
             return
         }
-        connection.connect(to: endpoint, name: name, path: "/", tls: .pinned(fingerprint))
+        connection.connect(to: endpoint, name: name, path: "/", tls: .pinned(fingerprint: fingerprint))
     }
 
     public func disconnect() {
