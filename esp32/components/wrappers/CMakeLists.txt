@@ -5,6 +5,7 @@ idf_component_register(
          "WiFiProv.cpp"
          "HTTPD.cpp"
          "UDPSocket.cpp"
+         "NVSSecurity.cpp"
     INCLUDE_DIRS "include"
     REQUIRES i_nterfaces
              util

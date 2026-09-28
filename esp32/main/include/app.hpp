@@ -5,6 +5,7 @@
 #include "HTTPD.hpp"
 #include "Handle.hpp"
 #include "LED.hpp"
+#include "NVSSecurity.hpp"
 #include "UDPServer.hpp"
 #include "UDPSocket.hpp"
 #include "WSServer.hpp"
@@ -44,6 +45,7 @@ using runtime_t = Runtime<RuntimeTypes>;
 struct AppHandles {
     Handle<DftEventLoop> eloop;
     Netif netif;
+    u_ptr<NVSSecurity> nvs_security;
     NVSHandle nvs;
     TimeHandle time;
     MDNSHandle mdns;

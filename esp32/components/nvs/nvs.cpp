@@ -7,6 +7,8 @@
 
 static const char *TAG = "NVS";
 
+using namespace std;
+
 namespace _NVS {
 u_ptr<nvs::NVSHandle> open(const char *part, nvs_open_mode_t mode,
                            esp_err_t *err) {
@@ -38,21 +40,26 @@ void write(const char *part, const char *key, const T &value) {
 }
 } // namespace _NVS
 
-NVS::NVS() : NVS{NVS_DEFAULT_PART_NAME} {}
+NVS::NVS(I_NVSSecurity &security) : NVS{NVS_DEFAULT_PART_NAME, security} {}
 
-NVS::NVS(std::string_view part) : part{part.data() ? part.data() : ""} {
-    UTIL_THROW(part.empty(), NullError);
-    auto ret = nvs_flash_init_partition(this->part.data());
+NVS::NVS(std::string_view part, I_NVSSecurity &security)
+    : part{part.data() ? part.data() : ""}, security{security} {}
+
+NVS::~NVS() noexcept { nvs_flash_deinit_partition(this->part.data()); }
+
+NVS::NVS(NVS &&other) : security{other.security} {}
+
+esp_err_t NVS::init() {
+    UTIL_THROW(part.empty(), NullError, "nvs part null name");
+    auto ret = init_partition();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES ||
         ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
         if (erase() == ESP_OK)
             UTIL_LOGW("NVS \"%s\" erased", this->part.data());
-        ret = nvs_flash_init_partition(this->part.data());
+        ret = init_partition();
     }
-    UTIL_THROW(ret, InitError, "NVS");
+    return ret;
 }
-
-NVS::~NVS() noexcept { nvs_flash_deinit_partition(this->part.data()); }
 
 esp_err_t NVS::erase() {
     auto handle = open(NVS_READWRITE);
@@ -125,4 +132,37 @@ esp_err_t NVS::get_string(NVSHandle &h, K key, char *out, size_t len) const {
     auto err = h.get_string(key, out, len);
     UTIL_THROW(_NVS::ignore_not_found(err), NVSError, "get string");
     return err;
+}
+
+esp_err_t NVS::init_partition() {
+    auto &sec = security.get();
+    if (!sec.is_flash_encrypted())
+        return nvs_flash_init_partition(this->part.data());
+    auto cfg = nvs_sec_cfg_t{};
+    auto ret = sec.read_security_cfg(&cfg);
+    if (ret == ESP_ERR_NVS_KEYS_NOT_INITIALIZED ||
+        ret == ESP_ERR_NVS_CORRUPT_KEY_PART) {
+        sec.generate_keys(&cfg);
+    } else if (ret != ESP_OK)
+        return ret;
+    return sec.secure_init_partition(part.data(), &cfg);
+}
+
+esp_err_t NVSUnencrypted::read_security_cfg(nvs_sec_cfg_t *cfg) {
+    (void)cfg;
+    UTIL_THROW(1, RuntimeError, "flash not excrypted");
+    return ESP_FAIL;
+}
+
+esp_err_t secure_init_partition(const char *name, nvs_sec_cfg_t *cfg) {
+    (void)name;
+    (void)cfg;
+    UTIL_THROW(1, RuntimeError, "flash not excrypted");
+    return ESP_FAIL;
+}
+
+esp_err_t generate_keys(nvs_sec_cfg_t *cfg) {
+    (void)cfg;
+    UTIL_THROW(1, RuntimeError, "flash not excrypted");
+    return ESP_FAIL;
 }

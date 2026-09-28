@@ -46,6 +46,7 @@ template <typename T> class GlobalHandle : public util::MoveSafe<T> {
         GlobalHandle::setter.value()(std::move(instance));
     }
     GlobalHandle(GlobalHandle &&) = default;
+    GlobalHandle(GlobalHandle &) = delete;
     ~GlobalHandle() noexcept {
         if (this->last()) {
             GlobalHandle::setter.value()(nullptr);

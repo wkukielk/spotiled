@@ -1,5 +1,6 @@
 #include "app.hpp"
 #include "Configurer.hpp"
+#include "NVSSecurity.hpp"
 #include "WiFi.hpp"
 #include "global.hpp"
 #include "server/server.hpp"
@@ -10,11 +11,32 @@ using namespace std;
 
 App::App(AppHandles &&handles) : handles{move(handles)} {}
 
+struct NVSHandles {
+    u_ptr<NVSSecurity> nvs_security;
+    NVS cfg;
+    NVS enc;
+    NVSHandle dft;
+};
+
+NVSHandles init_nvs() {
+    auto nvs_security = mkuptr<NVSSecurity>();
+    auto cfgnvs = NVS{"cfg", *nvs_security};
+    auto encnvs = NVS{"encnvs", *nvs_security};
+    auto nvs = mkuptr<NVS>(*nvs_security);
+    nvs->init();
+    cfgnvs.init();
+    encnvs.init();
+
+    return {.nvs_security{move(nvs_security)},
+            .cfg{move(cfgnvs)},
+            .enc{move(encnvs)},
+            .dft{move(nvs)}};
+}
+
 App App::create() {
-    auto cfgnvs = NVS{"cfg"};
-    auto encnvs = NVS{"encnvs"};
-    auto nvs = NVSHandle{mkuptr<NVS>()};
-    auto cfg_reader = Configurer{cfgnvs, nvs_(), encnvs};
+    auto nvs_handles = init_nvs();
+
+    auto cfg_reader = Configurer{nvs_handles.cfg, nvs_(), nvs_handles.enc};
     cfg_reader.preconfigure();
 
     auto eloop = Handle<DftEventLoop>{};
@@ -31,7 +53,8 @@ App App::create() {
     auto handles = AppHandles{
         .eloop{move(eloop)},
         .netif{move(netif)},
-        .nvs{move(nvs)},
+        .nvs_security{move(nvs_handles.nvs_security)},
+        .nvs{move(nvs_handles.dft)},
         .time{move(time)},
         .mdns{move(mdns)},
         .led{move(led)},
