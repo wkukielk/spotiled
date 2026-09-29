@@ -30,16 +30,22 @@ TEST_F(ProvisioningTest, isProvisioned) {
 }
 
 TEST_F(ProvisioningTest, success) {
+    InSequence inseq;
+
     EXPECT_CALL(wifi_prov, start_provisioning(_, _, StrEq(service_name), _));
     EXPECT_CALL(event_group, wait(success_bit | fail_bit))
         .WillOnce(Return(success_bit));
+    EXPECT_CALL(event_group, wait(end_bit)).WillOnce(Return(end_bit));
     EXPECT_EQ(prov.connect(), ESP_OK);
 }
 
 TEST_F(ProvisioningTest, failAndRecover) {
+    InSequence inseq;
+
     EXPECT_CALL(event_group, wait(success_bit | fail_bit))
-        .Times(2)
-        .WillOnce(Return(fail_bit))
+        .WillOnce(Return(fail_bit));
+    EXPECT_CALL(event_group, wait(end_bit)).WillOnce(Return(end_bit));
+    EXPECT_CALL(event_group, wait(success_bit | fail_bit))
         .WillOnce(Return(success_bit));
     EXPECT_CALL(event_group, wait(end_bit)).WillOnce(Return(end_bit));
     EXPECT_EQ(prov.connect(), ESP_OK);

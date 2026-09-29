@@ -54,7 +54,7 @@ extern const char *PROV_TAG;
 
 namespace provisioning {
 void print_qr(const char *name, const char *transport);
-std::string get_service_name();
+template <WiFiHandle WiFi> std::string get_service_name();
 
 extern uint8_t custom_service_uuid[16];
 } // namespace provisioning

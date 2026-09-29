@@ -82,7 +82,7 @@ template <WiFiManagerTypes T> int WiFiManager<T>::reprovision() {
 }
 
 template <WiFiManagerTypes T> void WiFiManager<T>::switch_to_prov() {
-    auto name = provisioning::get_service_name();
+    auto name = provisioning::get_service_name<WiFi>();
     provisioning.emplace(event_group, name);
     handler.off();
 }

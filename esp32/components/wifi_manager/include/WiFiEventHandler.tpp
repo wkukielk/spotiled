@@ -39,7 +39,6 @@ WiFiEventHandler<T>::~WiFiEventHandler() noexcept {
     if (!instance && !ip_instance)
         return;
     WiFiEventHandler::event_group = nullptr;
-    ESP_LOGW("HANDLER", "handler unregister");
     DEL::get().handler_unregister(IP_EVENT, IP_EVENT_STA_GOT_IP, ip_instance);
     DEL::get().handler_unregister(WIFI_EVENT, ESP_EVENT_ANY_ID, instance);
 }
@@ -59,7 +58,6 @@ void WiFiEventHandler<T>::handler(void *arg, esp_event_base_t event_base,
     (void)arg;
     (void)event_base;
     (void)event_id;
-    ESP_LOGW("wifihandler", "wifihandler");
     switch (event_id) {
     case WIFI_EVENT_STA_START:
         event_group->clear(wifi::end_bit);

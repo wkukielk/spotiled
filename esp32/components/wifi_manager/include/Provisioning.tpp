@@ -7,6 +7,16 @@
 #include "wifi_aux.hpp"
 #include <stdexcept>
 
+namespace provisioning {
+template <WiFiHandle WiFi> std::string get_service_name() {
+    uint8_t eth_mac[6];
+    const char *ssid_prefix = "PROV_";
+    WiFi::get().get_mac(WiFiIF::STA, eth_mac);
+    return straux::strprintf("%s%02X%02X%02X", ssid_prefix, eth_mac[3],
+                             eth_mac[4], eth_mac[5]);
+}
+} // namespace provisioning
+
 template <ProvisioningTypes T>
 Provisioning<T>::Provisioning(EventGroup &event_group,
                               std::string_view prov_name)

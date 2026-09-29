@@ -1,9 +1,16 @@
+#include "MockNVSSecurity.hpp"
 #include "errors.hpp"
 #include "nvs.hpp"
 #include "nvs_handle.hpp"
 #include "straux.hpp"
 #include "util.hpp"
 #include <gtest/gtest.h>
+
+using namespace testing;
+
+u_ptr<NVS> create_unencrypted_nvs(I_NVSSecurity &sec, const char *part_lbl) {
+    return part_lbl ? mkuptr<NVS>(part_lbl, sec) : mkuptr<NVS>(sec);
+}
 
 struct NVSPartitionLabel {
     const char *part_lbl;
@@ -13,7 +20,9 @@ class NVSTest : public testing::TestWithParam<NVSPartitionLabel> {
   protected:
     NVSTest() {
         const auto &p = GetParam();
-        nvsstore = p.part_lbl ? mkuptr<NVS>(p.part_lbl) : mkuptr<NVS>();
+        auto sec = mkuptr<NVSUnencrypted>();
+        nvsstore = create_unencrypted_nvs(*sec, p.part_lbl);
+        nvsstore->init();
     }
     ~NVSTest() { nvsstore->erase(); }
 
@@ -80,9 +89,52 @@ TEST_P(NVSTest, readNullKeyStr) {
     ASSERT_THROW(nvsstore->read(nullptr), NullError);
 }
 
+class NVSTestInit : public testing::Test {
+  protected:
+    NVSTestInit() : security{}, nvsstore{security} {}
+
+    MockNVSSecurity security;
+    NVS nvsstore;
+};
+
+TEST_F(NVSTestInit, unencrypted) {
+    EXPECT_CALL(security, is_flash_encrypted()).WillOnce(Return(false));
+    nvsstore.init();
+}
+
+TEST_F(NVSTestInit, encryptedFirstBoot) {
+    InSequence inseq;
+
+    EXPECT_CALL(security, is_flash_encrypted()).WillOnce(Return(true));
+    EXPECT_CALL(security, read_security_cfg(_))
+        .WillOnce(Return(ESP_ERR_NVS_KEYS_NOT_INITIALIZED));
+    EXPECT_CALL(security, generate_keys(_)).WillOnce(Return(ESP_OK));
+    EXPECT_CALL(security,
+                secure_init_partition(StrEq(NVS_DEFAULT_PART_NAME), _))
+        .WillOnce(Return(ESP_OK));
+
+    nvsstore.init();
+}
+
+TEST_F(NVSTestInit, encryptedNextBoot) {
+    InSequence inseq;
+
+    EXPECT_CALL(security, is_flash_encrypted()).WillOnce(Return(true));
+    EXPECT_CALL(security, read_security_cfg(_)).WillOnce(Return(ESP_OK));
+    EXPECT_CALL(security,
+                secure_init_partition(StrEq(NVS_DEFAULT_PART_NAME), _))
+        .WillOnce(Return(ESP_OK));
+
+    nvsstore.init();
+}
+
 TEST(NVSTestTwoPartitions, write_read) {
-    auto nvsstore1 = mkuptr<NVS>();
-    auto nvsstore2 = mkuptr<NVS>("cfg");
+    auto sec = mkuptr<NVSUnencrypted>();
+    auto nvsstore1 = create_unencrypted_nvs(*sec, nullptr);
+    nvsstore1->init();
+    auto nvsstore2 = create_unencrypted_nvs(*sec, "cfg");
+    nvsstore2->init();
+
     nvsstore1->write_time_t("test", 10);
     nvsstore2->write_time_t("test", 20);
     time_t read1 = 0;

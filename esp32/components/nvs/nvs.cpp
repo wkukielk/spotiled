@@ -142,7 +142,7 @@ esp_err_t NVS::init_partition() {
     auto ret = sec.read_security_cfg(&cfg);
     if (ret == ESP_ERR_NVS_KEYS_NOT_INITIALIZED ||
         ret == ESP_ERR_NVS_CORRUPT_KEY_PART) {
-        sec.generate_keys(&cfg);
+        UTIL_THROW(sec.generate_keys(&cfg), RuntimeError, "nvs keygen fail");
     } else if (ret != ESP_OK)
         return ret;
     return sec.secure_init_partition(part.data(), &cfg);
@@ -154,14 +154,15 @@ esp_err_t NVSUnencrypted::read_security_cfg(nvs_sec_cfg_t *cfg) {
     return ESP_FAIL;
 }
 
-esp_err_t secure_init_partition(const char *name, nvs_sec_cfg_t *cfg) {
+esp_err_t NVSUnencrypted::secure_init_partition(const char *name,
+                                                nvs_sec_cfg_t *cfg) {
     (void)name;
     (void)cfg;
     UTIL_THROW(1, RuntimeError, "flash not excrypted");
     return ESP_FAIL;
 }
 
-esp_err_t generate_keys(nvs_sec_cfg_t *cfg) {
+esp_err_t NVSUnencrypted::generate_keys(nvs_sec_cfg_t *cfg) {
     (void)cfg;
     UTIL_THROW(1, RuntimeError, "flash not excrypted");
     return ESP_FAIL;
