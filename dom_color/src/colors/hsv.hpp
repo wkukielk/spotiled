@@ -35,9 +35,9 @@ struct HSV
     floatHSV to_float() const;
     bool operator==(const HSV &) const;
 
-    static const uint16_t kMaxHue = (360 << 7);
-    static const uint16_t kMaxSat = (1 << 15);
-    static const uint16_t kMaxVal = (1 << 15);
+    static constexpr uint16_t kMaxHue = (360 << 7);
+    static constexpr uint16_t kMaxSat = (1 << 15);
+    static constexpr uint16_t kMaxVal = (1 << 15);
 };
 
 #endif

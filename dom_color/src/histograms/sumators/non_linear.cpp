@@ -1,5 +1,6 @@
 #include "non_linear.hpp"
 #include "wraparound_it.hpp"
+#include <memory>
 
 
 namespace hist {
@@ -11,16 +12,16 @@ namespace hist {
                 const {
             if (depth > sizeof(weights) - 1)
                 return 0;
-            auto curr = wraparound_iterator{clusters, center};
+            auto curr = wraparound_iterator{clusters, clusters.begin() + (center - begin)};
             curr -= ((1<<depth) - 1);
             auto curr_depth = depth + 1;
             auto curr_width = 1 << (depth - 1);
             uint64_t count = 0;
             while (--curr_depth != 0) {
                 count += weights[curr_depth] *
-                    wrap_interval_count(curr.base(), curr_width);
+                    wrap_interval_count(std::to_address(curr.base()), curr_width);
                 count += weights[curr_depth] *
-                    wrap_interval_count((curr+offsets[curr_depth]).base(), curr_width);
+                    wrap_interval_count(std::to_address((curr+offsets[curr_depth]).base()), curr_width);
                 curr += curr_width;
                 curr_width /= 2;
             }
@@ -32,16 +33,16 @@ namespace hist {
                 const {
             if (depth > sizeof(weights) - 1)
                 return 0;
-            auto curr = wraparound_iterator{clusters, center};
+            auto curr = wraparound_iterator{clusters, clusters.begin() + (center - begin)};
             curr -= ((1<<depth) - 1);
             auto curr_depth = depth + 1;
             auto curr_width = 1 << (depth - 1);
             uint64_t sum = 0;
             while (--curr_depth != 0) {
                 sum += weights[curr_depth] *
-                    (uint64_t)wrap_interval_sum(curr.base(), curr_width);
+                    (uint64_t)wrap_interval_sum(std::to_address(curr.base()), curr_width);
                 sum += weights[curr_depth] *
-                    (uint64_t)wrap_interval_sum((curr + offsets[curr_depth]).base(),
+                    (uint64_t)wrap_interval_sum(std::to_address((curr + offsets[curr_depth]).base()),
                                                 curr_width);
                 curr += curr_width;
                 curr_width /= 2;

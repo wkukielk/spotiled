@@ -8,12 +8,12 @@ namespace hist {
 namespace sumators {
 class WrapAround : public Basic {
   public:
-    WrapAround(const ClusterArray &, uint16_t exclusive_upper_bound);
+    WrapAround(std::span<const MyCluster>, uint16_t exclusive_upper_bound);
     uint32_t wrap_interval_count(const MyCluster *clusters, size_t size) const;
     uint32_t wrap_interval_sum(const MyCluster *, size_t length) const;
 
   protected:
-    const ClusterArray &clusters;
+    const std::span<const MyCluster> clusters;
     const uint16_t upper_bound;
 };
 }; // namespace sumators

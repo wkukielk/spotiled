@@ -44,6 +44,13 @@ TEST(HueHistogram, MostlyGreyIsGrey) {
     EXPECT_TRUE(histogram.get_dominant().is_grey);
 }
 
+TEST(HueHistogram, EmptyIsGrey) {
+    HueHistogram histogram;
+    auto dominant = histogram.get_dominant();
+    EXPECT_TRUE(dominant.is_grey);
+    EXPECT_EQ(dominant.count, 0u);
+}
+
 TEST(HueHistogram, ResetClearsCounts) {
     HueHistogram histogram;
     histogram.add_pixel(HSV{deg(200), HSV::kMaxSat, HSV::kMaxVal});
