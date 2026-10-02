@@ -4,20 +4,19 @@
 
 namespace hist {
     namespace sumators {
-        Basic::Basic(std::span<const MyCluster> clusters) :
-            begin{clusters.data()}, end{clusters.data() + clusters.size()} {}
+        Basic::Basic(std::span<const MyCluster> clusters) : clusters{clusters} {}
 
-        uint32_t Basic::interval_count(const MyCluster* clusters, uint8_t size) const {
-            if (clusters < begin || clusters + size > end)
+        uint32_t Basic::interval_count(const MyCluster* first, uint8_t size) const {
+            if (first < clusters.data() || first + size > clusters.data() + clusters.size())
                 return 0;
-            return std::transform_reduce(clusters, clusters + size, uint32_t{0},
+            return std::transform_reduce(first, first + size, uint32_t{0},
                 std::plus{}, [](const MyCluster& cluster) { return cluster.count; });
         }
 
-        uint32_t Basic::interval_sum(const MyCluster* clusters, uint8_t size) const {
-            if (clusters < begin || clusters + size > end)
+        uint32_t Basic::interval_sum(const MyCluster* first, uint8_t size) const {
+            if (first < clusters.data() || first + size > clusters.data() + clusters.size())
                 return 0;
-            return std::transform_reduce(clusters, clusters + size, uint32_t{0},
+            return std::transform_reduce(first, first + size, uint32_t{0},
                 std::plus{}, [](const MyCluster& cluster) { return cluster.sum; });
         }
     };

@@ -34,9 +34,7 @@ namespace hist {
                 max_count = 0;
                 const MyCluster* current = end - precission.get_cluster_size() + 1;
                 for (; current != end; ++current) {
-                    auto current_count = sumator.interval_count(current, end - current);
-                    current_count += sumator.interval_count(begin,
-                        precission.get_cluster_size() - (end - current));
+                    auto current_count = sumator.wrap_interval_count(current, precission.get_cluster_size());
                     if (current_count > max_count) {
                         largest = current;
                         max_count = current_count;
@@ -44,7 +42,7 @@ namespace hist {
                 }
                 current = begin;
                 do {
-                    auto current_count = sumator.interval_count(current, precission.get_cluster_size());
+                    auto current_count = sumator.wrap_interval_count(current, precission.get_cluster_size());
                     if (current_count > max_count) {
                         largest = current;
                         max_count = current_count;
