@@ -1,5 +1,6 @@
 #include "rgb.hpp"
 #include "hsv.hpp"
+#include <algorithm>
 #include <cmath>
 
 
@@ -56,12 +57,9 @@ RGB::RGB(const HSV& hsv) {
 }
 
 uint16_t RGB::to_pixel16() const {
-    uint8_t r5 = r;
-    uint8_t g6 = g;
-    uint8_t b5 = b;
-    (r5 += 0x4) >>= 3;
-    (g6 += 0x2) >>= 2;
-    (b5 += 0x4) >>= 3;
+    uint8_t r5 = std::min(r + 0x4, 0xFF) >> 3;
+    uint8_t g6 = std::min(g + 0x2, 0xFF) >> 2;
+    uint8_t b5 = std::min(b + 0x4, 0xFF) >> 3;
     return b5 | (g6 << 5) | (r5 << 11);
 }
 

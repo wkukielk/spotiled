@@ -78,7 +78,7 @@ namespace hist {
         uint16_t NonLinear::get_representant_value(const MyCluster* clusters, uint8_t depth) const {
             uint64_t sum = sumator.neighbourhood_sum(clusters, depth);
             uint64_t count = sumator.neighbourhood_count(clusters, depth);
-            uint64_t boundary = count * histogram.get_upper_bound();
+            uint64_t boundary = count * (histogram.get_upper_bound() >> hshift);
             if (sum >= boundary) {
                 sum -= boundary;
             }
