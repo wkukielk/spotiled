@@ -48,7 +48,7 @@ namespace hist {
                         max_count = current_count;
                     }
                 } while ( current++ + precission.get_cluster_size() != end );
-            } while (not alpha6.is_count_enough(max_count, histogram.get_count() / basesz) &&
+            } while (not alpha6.is_count_enough(max_count, histogram.get_count()) &&
                 (--precission).get_precission() != 0);
             if (precission.get_precission())
                 return {
