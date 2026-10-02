@@ -17,6 +17,9 @@ struct Dominant {
     bool is_grey;
     static Dominant grey;
 };
+
+Dominant create_grey(uint32_t grey_count);
+Dominant convert_dominant(const hist::Dominant &dominant);
 }; // namespace hue_hist
 
 class HueHistogram {
@@ -36,8 +39,8 @@ class HueHistogram {
     hist::sumators::WrapAround sumator;
     hist::analyzers::WrapAround analyzer;
     uint16_t grey_count = 0;
-    uint8_t alpha =
-        1; // calculation of dominant starts if grey_count / count >= alpha
+    uint8_t alpha = 1;
+    // calculation of dominant starts if grey_count / count >= alpha
     uint8_t beta = 1; // passed to the analyzer as its "alpha coefficient"
 };
 

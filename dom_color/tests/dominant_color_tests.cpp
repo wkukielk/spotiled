@@ -80,3 +80,7 @@ INSTANTIATE_TEST_SUITE_P(
         Case{"random_seed3", random_image(3), {185, 185, 185}},
         Case{"noisy_orange", noisy_orange(), {225, 66, 11}}),
     [](const testing::TestParamInfo<Case> &info) { return info.param.name; });
+
+TEST(DominantColorEdge, EmptyIsBlack) {
+    EXPECT_EQ(get_dominating_color({}), (RGB{0, 0, 0}));
+}

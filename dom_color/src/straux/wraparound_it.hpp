@@ -2,21 +2,22 @@
 #define WRAP_AROUND_ITERATOR
 
 #include <iterator>
+#include <ranges>
 #include <stdexcept>
 
 template <class C>
-concept WrapContainer = requires {
-    typename C::const_iterator;
-    requires std::random_access_iterator<typename C::const_iterator>;
-};
+concept WrapContainer = std::ranges::random_access_range<const C> &&
+                        std::ranges::sized_range<const C>;
 
 template <WrapContainer C>
 class wraparound_iterator
 {
 public:
-    wraparound_iterator(const C &container, typename C::const_iterator pointer);
+    using iterator = std::ranges::iterator_t<const C>;
 
-    typename C::const_iterator base() const noexcept { return pointer; }
+    wraparound_iterator(const C &container, iterator pointer);
+
+    iterator base() const noexcept { return pointer; }
 
     wraparound_iterator &operator++() noexcept;
     wraparound_iterator operator++(int) noexcept;
@@ -25,15 +26,15 @@ public:
     wraparound_iterator &operator+=(int n) noexcept;
     wraparound_iterator &operator-=(int n) noexcept;
 
-    const typename C::value_type &operator*() const noexcept;
-    typename C::const_iterator operator->() const noexcept;
+    std::ranges::range_reference_t<const C> operator*() const noexcept;
+    iterator operator->() const noexcept;
 
     bool operator==(const wraparound_iterator<C> &other) const noexcept;
     bool operator!=(const wraparound_iterator<C> &other) const noexcept;
 
 private:
     const C &container;
-    typename C::const_iterator pointer = nullptr;
+    iterator pointer;
 };
 
 template <typename C>

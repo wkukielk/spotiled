@@ -52,7 +52,7 @@ TEST(HSV, GreysHaveZeroSaturation) {
         EXPECT_EQ(hsv.h, 0) << c;
         EXPECT_EQ(hsv.s, 0) << c;
     }
-    EXPECT_EQ((HSV{RGB{255, 255, 255}}.v), uint16_t{HSV::kMaxVal});
+    EXPECT_EQ((HSV{RGB{255, 255, 255}}.v), HSV::kMaxVal);
     EXPECT_EQ((HSV{RGB{0, 0, 0}}.v), 0);
 }
 

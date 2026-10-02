@@ -5,7 +5,21 @@
 namespace hue_hist {
 Dominant Dominant::grey =
     Dominant{.bounds = {.lower = 0, .upper = 0}, .count = 0, .is_grey = true};
+
+Dominant create_grey(uint32_t grey_count) {
+    auto grey = Dominant::grey;
+    grey.count = grey_count;
+    return grey;
 }
+
+Dominant convert_dominant(const hist::Dominant &dominant) {
+    return Dominant{.bounds = {.lower = dominant.bounds.lower,
+                               .upper = dominant.bounds.upper},
+                    .hue = dominant.value,
+                    .count = dominant.count,
+                    .is_grey = false};
+}
+} // namespace hue_hist
 
 HueHistogram::HueHistogram(uint8_t alpha, uint8_t beta)
     : histogram{HSV::kMaxHue},
@@ -13,28 +27,16 @@ HueHistogram::HueHistogram(uint8_t alpha, uint8_t beta)
       analyzer{histogram, sumator}, alpha{alpha}, beta{beta} {}
 
 hue_hist::Dominant HueHistogram::get_dominant() {
-    auto dominant_hue = hue_hist::Dominant{};
-    if (alpha * grey_count >
-        get_count()) { // default threshhold is 1/129 of non-grey fully
-                       // saturated and valued pixels
-        dominant_hue = hue_hist::Dominant::grey;
-        dominant_hue.count = grey_count;
-    } else {
+    if (get_count() == 0 || alpha * grey_count > get_count())
+        return hue_hist::create_grey(grey_count);
+    else {
         analyzer.set_alpha(calculate_beta());
         auto dominant_value = analyzer.get_dominant();
-        if (dominant_value.count == 0) {
-            dominant_hue = hue_hist::Dominant::grey;
-            dominant_hue.count = grey_count;
-        } else {
-            dominant_hue = hue_hist::Dominant{
-                .bounds = {.lower = dominant_value.bounds.lower,
-                           .upper = dominant_value.bounds.upper},
-                .hue = dominant_value.value,
-                .count = dominant_value.count,
-                .is_grey = false};
-        }
+        if (dominant_value.count == 0)
+            return hue_hist::create_grey(grey_count);
+        else
+            return hue_hist::convert_dominant(dominant_value);
     }
-    return dominant_hue;
 }
 
 uint16_t HueHistogram::add_pixel(const HSV &hsv) {

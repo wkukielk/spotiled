@@ -2,12 +2,13 @@
 #define SUMATORS_BASIC_HPP
 
 #include "histogram_aux.hpp"
+#include <span>
 
 namespace hist {
 namespace sumators {
 class Basic {
   public:
-    Basic(const ClusterArray &clusters);
+    Basic(std::span<const MyCluster> clusters);
     uint32_t interval_count(const MyCluster *clusters, uint8_t size) const;
     uint32_t interval_sum(const MyCluster *clusters, uint8_t size) const;
 

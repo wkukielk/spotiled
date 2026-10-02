@@ -21,7 +21,7 @@ class AlphaCoefficient6 {
     static const uint8_t alpha_shift = 8;
 };
 
-// alpha = 1 means "anything not less than boundary_count is enough"
+// alpha = 1 means "above boundary_count is enough"
 // alpha = 255 means "only 48 times boundary_count is enough"
 class AlphaCoefficient48 {
   public:

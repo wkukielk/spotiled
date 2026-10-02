@@ -3,7 +3,7 @@
 
 namespace hist {
     namespace sumators {
-        WrapAround::WrapAround(const ClusterArray& clusters,
+        WrapAround::WrapAround(std::span<const MyCluster> clusters,
                 uint16_t exclusive_upper_bound) :
             Basic{clusters}, clusters{clusters}, upper_bound{exclusive_upper_bound} {}
         

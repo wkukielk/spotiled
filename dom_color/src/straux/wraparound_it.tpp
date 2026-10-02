@@ -4,7 +4,7 @@
 #include "wraparound_it.hpp"
 
 template <WrapContainer C>
-wraparound_iterator<C>::wraparound_iterator(const C &container, typename C::const_iterator pointer)
+wraparound_iterator<C>::wraparound_iterator(const C &container, iterator pointer)
     : container{container}, pointer{pointer}
 {
     if (pointer < container.begin() || container.end() <= pointer)
@@ -62,13 +62,13 @@ wraparound_iterator<C> &wraparound_iterator<C>::operator-=(int n) noexcept
 }
 
 template <WrapContainer C>
-const typename C::value_type &wraparound_iterator<C>::operator*() const noexcept
+std::ranges::range_reference_t<const C> wraparound_iterator<C>::operator*() const noexcept
 {
     return *pointer;
 }
 
 template <WrapContainer C>
-typename C::const_iterator wraparound_iterator<C>::operator->() const noexcept
+typename wraparound_iterator<C>::iterator wraparound_iterator<C>::operator->() const noexcept
 {
     return pointer;
 }
