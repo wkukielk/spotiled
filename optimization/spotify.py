@@ -1,43 +1,41 @@
 import numpy as np
-import spotipy
-from spotipy.oauth2 import SpotifyClientCredentials
+import tekore as tk
+from typing import cast
+from collections.abc import Awaitable
 from dataclasses import dataclass
+from tekore.model import SimpleAlbumPaging, SimpleAlbum
 
 
 @dataclass
 class SpotifyAlbumDto:
     id: str
+    name: str
+    artist: str
     image_url: str
 
 
 class Spotify:
-    def __init__(self, client_id, client_secret):
-        self._sp = spotipy.Spotify(
-            auth_manager=SpotifyClientCredentials(
-                client_id=client_id,
-                client_secret=client_secret
-            )
+    def __init__(self, spotify: tk.Spotify):
+        self._spotify = spotify
+
+    @classmethod
+    def create(cls, client_id: str, client_secret: str) -> "Spotify":
+        token = tk.request_client_token(client_id, client_secret)
+        spotify = tk.Spotify(token, asynchronous=True)
+        return cls(spotify)
+
+
+    async def fetch_album(self, name) -> SpotifyAlbumDto | None:
+        simple_album = await self._get_album(name)
+        return self._map_album(simple_album) if simple_album else None
+
+    async def _get_album(self, name) -> SimpleAlbum | None:
+        albums: SimpleAlbumPaging
+        albums, = await cast(
+            Awaitable[tuple[SimpleAlbumPaging]],
+            self._spotify.search(name, types=("album",), market="PL", limit=1),
         )
-
-    def fetch_album(self, name) -> SpotifyAlbumDto | None:
-        album_dict = self._get_album(name)
-        return self._map_album(album_dict) if album_dict else None
-
-    def get_token(self) -> str | None:
-        mgr = self._sp.auth_manager
-        return mgr.get_access_token() if mgr else None
-
-    def _get_album(self, name) -> dict | None:
-        results = self._sp.search(
-            name,
-            limit=1,
-            offset=0,
-            type="album",
-            market="PL"
-        )
-        albums_dict = (results or {}).get("albums")
-        albums = albums_dict.get("items", []) if albums_dict else []
-        return albums[0] if albums else None
+        return albums.items[0] if albums.items else None
 
 
     def _get_playlist_item_album(self, item: dict) -> dict | None:
@@ -51,12 +49,14 @@ class Spotify:
         return album if images[0].get("url") else None
 
 
-    def _map_album(self, album_dict: dict) -> SpotifyAlbumDto | None:
-        images = album_dict.get("images")
-        if not images or not images[-1].get("url"):
+    def _map_album(self, simple_album: SimpleAlbum) -> SpotifyAlbumDto | None:
+        images = simple_album.images
+        if not images or not simple_album.artists:
             return None
 
         return SpotifyAlbumDto(
-            id=album_dict["id"],
-            image_url=images[0]["url"],
+            id=simple_album.id,
+            name=simple_album.name,
+            artist=simple_album.artists[0].name,
+            image_url=images[-1].url,
         )
