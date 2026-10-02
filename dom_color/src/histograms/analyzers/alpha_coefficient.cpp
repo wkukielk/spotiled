@@ -13,8 +13,8 @@ namespace hist {
         }
 
         bool AlphaCoefficient6::is_count_enough(uint32_t count,
-                uint32_t boundary_count) const {
-            return (uint64_t)count << alpha_shift >= alpha6 * (uint64_t)boundary_count;
+                uint32_t total) const {
+            return (uint64_t)count * 6 << alpha_shift >= alpha6 * (uint64_t)total;
         }
 
         AlphaCoefficient48::AlphaCoefficient48(uint8_t alpha) : alpha{alpha} {
