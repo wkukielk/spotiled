@@ -5,7 +5,7 @@
 
 template <WrapContainer C>
 wraparound_iterator<C>::wraparound_iterator(const C &container, iterator pointer)
-    : container{container}, pointer{pointer}
+    : container{&container}, pointer{pointer}
 {
     if (pointer < container.begin() || container.end() <= pointer)
         throw std::runtime_error{"pointer out of range"};
@@ -14,8 +14,8 @@ wraparound_iterator<C>::wraparound_iterator(const C &container, iterator pointer
 template <WrapContainer C>
 wraparound_iterator<C> &wraparound_iterator<C>::operator++() noexcept
 {
-    if (++pointer == container.end())
-        pointer = container.begin();
+    if (++pointer == container->end())
+        pointer = container->begin();
     return *this;
 }
 
@@ -30,8 +30,8 @@ wraparound_iterator<C> wraparound_iterator<C>::operator++(int) noexcept
 template <WrapContainer C>
 wraparound_iterator<C> &wraparound_iterator<C>::operator--() noexcept
 {
-    if (pointer-- == container.begin())
-        pointer = container.end() - 1;
+    if (pointer-- == container->begin())
+        pointer = container->end() - 1;
     return *this;
 }
 
@@ -47,8 +47,8 @@ template <WrapContainer C>
 wraparound_iterator<C> &wraparound_iterator<C>::operator+=(int n) noexcept
 {
     pointer += n;
-    while (pointer >= container.end())
-        pointer -= container.size();
+    while (pointer >= container->end())
+        pointer -= container->size();
     return *this;
 }
 
@@ -56,8 +56,8 @@ template <WrapContainer C>
 wraparound_iterator<C> &wraparound_iterator<C>::operator-=(int n) noexcept
 {
     pointer -= n;
-    while (pointer < container.begin())
-        pointer += container.size();
+    while (pointer < container->begin())
+        pointer += container->size();
     return *this;
 }
 

@@ -9,12 +9,11 @@ namespace sumators {
 class Basic {
   public:
     Basic(std::span<const MyCluster> clusters);
-    uint32_t interval_count(const MyCluster *clusters, uint8_t size) const;
-    uint32_t interval_sum(const MyCluster *clusters, uint8_t size) const;
+    uint32_t interval_count(const MyCluster *first, uint8_t size) const;
+    uint32_t interval_sum(const MyCluster *first, uint8_t size) const;
 
   protected:
-    const MyCluster *const begin;
-    const MyCluster *const end;
+    const std::span<const MyCluster> clusters;
 };
 }; // namespace sumators
 }; // namespace hist

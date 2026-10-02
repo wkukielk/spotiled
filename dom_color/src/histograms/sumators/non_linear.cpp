@@ -1,54 +1,57 @@
 #include "non_linear.hpp"
+#include "depth_it.hpp"
+#include "lap_it.hpp"
 #include "wraparound_it.hpp"
-#include <memory>
-
+#include <bit>
+#include <functional>
+#include <numeric>
+#include <ranges>
 
 namespace hist {
-    namespace sumators {
-        const uint8_t NonLinear::weights[] = {24, 8, 4, 2, 1};
-        const uint8_t NonLinear::offsets[] = {0, 2, 5, 11, 23};
+namespace sumators {
+namespace {
+auto neighbourhood(const std::span<const MyCluster> &clusters,
+                   const MyCluster *center, uint8_t depth) {
+    std::ptrdiff_t radius = (1 << depth) - 1;
+    auto left = lap_iterator{wraparound_iterator{
+        clusters, clusters.begin() + (center - clusters.data())} - (int)radius};
+    return std::views::counted(depth_iterator{left, -radius}, 2 * radius + 1) |
+           std::views::common;
+}
+} // namespace
 
-        uint64_t NonLinear::neighbourhood_count(const MyCluster* center, uint8_t depth)
-                const {
-            if (depth > sizeof(weights) - 1)
-                return 0;
-            auto curr = wraparound_iterator{clusters, clusters.begin() + (center - begin)};
-            curr -= ((1<<depth) - 1);
-            auto curr_depth = depth + 1;
-            auto curr_width = 1 << (depth - 1);
-            uint64_t count = 0;
-            while (--curr_depth != 0) {
-                count += weights[curr_depth] *
-                    wrap_interval_count(std::to_address(curr.base()), curr_width);
-                count += weights[curr_depth] *
-                    wrap_interval_count(std::to_address((curr+offsets[curr_depth]).base()), curr_width);
-                curr += curr_width;
-                curr_width /= 2;
-            }
-            count += weights[0] * (center -> count);
-            return count;
-        }
+const uint8_t NonLinear::weights[] = {24, 8, 4, 2, 1};
 
-        uint64_t NonLinear::neighbourhood_sum(const MyCluster* center, uint8_t depth)
-                const {
-            if (depth > sizeof(weights) - 1)
-                return 0;
-            auto curr = wraparound_iterator{clusters, clusters.begin() + (center - begin)};
-            curr -= ((1<<depth) - 1);
-            auto curr_depth = depth + 1;
-            auto curr_width = 1 << (depth - 1);
-            uint64_t sum = 0;
-            while (--curr_depth != 0) {
-                sum += weights[curr_depth] *
-                    (uint64_t)wrap_interval_sum(std::to_address(curr.base()), curr_width);
-                sum += weights[curr_depth] *
-                    (uint64_t)wrap_interval_sum(std::to_address((curr + offsets[curr_depth]).base()),
-                                                curr_width);
-                curr += curr_width;
-                curr_width /= 2;
-            }
-            sum += weights[0] * (uint64_t)(center -> sum);
-            return sum;
-        }
-    };
-};
+NonLinear::NonLinear(std::span<const MyCluster> clusters,
+                     uint16_t exclusive_upper_bound)
+    : clusters{clusters}, upper_bound{exclusive_upper_bound} {}
+
+uint64_t NonLinear::neighbourhood_count(const MyCluster *center,
+                                        uint8_t depth) const {
+    if (depth > sizeof(weights) - 1)
+        return 0;
+    auto clusters_around = neighbourhood(clusters, center, depth);
+    return std::transform_reduce(
+        clusters_around.begin(), clusters_around.end(), uint64_t{0},
+        std::plus{}, [](auto cluster) -> uint64_t {
+            auto weight = weights[std::bit_width((size_t)cluster.distance)];
+            return weight * cluster.value.value.count;
+        });
+}
+
+uint64_t NonLinear::neighbourhood_sum(const MyCluster *center,
+                                      uint8_t depth) const {
+    if (depth > sizeof(weights) - 1)
+        return 0;
+    uint64_t turn = upper_bound >> hshift;
+    auto clusters_around = neighbourhood(clusters, center, depth);
+    return std::transform_reduce(
+        clusters_around.begin(), clusters_around.end(), uint64_t{0},
+        std::plus{}, [turn](auto cluster) -> uint64_t {
+            auto weight = weights[std::bit_width((size_t)cluster.distance)];
+            auto [value, lap] = cluster.value;
+            return weight * (value.sum + lap * value.count * turn);
+        });
+}
+}; // namespace sumators
+}; // namespace hist
