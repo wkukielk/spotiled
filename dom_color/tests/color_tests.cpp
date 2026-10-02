@@ -33,6 +33,16 @@ TEST(RGB, Pixel16RoundTripIsExact) {
         ASSERT_EQ(RGB{(uint16_t)px}.to_pixel16(), px) << std::hex << px;
 }
 
+TEST(RGB, Pixel16RoundsWithoutOverflow) {
+    EXPECT_EQ((RGB{255, 0, 0}.to_pixel16()), 0xF800);
+    EXPECT_EQ((RGB{0, 255, 0}.to_pixel16()), 0x07E0);
+    EXPECT_EQ((RGB{0, 0, 255}.to_pixel16()), 0x001F);
+    EXPECT_EQ((RGB{255, 255, 255}.to_pixel16()), 0xFFFF);
+    EXPECT_EQ((RGB{252, 254, 252}.to_pixel16()), 0xFFFF);
+    EXPECT_EQ((RGB{251, 253, 251}.to_pixel16()), 0xFFFF);
+    EXPECT_EQ((RGB{243, 249, 243}.to_pixel16()), 0xF7DE);
+}
+
 TEST(RGB, Pixel32RoundTripIsExact) {
     for (uint32_t px = 0; px < (1u << 24); px += 101)
         ASSERT_EQ(RGB{px}.to_pixel32(), px) << std::hex << px;

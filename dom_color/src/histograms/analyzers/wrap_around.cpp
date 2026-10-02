@@ -33,7 +33,7 @@ namespace hist {
             do {
                 max_count = 0;
                 const MyCluster* current = end - precission.get_cluster_size() + 1;
-                while (current++ != end) {
+                for (; current != end; ++current) {
                     auto current_count = sumator.interval_count(current, end - current);
                     current_count += sumator.interval_count(begin,
                         precission.get_cluster_size() - (end - current));
@@ -63,9 +63,9 @@ namespace hist {
         }
 
         uint16_t WrapAround::get_representant_value(const MyCluster* clusters, uint8_t length) const {
-            uint32_t sum = sumator.wrap_interval_sum(clusters, length);
+            uint64_t sum = sumator.wrap_interval_sum(clusters, length);
             uint32_t count = sumator.wrap_interval_count(clusters, length);
-            auto boundary = count * histogram.get_upper_bound();
+            uint64_t boundary = (uint64_t)count * (histogram.get_upper_bound() >> hshift);
             if (sum >= boundary) {
                 sum -= boundary;
             }

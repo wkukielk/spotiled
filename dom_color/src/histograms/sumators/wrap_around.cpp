@@ -23,9 +23,9 @@ namespace hist {
             return count;
         }
 
-        uint32_t WrapAround::wrap_interval_sum(const MyCluster* left, size_t length)
+        uint64_t WrapAround::wrap_interval_sum(const MyCluster* left, size_t length)
                 const {
-            uint32_t sum = 0;
+            uint64_t sum = 0;
             if (left + length <= end)
                 for (auto curr = left; curr != left + length; ++curr)
                     sum += curr -> sum;
@@ -33,7 +33,7 @@ namespace hist {
                 for (auto curr = left; curr != end; ++curr)
                     sum += curr -> sum;
                 for (auto curr = begin; curr != begin + length - (end - left); ++curr)
-                    sum += curr -> sum + upper_bound;
+                    sum += curr -> sum + curr -> count * (upper_bound >> hshift);
             }
             return sum;
         }

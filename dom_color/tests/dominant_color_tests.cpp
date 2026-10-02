@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
 #include "dominant_color.hpp"
+#include "hsv.hpp"
 #include <random>
 #include <vector>
 
@@ -33,6 +34,33 @@ std::vector<uint16_t> noisy_orange() {
         auto b = (uint8_t)(gen() % 40);
         px = RGB{r, g, b}.to_pixel16();
     }
+    return image;
+}
+
+// Fully saturated pixels with hues spread evenly over centre +- 15 deg.
+std::vector<uint16_t> hue_spread(int centre) {
+    std::vector<uint16_t> image;
+    for (int quarter = -60; quarter <= 60; ++quarter) {
+        int hue = ((centre * 4 + quarter) % 1440 + 1440) % 1440;
+        auto rgb = RGB{HSV{(uint16_t)(hue << 5), HSV::kMaxSat, HSV::kMaxVal}};
+        auto px = (uint16_t)((rgb.r >> 3) << 11 | (rgb.g >> 2) << 5 | rgb.b >> 3);
+        image.insert(image.end(), 8, px);
+    }
+    return image;
+}
+
+// Dominant window wraps: bright pixels just under 360 deg, dark ones at 0 deg,
+// flanked by enough other hues that no single cluster wins on its own.
+std::vector<uint16_t> wrapping_peak() {
+    struct Part {
+        uint16_t px;
+        size_t n;
+    };
+    std::vector<uint16_t> image;
+    for (auto [px, n] : {Part{0xF821, 40}, Part{0x7800, 80}, Part{0xF802, 30},
+                         Part{0xF803, 30}, Part{0xF804, 30}, Part{0xF840, 30},
+                         Part{0xF880, 30}, Part{0xF8C0, 30}})
+        image.insert(image.end(), n, px);
     return image;
 }
 
@@ -78,7 +106,12 @@ INSTANTIATE_TEST_SUITE_P(
         Case{"random_seed1", random_image(1), {183, 183, 183}},
         Case{"random_seed2", random_image(2), {171, 171, 171}},
         Case{"random_seed3", random_image(3), {185, 185, 185}},
-        Case{"noisy_orange", noisy_orange(), {225, 66, 11}}),
+        Case{"noisy_orange", noisy_orange(), {245, 71, 11}},
+        Case{"hue_spread_120", hue_spread(120), {0, 252, 2}},
+        Case{"hue_spread_0", hue_spread(0), {248, 2, 0}},
+        Case{"hue_spread_355", hue_spread(355), {248, 2, 0}},
+        Case{"hue_spread_5", hue_spread(5), {248, 2, 0}},
+        Case{"wrapping_peak", wrapping_peak(), {120, 0, 2}}),
     [](const testing::TestParamInfo<Case> &info) { return info.param.name; });
 
 TEST(DominantColorEdge, EmptyIsBlack) {
