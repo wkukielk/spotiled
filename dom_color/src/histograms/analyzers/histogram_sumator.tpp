@@ -1,5 +1,5 @@
 #ifndef HISTOGRAM_ANALYZER_HPP
-#include "analyzer.hpp"
+#include "histogram_sumator.hpp"
 #endif
 
 template <hist::Sumator S>
@@ -15,14 +15,12 @@ uint16_t HistogramSumator<S>::get_representant_value(S::window_t w) const {
         (uint64_t)count * (histogram.get_upper_bound() >> hist::hshift);
     if (sum >= boundary)
         sum -= boundary;
-    return count != 0 ? (sum / count) << hist::hshift : 0;
+    return count != 0 ? (sum << hist::hshift) / count : 0;
 }
 
 template <hist::Sumator S>
 hist::Dominant HistogramSumator<S>::window_to_dominant(S::window_t w) const {
-    return {
-        .bounds = get_bounds(histogram, w),
-        .value = get_representant_value(w),
-        .count = sumator.count(w)
-    };
+    return {.bounds = get_bounds(histogram, w),
+            .value = get_representant_value(w),
+            .count = count(w)};
 }

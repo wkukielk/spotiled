@@ -108,9 +108,9 @@ INSTANTIATE_TEST_SUITE_P(
         Case{"random_seed3", random_image(3), {185, 185, 185}},
         Case{"noisy_orange", noisy_orange(), {245, 71, 11}},
         Case{"hue_spread_120", hue_spread(120), {0, 252, 2}},
-        Case{"hue_spread_0", hue_spread(0), {248, 2, 0}},
-        Case{"hue_spread_355", hue_spread(355), {248, 2, 0}},
-        Case{"hue_spread_5", hue_spread(5), {248, 2, 0}},
+        Case{"hue_spread_0", hue_spread(0), {248, 4, 0}},
+        Case{"hue_spread_355", hue_spread(355), {248, 4, 0}},
+        Case{"hue_spread_5", hue_spread(5), {248, 4, 0}},
         Case{"wrapping_peak", wrapping_peak(), {120, 0, 2}}),
     [](const testing::TestParamInfo<Case> &info) { return info.param.name; });
 

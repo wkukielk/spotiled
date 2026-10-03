@@ -60,3 +60,26 @@ const hist::MyCluster *WrappingSearchAlgorithm::get_best() const {
     auto best = std::max_element(counts.begin(), counts.end());
     return std::to_address((first + (int)(best - counts.begin())).base());
 }
+
+NonLinearSearchAlgorithm::NonLinearSearchAlgorithm(
+    const hist::Histogram &histogram)
+    : sumator{histogram,
+              hist::sumators::NonLinear{histogram.get_clusters(),
+                                        histogram.get_upper_bound()}},
+      histogram{histogram}, clusters{histogram.get_clusters()} {}
+
+std::optional<hist::Dominant> NonLinearSearchAlgorithm::get_next() {
+    if (histogram.get_count() == 0 || depth == hist::halvings)
+        return std::nullopt;
+    auto best_window = hist::CenterWindow{get_best(), depth};
+    ++depth;
+    return sumator.window_to_dominant(best_window);
+}
+
+const hist::MyCluster *NonLinearSearchAlgorithm::get_best() const {
+    auto counts = std::array<uint32_t, hist::sz>{};
+    std::transform(clusters.begin(), clusters.end(), counts.begin(),
+                   [this](const auto &c) { return sumator.count({&c, depth}); });
+    auto best = std::max_element(counts.begin(), counts.end());
+    return clusters.begin() + (best - counts.begin());
+}
