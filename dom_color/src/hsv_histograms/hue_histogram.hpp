@@ -1,8 +1,7 @@
 #ifndef HUE_HISTOGRAM_HPP
 #define HUE_HISTOGRAM_HPP
 
-#include "analyzers/non_linear.hpp"
-#include "analyzers/wrap_around.hpp"
+#include "analyzers/analyzer.hpp"
 #include "histogram.hpp"
 #include "hsv.hpp"
 #include "sumators/non_linear.hpp"
@@ -25,7 +24,7 @@ Dominant convert_dominant(const hist::Dominant &dominant);
 
 class HueHistogram {
   public:
-    HueHistogram(uint8_t alpha = 3, uint8_t beta = 60);
+    HueHistogram(uint8_t alpha = 3, uint8_t beta = 23);
     uint32_t get_count() const { return histogram.get_count(); };
     uint32_t get_grey_count() const { return alpha * grey_count; }
     uint64_t get_score() const { return get_count(); };
@@ -37,7 +36,7 @@ class HueHistogram {
   private:
     uint8_t calculate_beta() const;
     hist::Histogram histogram;
-    hist::analyzers::WrapAround analyzer;
+    hist::analyzers::Analyzer<WrappingSearchAlgorithm> analyzer;
     uint16_t grey_count = 0;
     uint8_t alpha = 1;
     // calculation of dominant starts if grey_count / count >= alpha

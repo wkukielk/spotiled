@@ -2,6 +2,8 @@
 #include "color_aux.hpp"
 #include <cmath>
 
+using namespace std;
+
 namespace hue_hist {
 Dominant Dominant::grey =
     Dominant{.bounds = {.lower = 0, .upper = 0}, .count = 0, .is_grey = true};
@@ -57,5 +59,6 @@ void HueHistogram::reset() {
 }
 
 uint8_t HueHistogram::calculate_beta() const {
-    return std::min<uint32_t>(alpha * beta * grey_count / get_count(), 255);
+    uint64_t grey = (uint64_t)alpha * grey_count;
+    return beta + (255 - beta) * grey / get_count();
 }

@@ -14,10 +14,7 @@ add_library(dom_color STATIC
     src/histograms/histogram_common/histogram_aux.cpp
     src/histograms/histogram/histogram.cpp
     src/histograms/analyzers/alpha_coefficient.cpp
-    src/histograms/analyzers/basic.cpp
-    src/histograms/analyzers/non_linear.cpp
     src/histograms/analyzers/search_algorithm.cpp
-    src/histograms/analyzers/wrap_around.cpp
     src/histograms/sumators/common.cpp
     src/histograms/sumators/basic.cpp
     src/histograms/sumators/non_linear.cpp

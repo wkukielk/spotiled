@@ -1,8 +1,6 @@
 add_library(histogram_analyzers)
 set(srcs "alpha_coefficient.cpp"
-         "basic.cpp"
-         "non_linear.cpp"
-         "wrap_around.cpp"
+         "search_algorithm.cpp"
 )
 add_prefix(srcs "${CMAKE_CURRENT_LIST_DIR}/" ${srcs})
 target_sources(histogram_analyzers PRIVATE ${srcs})

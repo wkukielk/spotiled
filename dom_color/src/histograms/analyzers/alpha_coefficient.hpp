@@ -6,34 +6,21 @@
 
 namespace hist {
 namespace analyzers {
-// alpha = 1 means "about 1/6 of total is enough"
-// alpha = 255 means "only all of total is enough"
-class AlphaCoefficient6 {
+// Interpolates linearly between a count the search is guaranteed to reach
+// and the highest count it could reach:
+// alpha = 1 means "the guaranteed count is enough"
+// alpha = 255 means "only the maximum count is enough"
+// alpha = 0 sits just below the guaranteed count.
+class AlphaCoefficient {
   public:
-    AlphaCoefficient6(uint8_t alpha);
+    AlphaCoefficient(uint8_t alpha) : alpha{alpha} {}
     uint8_t get_alpha() const { return alpha; };
-    void set_alpha(uint8_t alpha);
-    bool is_count_enough(uint32_t count, uint32_t total) const;
+    void set_alpha(uint8_t alpha) { this->alpha = alpha; };
+    bool is_count_enough(uint64_t count, uint64_t min_count,
+                         uint64_t max_count) const;
 
   private:
     uint8_t alpha;
-    uint32_t alpha6;
-    static const uint8_t alpha_shift = 8;
-};
-
-// alpha = 1 means "above boundary_count is enough"
-// alpha = 255 means "only 48 times boundary_count is enough"
-class AlphaCoefficient48 {
-  public:
-    AlphaCoefficient48(uint8_t alpha);
-    uint8_t get_alpha() const { return alpha; };
-    void set_alpha(uint8_t alpha);
-    bool is_count_enough(uint32_t count, uint32_t boundary_count) const;
-
-  private:
-    uint8_t alpha;
-    uint32_t alpha48;
-    static const uint8_t alpha_shift = 4;
 };
 }; // namespace analyzers
 }; // namespace hist
