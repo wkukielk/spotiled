@@ -71,8 +71,8 @@ namespace hist2D {
                     .upper = (uint16_t)((index.x + offsets.x.upper) * histogram.get_upper_bound_x() / sz)
                 },
                 .y = Bounds {
-                    .lower = (uint16_t)((index.x + offsets.y.lower) * histogram.get_upper_bound_y() / sz),
-                    .upper = (uint16_t)((index.x + offsets.y.upper) * histogram.get_upper_bound_y() / sz)
+                    .lower = (uint16_t)((index.y + offsets.y.lower) * histogram.get_upper_bound_y() / sz),
+                    .upper = (uint16_t)((index.y + offsets.y.upper) * histogram.get_upper_bound_y() / sz)
                 }
             };
         }

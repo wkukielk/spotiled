@@ -60,8 +60,8 @@ namespace hist2D {
             auto [x_row, y_row] = histogram.get_index(topleft);
             uint16_t x_lower = x_row * histogram.get_upper_bound_x() / sz;
             uint16_t x_upper = (x_row + square_size) * histogram.get_upper_bound_x() / sz;
-            uint16_t y_lower = y_row * histogram.get_upper_bound_x() / sz;
-            uint16_t y_upper = (y_row + square_size) * histogram.get_upper_bound_x() / sz;
+            uint16_t y_lower = y_row * histogram.get_upper_bound_y() / sz;
+            uint16_t y_upper = (y_row + square_size) * histogram.get_upper_bound_y() / sz;
             return {
                 .x = Bounds {
                     .lower = x_lower,

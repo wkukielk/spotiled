@@ -1,5 +1,8 @@
 #include "non_linear.hpp"
+#include "rect_it.hpp"
 #include <algorithm>
+#include <functional>
+#include <numeric>
 
 namespace hist2D {
 namespace sumators {
@@ -12,38 +15,42 @@ const uint8_t NonLinear::weights[5][5] = {{2, 3, 3, 3, 2},
 NonLinear::NonLinear(const Histogram &histogram)
     : Basic{histogram.get_clusters()}, histogram{histogram} {}
 
+namespace {
+// Sum of weights * value_of(cluster) over the clusters at `offsets` around
+// `center`.
+template <typename ValueOf>
+uint64_t weighted_sum(const MyCluster (&clusters)[sz][sz], Index center,
+                      ClusterOffsets offsets, ValueOf value_of) {
+    auto [x, y] = offsets;
+    auto neighbourhood = rect(&clusters[center.y + y.lower][center.x + x.lower],
+                              x.upper - x.lower, y.upper - y.lower, sz);
+    return std::transform_reduce(
+        neighbourhood.begin(), neighbourhood.end(), uint64_t{0}, std::plus{},
+        [&](auto cluster) -> uint64_t {
+            auto dy = y.lower + cluster.row;
+            auto dx = x.lower + cluster.col;
+            return NonLinear::weights[2 + dy][2 + dx] *
+                   (uint64_t)value_of(cluster.value);
+        });
+}
+} // namespace
+
 uint64_t NonLinear::neighbourhood_count(const MyCluster *center,
                                         uint8_t depth) const {
-    auto &clusters = *histogram.get_clusters();
-    auto [x_row, y_row] = histogram.get_index(center);
-    auto offsets = get_cluster_offsets(center, depth);
-    uint64_t count = 0;
-    for (int8_t delta_y = offsets.y.lower; delta_y != offsets.y.upper;
-         ++delta_y)
-        for (int8_t delta_x = offsets.x.lower; delta_x != offsets.x.upper;
-             ++delta_x) {
-            count += weights[2 + delta_y][2 + delta_x] *
-                     clusters[y_row + delta_y][x_row + delta_x].count;
-        }
-    return count;
+    return weighted_sum(*histogram.get_clusters(), histogram.get_index(center),
+                        get_cluster_offsets(center, depth),
+                        [](const MyCluster &cluster) { return cluster.count; });
 }
 
 Sum64 NonLinear::neighbourhood_sum(const MyCluster *center,
                                    uint8_t depth) const {
     auto &clusters = *histogram.get_clusters();
-    auto [x_row, y_row] = histogram.get_index(center);
+    auto index = histogram.get_index(center);
     auto offsets = get_cluster_offsets(center, depth);
-    Sum64 sum{};
-    for (int8_t delta_y = offsets.y.lower; delta_y != offsets.y.upper;
-         ++delta_y)
-        for (int8_t delta_x = offsets.x.lower; delta_x != offsets.x.upper;
-             ++delta_x) {
-            sum.x += weights[2 + delta_y][2 + delta_x] *
-                     (uint64_t)clusters[y_row + delta_y][x_row + delta_x].sum_x;
-            sum.y += weights[2 + delta_y][2 + delta_x] *
-                     (uint64_t)clusters[y_row + delta_y][x_row + delta_x].sum_y;
-        }
-    return sum;
+    return {.x = weighted_sum(clusters, index, offsets,
+                              [](const MyCluster &cluster) { return cluster.sum_x; }),
+            .y = weighted_sum(clusters, index, offsets,
+                              [](const MyCluster &cluster) { return cluster.sum_y; })};
 }
 
 ClusterOffsets NonLinear::get_cluster_offsets(const MyCluster *center,

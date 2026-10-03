@@ -23,7 +23,7 @@ namespace hist2D {
         auto index = Index{};
         index.x = value.x * sz / upper_bound_x;
         index.y = value.y * sz / upper_bound_y;
-        (*clusters)[index.x][index.y].add(value);
+        (*clusters)[index.y][index.x].add(value);
         ++count;
         return index;
     }
@@ -32,7 +32,7 @@ namespace hist2D {
         auto index = Index{};
         index.x = value.x * sz / upper_bound_x;
         index.y = value.y * sz / upper_bound_y;
-        (*clusters)[index.x][index.y].add(value, weight);
+        (*clusters)[index.y][index.x].add(value, weight);
         count += weight;
         return index;
     }
