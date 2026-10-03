@@ -11,7 +11,7 @@ namespace hist2D {
             auto [largest, count, size] = get_max_cluster();
             if (largest) {
                 dominant.value = get_representant_value(largest, size);
-                dominant.bounds = get_cluster_bounds(largest, size);
+                dominant.bounds = get_bounds(histogram, BasicWindow{largest, size});
                 dominant.count = count;
             }
             return dominant;
@@ -30,7 +30,7 @@ namespace hist2D {
                 do {
                     auto row_end = current + sz;
                     do {
-                        auto current_count = sumator.interval_count(current, cluster_size);
+                        auto current_count = sumator.count({current, cluster_size});
                         if (current_count > max_count) {
                             largest = current;
                             max_count = current_count;
@@ -49,29 +49,11 @@ namespace hist2D {
         }
 
         Value Basic::get_representant_value(const MyCluster* topleft, uint8_t square_size) const {
-            auto count = sumator.interval_count(topleft, square_size);
-            auto sum = sumator.interval_sum(topleft, square_size);
+            auto count = sumator.count({topleft, square_size});
+            auto sum = sumator.sum({topleft, square_size});
             uint16_t x = count != 0 ? (sum.x / count) << hshift : 0;
             uint16_t y = count != 0 ? (sum.y / count) << hshift : 0;
             return Value{ .x = x, .y = y };
-        }
-
-        ValueBounds Basic::get_cluster_bounds(const MyCluster* topleft, uint8_t square_size) const {
-            auto [x_row, y_row] = histogram.get_index(topleft);
-            uint16_t x_lower = x_row * histogram.get_upper_bound_x() / sz;
-            uint16_t x_upper = (x_row + square_size) * histogram.get_upper_bound_x() / sz;
-            uint16_t y_lower = y_row * histogram.get_upper_bound_y() / sz;
-            uint16_t y_upper = (y_row + square_size) * histogram.get_upper_bound_y() / sz;
-            return {
-                .x = Bounds {
-                    .lower = x_lower,
-                    .upper = x_upper
-                },
-                .y = Bounds {
-                    .lower = y_lower,
-                    .upper = y_upper
-                }
-            };
         }
     };
 };

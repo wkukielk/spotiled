@@ -12,8 +12,7 @@ const uint8_t NonLinear::weights[5][5] = {{2, 3, 3, 3, 2},
                                           {3, 4, 6, 4, 3},
                                           {2, 3, 3, 3, 2}};
 
-NonLinear::NonLinear(const Histogram &histogram)
-    : Basic{histogram.get_clusters()}, histogram{histogram} {}
+NonLinear::NonLinear(const Histogram &histogram) : histogram{histogram} {}
 
 namespace {
 // Sum of weights * value_of(cluster) over the clusters at `offsets` around
@@ -35,31 +34,28 @@ uint64_t weighted_sum(const MyCluster (&clusters)[sz][sz], Index center,
 }
 } // namespace
 
-uint64_t NonLinear::neighbourhood_count(const MyCluster *center,
-                                        uint8_t depth) const {
-    return weighted_sum(*histogram.get_clusters(), histogram.get_index(center),
-                        get_cluster_offsets(center, depth),
+uint64_t NonLinear::count(CenterWindow w) const {
+    return weighted_sum(*histogram.get_clusters(), histogram.get_index(w.center),
+                        get_cluster_offsets(w),
                         [](const MyCluster &cluster) { return cluster.count; });
 }
 
-Sum64 NonLinear::neighbourhood_sum(const MyCluster *center,
-                                   uint8_t depth) const {
+Sum64 NonLinear::sum(CenterWindow w) const {
     auto &clusters = *histogram.get_clusters();
-    auto index = histogram.get_index(center);
-    auto offsets = get_cluster_offsets(center, depth);
+    auto index = histogram.get_index(w.center);
+    auto offsets = get_cluster_offsets(w);
     return {.x = weighted_sum(clusters, index, offsets,
                               [](const MyCluster &cluster) { return cluster.sum_x; }),
             .y = weighted_sum(clusters, index, offsets,
                               [](const MyCluster &cluster) { return cluster.sum_y; })};
 }
 
-ClusterOffsets NonLinear::get_cluster_offsets(const MyCluster *center,
-                                              uint8_t depth) const {
-    auto [x_row, y_row] = histogram.get_index(center);
-    auto lower_x_offset = std::max<int8_t>(-depth, 0 - x_row);
-    auto upper_x_offset = std::min<int8_t>(depth + 1, sz - x_row);
-    auto lower_y_offset = std::max<int8_t>(-depth, 0 - y_row);
-    auto upper_y_offset = std::min<int8_t>(depth + 1, sz - y_row);
+ClusterOffsets NonLinear::get_cluster_offsets(CenterWindow w) const {
+    auto [x_row, y_row] = histogram.get_index(w.center);
+    auto lower_x_offset = std::max<int8_t>(-w.depth, 0 - x_row);
+    auto upper_x_offset = std::min<int8_t>(w.depth + 1, sz - x_row);
+    auto lower_y_offset = std::max<int8_t>(-w.depth, 0 - y_row);
+    auto upper_y_offset = std::min<int8_t>(w.depth + 1, sz - y_row);
     return ClusterOffsets{
         .x = Offsets{.lower = lower_x_offset, .upper = upper_x_offset},
         .y = Offsets{.lower = lower_y_offset, .upper = upper_y_offset}};
