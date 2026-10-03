@@ -18,6 +18,6 @@ template <hist::Sumator S> class HistogramSumator {
     const hist::Histogram &histogram;
 };
 
-#include "analyzer.tpp"
+#include "histogram_sumator.tpp"
 
 #endif
