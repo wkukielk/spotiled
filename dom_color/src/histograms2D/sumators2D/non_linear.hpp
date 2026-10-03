@@ -10,16 +10,6 @@ struct Sum64 {
     uint64_t y;
 };
 
-struct Offsets {
-    int8_t lower;
-    int8_t upper;
-};
-
-struct ClusterOffsets {
-    Offsets x;
-    Offsets y;
-};
-
 class NonLinear {
   public:
     using window_t = CenterWindow;
@@ -27,7 +17,6 @@ class NonLinear {
     NonLinear(const Histogram &);
     uint64_t count(CenterWindow w) const;
     Sum64 sum(CenterWindow w) const;
-    ClusterOffsets get_cluster_offsets(CenterWindow w) const;
     static uint8_t get_magic_number() { return magic_number; };
     static const uint8_t weights[5][5];
 
