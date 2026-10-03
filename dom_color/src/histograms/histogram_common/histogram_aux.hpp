@@ -31,6 +31,7 @@ class Precission {
     size_t get_cluster_size() const { return cluster_size; };
     Precission &operator++();
     Precission &operator--();
+    bool operator==(const Precission &other) const noexcept;
 
   private:
     uint8_t precission;

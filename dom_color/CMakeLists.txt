@@ -16,7 +16,9 @@ add_library(dom_color STATIC
     src/histograms/analyzers/alpha_coefficient.cpp
     src/histograms/analyzers/basic.cpp
     src/histograms/analyzers/non_linear.cpp
+    src/histograms/analyzers/search_algorithm.cpp
     src/histograms/analyzers/wrap_around.cpp
+    src/histograms/sumators/common.cpp
     src/histograms/sumators/basic.cpp
     src/histograms/sumators/non_linear.cpp
     src/histograms/sumators/wrap_around.cpp

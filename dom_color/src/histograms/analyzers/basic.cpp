@@ -1,63 +1,17 @@
 #include "basic.hpp"
-#include "wraparound_it.hpp"
+#include "search_algorithm.hpp"
 
 namespace hist {
 namespace analyzers {
-Basic::Basic(const Histogram &histogram, const sumators::Basic &sumator,
-             uint8_t alpha)
-    : histogram{histogram}, sumator{sumator},
-      clusters{histogram.get_clusters()}, alpha6{alpha} {}
+Basic::Basic(const Histogram &histogram, uint8_t alpha)
+    : histogram{histogram}, alpha6{alpha} {}
 
 Dominant Basic::get_dominant() const {
-    auto dominant = Dominant{};
-    const MyCluster *const begin = clusters.begin();
-    auto [largest, count, size] = get_max_cluster();
-    if (largest) {
-        dominant.bounds.lower =
-            histogram.get_upper_bound() * (largest - begin) / sz;
-        dominant.bounds.upper =
-            histogram.get_upper_bound() * (largest - begin + size) / sz;
-        dominant.count = count;
-        dominant.value = get_representant_value(largest, size);
-    }
-    return dominant;
-}
-
-_basic::MaxCluster Basic::get_max_cluster() const {
-    if (histogram.get_count() == 0)
-        return {};
-    auto precission = Precission{halvings};
-    const MyCluster *const begin = clusters.data();
-    const MyCluster *const end = clusters.end();
-    const MyCluster *largest = begin;
-    uint32_t max_count = 0;
-    do {
-        max_count = 0;
-        const MyCluster *current = begin;
-        do {
-            auto current_count =
-                sumator.interval_count(current, precission.get_cluster_size());
-            if (current_count > max_count) {
-                largest = current;
-                max_count = current_count;
-            }
-        } while (current++ + precission.get_cluster_size() != end);
-    } while (
-        not alpha6.is_count_enough(max_count, histogram.get_count()) &&
-        (--precission).get_precission() != 0);
-    if (precission.get_precission()) {
-        return {.cluster = largest,
-                .count = max_count,
-                .size = (uint8_t)precission.get_cluster_size()};
-    } else
-        return {};
-}
-
-uint16_t Basic::get_representant_value(const MyCluster *clusters,
-                                       uint8_t length) const {
-    uint32_t sum = sumator.interval_sum(clusters, length);
-    uint32_t count = sumator.interval_count(clusters, length);
-    return count != 0 ? (sum / count) << hshift : 0;
+    auto search = BasicSearchAlgorithm{histogram};
+    while (auto dominant = search.get_next())
+        if (alpha6.is_count_enough(dominant->count, histogram.get_count()))
+            return *dominant;
+    return {};
 }
 }; // namespace analyzers
 }; // namespace hist
