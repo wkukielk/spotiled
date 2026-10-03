@@ -11,7 +11,7 @@ namespace hist2D {
             auto dominant = Dominant{};
             auto [largest, count, depth] = get_max_cluster();
             if (largest) {
-                dominant.bounds = get_cluster_bounds(largest, depth);
+                dominant.bounds = get_bounds(histogram, CenterWindow{largest, depth});
                 dominant.count = count;
                 dominant.value = get_representant_value(largest, depth);
             }
@@ -29,7 +29,7 @@ namespace hist2D {
                 do {
                     auto row_end = current + sz;
                     do {
-                        auto current_count = sumator.neighbourhood_count(current, current_depth);
+                        auto current_count = sumator.count({current, current_depth});
                         if (current_count > max_count) {
                             largest = current;
                             max_count = current_count;
@@ -52,28 +52,13 @@ namespace hist2D {
         }
 
         Value NonLinear::get_representant_value(const MyCluster* center, uint8_t depth) const {
-            auto sum = sumator.neighbourhood_sum(center, depth);
-            auto count = sumator.neighbourhood_count(center, depth);
+            auto sum = sumator.sum({center, depth});
+            auto count = sumator.count({center, depth});
             uint16_t value_x = count != 0 ? (sum.x << hshift) / count : 0;
             uint16_t value_y = count != 0 ? (sum.y << hshift) / count : 0;
             return Value {
                 .x = value_x,
                 .y = value_y
-            };
-        }
-
-        ValueBounds NonLinear::get_cluster_bounds(const MyCluster* center, uint8_t depth) const {
-            auto index = histogram.get_index(center);
-            auto offsets = sumator.get_cluster_offsets(center, depth);
-            return ValueBounds {
-                .x = Bounds {
-                    .lower = (uint16_t)((index.x + offsets.x.lower) * histogram.get_upper_bound_x() / sz),
-                    .upper = (uint16_t)((index.x + offsets.x.upper) * histogram.get_upper_bound_x() / sz)
-                },
-                .y = Bounds {
-                    .lower = (uint16_t)((index.y + offsets.y.lower) * histogram.get_upper_bound_y() / sz),
-                    .upper = (uint16_t)((index.y + offsets.y.upper) * histogram.get_upper_bound_y() / sz)
-                }
             };
         }
     };

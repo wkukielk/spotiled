@@ -23,6 +23,7 @@ add_library(dom_color STATIC
     src/histograms2D/histogram2D.cpp
     src/histograms2D/analyzers2D/basic.cpp
     src/histograms2D/analyzers2D/non_linear.cpp
+    src/histograms2D/sumators2D/common.cpp
     src/histograms2D/sumators2D/basic.cpp
     src/histograms2D/sumators2D/non_linear.cpp
 

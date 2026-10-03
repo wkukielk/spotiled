@@ -1,6 +1,6 @@
 #pragma once
 
-#include "basic.hpp"
+#include "common.hpp"
 #include "histogram2D.hpp"
 
 namespace hist2D {
@@ -20,13 +20,14 @@ struct ClusterOffsets {
     Offsets y;
 };
 
-class NonLinear : public Basic {
+class NonLinear {
   public:
+    using window_t = CenterWindow;
+
     NonLinear(const Histogram &);
-    uint64_t neighbourhood_count(const MyCluster *center, uint8_t depth) const;
-    Sum64 neighbourhood_sum(const MyCluster *center, uint8_t depth) const;
-    ClusterOffsets get_cluster_offsets(const MyCluster *center,
-                                       uint8_t depth) const;
+    uint64_t count(CenterWindow w) const;
+    Sum64 sum(CenterWindow w) const;
+    ClusterOffsets get_cluster_offsets(CenterWindow w) const;
     static uint8_t get_magic_number() { return magic_number; };
     static const uint8_t weights[5][5];
 

@@ -23,8 +23,6 @@ class NonLinear {
     _nonlinear::MaxCluster get_max_cluster() const;
     uint32_t get_boundary_count() const;
     Value get_representant_value(const MyCluster *center, uint8_t depth) const;
-    ValueBounds get_cluster_bounds(const MyCluster *center,
-                                   uint8_t depth) const;
     const Histogram &histogram;
     const sumators::NonLinear &sumator;
     const MyCluster (*const clusters)[sz][sz];

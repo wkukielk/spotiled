@@ -21,8 +21,6 @@ class Basic {
   protected:
     _MaxCluster get_max_cluster() const;
     Value get_representant_value(const MyCluster *topleft, uint8_t size) const;
-    ValueBounds get_cluster_bounds(const MyCluster *topleft,
-                                   uint8_t size) const;
     const Histogram &histogram;
     const sumators::Basic &sumator;
     const MyCluster (*const clusters)[sz][sz];

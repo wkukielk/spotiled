@@ -22,16 +22,16 @@ namespace hist2D {
         Basic::Basic(const MyCluster (*clusters)[sz][sz]) :
             begin{(MyCluster*)clusters}, end{(MyCluster*)(clusters + 1)} {}
 
-        uint32_t Basic::interval_count(const MyCluster* topleft, uint8_t square_size) const {
-            return square_sum(topleft, square_size,
+        uint32_t Basic::count(BasicWindow w) const {
+            return square_sum(w.topleft, w.size,
                 [](const MyCluster& cluster) { return (uint32_t)cluster.count; });
         }
 
-        Sum Basic::interval_sum(const MyCluster* topleft, uint8_t square_size) const {
+        Sum Basic::sum(BasicWindow w) const {
             return {
-                .x = square_sum(topleft, square_size,
+                .x = square_sum(w.topleft, w.size,
                     [](const MyCluster& cluster) { return cluster.sum_x; }),
-                .y = square_sum(topleft, square_size,
+                .y = square_sum(w.topleft, w.size,
                     [](const MyCluster& cluster) { return cluster.sum_y; })
             };
         }
