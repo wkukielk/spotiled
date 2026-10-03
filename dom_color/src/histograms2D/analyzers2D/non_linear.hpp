@@ -1,31 +1,25 @@
 #ifndef ANALYZER2D_NON_LINEAR_HPP
 #define ANALYZER2D_NON_LINEAR_HPP
 
+#include "analyzers/alpha_coefficient.hpp"
 #include "histogram2D.hpp"
 #include "histogram2D_aux.hpp"
 #include "sumators2D/non_linear.hpp"
 
 namespace hist2D {
 namespace analyzers {
-namespace _nonlinear {
-struct MaxCluster {
-    const MyCluster *cluster;
-    const uint32_t count;
-    const uint8_t depth;
-};
-}; // namespace _nonlinear
 class NonLinear {
   public:
-    NonLinear(const Histogram &, const sumators::NonLinear &sumator);
+    NonLinear(const Histogram &, const sumators::NonLinear &sumator,
+              uint8_t alpha = 1);
+    uint8_t get_alpha() const { return alpha.get_alpha(); };
+    void set_alpha(uint8_t alpha) { this->alpha.set_alpha(alpha); };
     Dominant get_dominant() const;
 
   protected:
-    _nonlinear::MaxCluster get_max_cluster() const;
-    uint32_t get_boundary_count() const;
-    Value get_representant_value(const MyCluster *center, uint8_t depth) const;
     const Histogram &histogram;
     const sumators::NonLinear &sumator;
-    const MyCluster (*const clusters)[sz][sz];
+    hist::analyzers::AlphaCoefficient alpha;
 };
 }; // namespace analyzers
 }; // namespace hist2D

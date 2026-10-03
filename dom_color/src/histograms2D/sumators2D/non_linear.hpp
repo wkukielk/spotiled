@@ -17,12 +17,10 @@ class NonLinear {
     NonLinear(const Histogram &);
     uint64_t count(CenterWindow w) const;
     Sum64 sum(CenterWindow w) const;
-    static uint8_t get_magic_number() { return magic_number; };
     static const uint8_t weights[5][5];
 
   protected:
     const Histogram &histogram;
-    static const uint8_t magic_number = 86;
 };
 }; // namespace sumators
 }; // namespace hist2D
