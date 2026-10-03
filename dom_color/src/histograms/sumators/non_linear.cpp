@@ -13,8 +13,10 @@ namespace {
 auto neighbourhood(const std::span<const MyCluster> &clusters,
                    const MyCluster *center, uint8_t depth) {
     std::ptrdiff_t radius = (1 << depth) - 1;
-    auto left = lap_iterator{wraparound_iterator{
-        clusters, clusters.begin() + (center - clusters.data())} - (int)radius};
+    auto left = lap_iterator{
+        wraparound_iterator{clusters,
+                            clusters.begin() + (center - clusters.data())} -
+        (int)radius};
     return std::views::counted(depth_iterator{left, -radius}, 2 * radius + 1) |
            std::views::common;
 }
@@ -26,11 +28,10 @@ NonLinear::NonLinear(std::span<const MyCluster> clusters,
                      uint16_t exclusive_upper_bound)
     : clusters{clusters}, upper_bound{exclusive_upper_bound} {}
 
-uint64_t NonLinear::neighbourhood_count(const MyCluster *center,
-                                        uint8_t depth) const {
-    if (depth > sizeof(weights) - 1)
+uint64_t NonLinear::count(CenterWindow w) const {
+    if (w.depth > sizeof(weights) - 1)
         return 0;
-    auto clusters_around = neighbourhood(clusters, center, depth);
+    auto clusters_around = neighbourhood(clusters, w.center, w.depth);
     return std::transform_reduce(
         clusters_around.begin(), clusters_around.end(), uint64_t{0},
         std::plus{}, [](auto cluster) -> uint64_t {
@@ -39,12 +40,11 @@ uint64_t NonLinear::neighbourhood_count(const MyCluster *center,
         });
 }
 
-uint64_t NonLinear::neighbourhood_sum(const MyCluster *center,
-                                      uint8_t depth) const {
-    if (depth > sizeof(weights) - 1)
+uint64_t NonLinear::sum(CenterWindow w) const {
+    if (w.depth > sizeof(weights) - 1)
         return 0;
     uint64_t turn = upper_bound >> hshift;
-    auto clusters_around = neighbourhood(clusters, center, depth);
+    auto clusters_around = neighbourhood(clusters, w.center, w.depth);
     return std::transform_reduce(
         clusters_around.begin(), clusters_around.end(), uint64_t{0},
         std::plus{}, [turn](auto cluster) -> uint64_t {

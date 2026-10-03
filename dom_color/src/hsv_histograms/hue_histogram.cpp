@@ -22,9 +22,7 @@ Dominant convert_dominant(const hist::Dominant &dominant) {
 } // namespace hue_hist
 
 HueHistogram::HueHistogram(uint8_t alpha, uint8_t beta)
-    : histogram{HSV::kMaxHue},
-      sumator{histogram.get_clusters(), histogram.get_upper_bound()},
-      analyzer{histogram, sumator}, alpha{alpha}, beta{beta} {}
+    : histogram{HSV::kMaxHue}, analyzer{histogram}, alpha{alpha}, beta{beta} {}
 
 hue_hist::Dominant HueHistogram::get_dominant() {
     if (get_count() == 0 || alpha * grey_count > get_count())

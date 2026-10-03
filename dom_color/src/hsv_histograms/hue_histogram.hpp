@@ -2,6 +2,7 @@
 #define HUE_HISTOGRAM_HPP
 
 #include "analyzers/non_linear.hpp"
+#include "analyzers/wrap_around.hpp"
 #include "histogram.hpp"
 #include "hsv.hpp"
 #include "sumators/non_linear.hpp"
@@ -36,7 +37,6 @@ class HueHistogram {
   private:
     uint8_t calculate_beta() const;
     hist::Histogram histogram;
-    hist::sumators::WrapAround sumator;
     hist::analyzers::WrapAround analyzer;
     uint16_t grey_count = 0;
     uint8_t alpha = 1;

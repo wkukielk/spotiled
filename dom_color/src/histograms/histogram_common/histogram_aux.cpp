@@ -15,4 +15,8 @@ Precission &Precission::operator--() {
     cluster_size *= 2;
     return *this;
 }
+
+bool Precission::operator==(const Precission &other) const noexcept {
+    return this->precission == other.precission;
+}
 }; // namespace hist

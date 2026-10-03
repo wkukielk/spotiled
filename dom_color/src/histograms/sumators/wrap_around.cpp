@@ -23,21 +23,19 @@ WrapAround::WrapAround(std::span<const MyCluster> clusters,
                        uint16_t exclusive_upper_bound)
     : clusters{clusters}, upper_bound{exclusive_upper_bound} {}
 
-uint32_t WrapAround::wrap_interval_count(const MyCluster *left,
-                                         size_t length) const {
-    auto interval = window(clusters, left, length);
+uint32_t WrapAround::count(BasicWindow w) const noexcept {
+    auto interval = window(clusters, w.first, w.size);
     return std::transform_reduce(
         interval.begin(), interval.end(), uint32_t{0}, std::plus{},
         [](auto cluster) { return cluster.value.count; });
 }
 
-uint64_t WrapAround::wrap_interval_sum(const MyCluster *left,
-                                       size_t length) const {
-    uint64_t turn = upper_bound >> hshift;
-    auto interval = window(clusters, left, length);
+uint32_t WrapAround::sum(BasicWindow w) const noexcept {
+    uint32_t turn = upper_bound >> hshift;
+    auto interval = window(clusters, w.first, w.size);
     return std::transform_reduce(
         interval.begin(), interval.end(), uint64_t{0}, std::plus{},
-        [turn](auto cluster) -> uint64_t {
+        [turn](auto cluster) -> uint32_t {
             return cluster.value.sum + cluster.lap * cluster.value.count * turn;
         });
 }
