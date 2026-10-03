@@ -22,8 +22,6 @@ auto neighbourhood(const std::span<const MyCluster> &clusters,
 }
 } // namespace
 
-const uint8_t NonLinear::weights[] = {24, 8, 4, 2, 1};
-
 NonLinear::NonLinear(std::span<const MyCluster> clusters,
                      uint16_t exclusive_upper_bound)
     : clusters{clusters}, upper_bound{exclusive_upper_bound} {}
