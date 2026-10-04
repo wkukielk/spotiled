@@ -10,7 +10,7 @@ using namespace std;
 
 namespace {
 hue_hist::Dominant avg_hue(std::span<const uint16_t> bmp,
-                           HueHistogram &hue_histogram) {
+                           GreyFilterHueHistogram<HueHistogram> &hue_histogram) {
     hue_histogram.reset();
     ranges::for_each(bmp, [&](auto px) { hue_histogram.add_pixel(HSV{px}); });
     return hue_histogram.get_dominant();
@@ -38,7 +38,8 @@ DominantV avg_grey(std::span<const uint16_t> bmp) {
                      .count = v_cluster.get_count()};
 }
 
-HSV avg_hsv(std::span<const uint16_t> bmp, HueHistogram &hue_histogram,
+HSV avg_hsv(std::span<const uint16_t> bmp,
+            GreyFilterHueHistogram<HueHistogram> &hue_histogram,
             SVHistogram &sv_histogram) {
     auto dominant_hue = avg_hue(bmp, hue_histogram);
     sv_hist::Dominant dominant_sv{};
@@ -52,13 +53,13 @@ HSV avg_hsv(std::span<const uint16_t> bmp, HueHistogram &hue_histogram,
 } // namespace
 
 RGB get_dominating_color(std::span<const uint16_t> pixels) {
-    HueHistogram hue_histogram{};
+    GreyFilterHueHistogram<HueHistogram> hue_histogram{};
     SVHistogram sv_histogram{};
     return get_dominating_color(pixels, hue_histogram, sv_histogram);
 }
 
 RGB get_dominating_color(std::span<const uint16_t> pixels,
-                         HueHistogram &hue_histogram,
+                         GreyFilterHueHistogram<HueHistogram> &hue_histogram,
                          SVHistogram &sv_histogram) {
     return RGB{avg_hsv(pixels, hue_histogram, sv_histogram)};
 }

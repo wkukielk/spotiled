@@ -53,23 +53,34 @@ def save_worst_collage(store: AlbumStore, evaluated: list[EvaluatedAlbum], path:
     collage(tiles, columns=4).save(path)
 
 
-def main():
-    store = AlbumStore()
-    albums = load_albums(store)
-    hue_histogram = HueHistogram()
-    sv_histogram = SVHistogram()
+def evaluate(albums: list[LoadedAlbum], hue_histogram: HueHistogram,
+             sv_histogram: SVHistogram) -> list[EvaluatedAlbum]:
     predicted = [get_dominating_color(loaded.pixels, hue_histogram, sv_histogram)
                  for loaded in albums]
     expected = [loaded.spotify_color for loaded in albums]
     errors = metrics.delta_e(predicted, expected)
-    evaluated = [EvaluatedAlbum(loaded=loaded, predicted=color, error=float(error))
-                 for loaded, color, error in zip(albums, predicted, errors)]
+    return [EvaluatedAlbum(loaded=loaded, predicted=color, error=float(error))
+            for loaded, color, error in zip(albums, predicted, errors)]
+
+
+def errors_of(evaluated: list[EvaluatedAlbum]) -> np.ndarray:
+    return np.array([e.error for e in evaluated])
+
+
+def summary(errors: np.ndarray) -> str:
+    return (f"loss (mean dE): {metrics.loss(errors):.2f}  median dE: {np.median(errors):.2f}  "
+            f"hit rate (dE<{metrics.HIT_THRESHOLD:g}): {metrics.hit_rate(errors):.0%}")
+
+
+def main():
+    store = AlbumStore()
+    albums = load_albums(store)
+    evaluated = evaluate(albums, HueHistogram(), SVHistogram())
 
     for e in evaluated:
         print(f"{e.loaded.album.image_filename}: dom_color={e.predicted} "
               f"spotify={e.loaded.spotify_color} dE={e.error:.1f}")
-    print(f"loss (mean dE): {metrics.loss(errors):.2f}  median dE: {np.median(errors):.2f}  "
-          f"hit rate (dE<{metrics.HIT_THRESHOLD:g}): {metrics.hit_rate(errors):.0%}")
+    print(summary(errors_of(evaluated)))
 
     WORST_COUNT = 12
     WORST_COLLAGE_PATH = "worst.png"

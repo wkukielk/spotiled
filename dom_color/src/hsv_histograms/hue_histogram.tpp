@@ -1,0 +1,43 @@
+#include "color_aux.hpp"
+
+template <I_HueHistogram H>
+GreyFilterHueHistogram<H>::GreyFilterHueHistogram(uint8_t alpha, uint8_t beta)
+    requires std::default_initializable<H>
+    : alpha{alpha}, beta{beta} {}
+
+template <I_HueHistogram H>
+template <std::invocable F>
+    requires std::same_as<std::invoke_result_t<F>, H>
+GreyFilterHueHistogram<H>::GreyFilterHueHistogram(F &&make_hue_histogram,
+                                                  uint8_t alpha, uint8_t beta)
+    : hue_histogram{std::forward<F>(make_hue_histogram)()}, alpha{alpha},
+      beta{beta} {}
+
+template <I_HueHistogram H>
+hue_hist::Dominant GreyFilterHueHistogram<H>::get_dominant() {
+    if (get_count() == 0 || alpha * grey_count > get_count())
+        return hue_hist::create_grey(grey_count);
+    else {
+        hue_histogram.set_alpha(calculate_beta());
+        return hue_histogram.get_dominant();
+    }
+}
+
+template <I_HueHistogram H>
+void GreyFilterHueHistogram<H>::add_pixel(const HSV &hsv) {
+    if (color::is_grey(hsv))
+        ++grey_count;
+    else
+        hue_histogram.add_pixel(hsv);
+}
+
+template <I_HueHistogram H> void GreyFilterHueHistogram<H>::reset() {
+    grey_count = 0;
+    hue_histogram.reset();
+}
+
+template <I_HueHistogram H>
+uint8_t GreyFilterHueHistogram<H>::calculate_beta() const {
+    uint64_t grey = (uint64_t)alpha * grey_count;
+    return beta + (255 - beta) * grey / get_count();
+}

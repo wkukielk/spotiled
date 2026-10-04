@@ -26,7 +26,9 @@ namespace
         return get_dominating_color(pixel_span(info));
     }
 
-    RGB get_dominating_color_buffer_reusing(py::buffer pixels, HueHistogram &hue_histogram,
+    using PyHueHistogram = GreyFilterHueHistogram<HueHistogram>;
+
+    RGB get_dominating_color_buffer_reusing(py::buffer pixels, PyHueHistogram &hue_histogram,
                                             SVHistogram &sv_histogram)
     {
         py::buffer_info info = pixels.request();
@@ -58,11 +60,11 @@ PYBIND11_MODULE(_core, m, py::mod_gil_not_used(), py::multiple_interpreters::per
         numpy array with dtype=numpy.uint16, or an array.array("H", ...)).
     )pbdoc");
 
-    py::class_<HueHistogram>(m, "HueHistogram")
+    py::class_<PyHueHistogram>(m, "HueHistogram")
         .def(py::init<uint8_t, uint8_t>(), py::arg("alpha") = 3, py::arg("beta") = 23)
-        .def_property("alpha", &HueHistogram::get_alpha, &HueHistogram::set_alpha,
+        .def_property("alpha", &PyHueHistogram::get_alpha, &PyHueHistogram::set_alpha,
                       "Dominant is grey if alpha * grey_count > count")
-        .def_property("beta", &HueHistogram::get_beta, &HueHistogram::set_beta,
+        .def_property("beta", &PyHueHistogram::get_beta, &PyHueHistogram::set_beta,
                       "Base alpha coefficient passed to the hue analyzer");
 
     py::class_<SVHistogram>(m, "SVHistogram")

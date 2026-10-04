@@ -10,7 +10,7 @@
 RGB get_dominating_color(std::span<const uint16_t> pixels);
 // Reuses the given histograms (and their parameters); resets them first.
 RGB get_dominating_color(std::span<const uint16_t> pixels,
-                         HueHistogram &hue_histogram,
+                         GreyFilterHueHistogram<HueHistogram> &hue_histogram,
                          SVHistogram &sv_histogram);
 
 #endif

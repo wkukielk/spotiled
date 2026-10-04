@@ -12,7 +12,6 @@
 class SVHistogram {
   public:
     SVHistogram();
-    const hist2D::Histogram &get_histogram() const { return histogram; }
     sv_hist::Index add_pixel(const HSV &);
     void add_bpp32(const uint32_t *bitmap, size_t length);
     sv_hist::Dominant get_dominant() const;

@@ -23,42 +23,27 @@ Dominant convert_dominant(const hist::Dominant &dominant) {
 }
 } // namespace hue_hist
 
-HueHistogram::HueHistogram(uint8_t alpha, uint8_t beta)
-    : histogram{HSV::kMaxHue}, analyzer{histogram}, alpha{alpha}, beta{beta} {}
+HueHistogram::HueHistogram() : histogram{HSV::kMaxHue}, analyzer{histogram} {}
 
-hue_hist::Dominant HueHistogram::get_dominant() {
-    if (get_count() == 0 || alpha * grey_count > get_count())
-        return hue_hist::create_grey(grey_count);
+hue_hist::Dominant HueHistogram::get_dominant() const {
+    if (get_count() == 0)
+        return hue_hist::create_grey(0);
     else {
-        analyzer.set_alpha(calculate_beta());
         auto dominant_value = analyzer.get_dominant();
         if (dominant_value.count == 0)
-            return hue_hist::create_grey(grey_count);
+            return hue_hist::create_grey(0);
         else
             return hue_hist::convert_dominant(dominant_value);
     }
 }
 
-uint16_t HueHistogram::add_pixel(const HSV &hsv) {
-    uint16_t hue_index = 0;
-    if (color::is_grey(hsv)) {
-        hue_index = UINT16_MAX;
-        ++grey_count;
-    } else {
-        uint16_t temp_sv = hsv.s * hsv.v >> 15;
-        temp_sv = std::min<uint16_t>(temp_sv, 0x7FFF);
-        uint8_t weight = temp_sv >> 7;
-        histogram.add(hsv.h, weight);
-    }
-    return hue_index;
+void HueHistogram::set_alpha(uint8_t alpha) { analyzer.set_alpha(alpha); }
+
+void HueHistogram::add_pixel(const HSV &hsv) {
+    uint16_t temp_sv = hsv.s * hsv.v >> 15;
+    temp_sv = std::min<uint16_t>(temp_sv, 0x7FFF);
+    uint8_t weight = temp_sv >> 7;
+    histogram.add(hsv.h, weight);
 }
 
-void HueHistogram::reset() {
-    histogram.reset();
-    grey_count = 0;
-}
-
-uint8_t HueHistogram::calculate_beta() const {
-    uint64_t grey = (uint64_t)alpha * grey_count;
-    return beta + (255 - beta) * grey / get_count();
-}
+void HueHistogram::reset() { histogram.reset(); }
