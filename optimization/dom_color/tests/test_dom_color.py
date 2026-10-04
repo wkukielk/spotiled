@@ -71,3 +71,42 @@ class TestGetDominatingColor:
         buf = flat.cast("B").cast("H", shape=(2, 5))
         with pytest.raises(RuntimeError):
             dom_color.get_dominating_color(buf)
+
+
+class TestReusedHistograms:
+    def test_defaults(self):
+        hue = dom_color.HueHistogram()
+        assert (hue.alpha, hue.beta) == (3, 23)
+
+    def test_alpha_beta_settable(self):
+        hue = dom_color.HueHistogram(alpha=5, beta=40)
+        assert (hue.alpha, hue.beta) == (5, 40)
+        hue.alpha, hue.beta = 7, 50
+        assert (hue.alpha, hue.beta) == (7, 50)
+
+    def test_matches_default_call(self):
+        buf = pixel_buffer(*([RED] * 90 + [BLUE] * 10))
+        hue, sv = dom_color.HueHistogram(), dom_color.SVHistogram()
+        assert dom_color.get_dominating_color(
+            buf, hue, sv
+        ) == dom_color.get_dominating_color(buf)
+
+    def test_no_state_leaks_between_calls(self):
+        hue, sv = dom_color.HueHistogram(), dom_color.SVHistogram()
+        red = pixel_buffer(*([RED] * 100))
+        blue = pixel_buffer(*([BLUE] * 100))
+        grey = pixel_buffer(*([GREY] * 100))
+        assert dom_color.get_dominating_color(red, hue, sv) == dom_color.RGB(248, 0, 0)
+        assert dom_color.get_dominating_color(blue, hue, sv) == dom_color.RGB(0, 0, 248)
+        assert dom_color.get_dominating_color(grey, hue, sv) == dom_color.RGB(128, 128, 128)
+        assert dom_color.get_dominating_color(red, hue, sv) == dom_color.RGB(248, 0, 0)
+
+    def test_alpha_controls_grey_shortcut(self):
+        # Hue count is weighted (~255 per saturated pixel), so grey wins only
+        # when alpha * 60 > ~255 * 40.
+        buf = pixel_buffer(*([GREY] * 60 + [RED] * 40))
+        sv = dom_color.SVHistogram()
+        grey = dom_color.get_dominating_color(buf, dom_color.HueHistogram(alpha=255), sv)
+        red = dom_color.get_dominating_color(buf, dom_color.HueHistogram(alpha=0), sv)
+        assert grey == dom_color.RGB(128, 128, 128)
+        assert red == dom_color.RGB(248, 0, 0)

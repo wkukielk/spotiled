@@ -12,14 +12,14 @@ fn main() {
     cxx_build::bridge("src/dom_color.rs")
         .file("cxx/bridge.cpp")
         .include("cxx")
-        .include("../dom_color")
-        .include("../dom_color/straux")
-        .include("../dom_color/colors")
-        .include("../dom_color/histograms2D")
-        .include("../dom_color/histograms")
-        .include("../dom_color/histograms/histogram")
-        .include("../dom_color/histograms/histogram_common")
-        .include("../dom_color/hsv_histograms")
+        .include("../dom_color/src")
+        .include("../dom_color/src/straux")
+        .include("../dom_color/src/colors")
+        .include("../dom_color/src/histograms2D")
+        .include("../dom_color/src/histograms")
+        .include("../dom_color/src/histograms/histogram")
+        .include("../dom_color/src/histograms/histogram_common")
+        .include("../dom_color/src/hsv_histograms")
         .std("c++20")
         .compile("dom_color_bridge");
 
@@ -27,4 +27,5 @@ fn main() {
     println!("cargo:rerun-if-changed=cxx/bridge.hpp");
     println!("cargo:rerun-if-changed=cxx/bridge.cpp");
     println!("cargo:rerun-if-changed=../dom_color/CMakeLists.txt");
+    println!("cargo:rerun-if-changed=../dom_color/src");
 }

@@ -28,6 +28,10 @@ class HueHistogram {
     uint32_t get_count() const { return histogram.get_count(); };
     uint32_t get_grey_count() const { return alpha * grey_count; }
     uint64_t get_score() const { return get_count(); };
+    uint8_t get_alpha() const { return alpha; };
+    void set_alpha(uint8_t alpha) { this->alpha = alpha; };
+    uint8_t get_beta() const { return beta; };
+    void set_beta(uint8_t beta) { this->beta = beta; };
     const hist::Histogram &get_histogram() const { return histogram; }
     hue_hist::Dominant get_dominant();
     uint16_t add_pixel(const HSV &);
