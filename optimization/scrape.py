@@ -9,6 +9,7 @@ from spotify import Spotify, SpotifyAlbumDto
 import csv
 from dataclasses import dataclass
 from playwright.async_api import async_playwright, Browser, Route
+from album_store import AlbumStore, AlbumWriter
 
 
 @dataclass
@@ -18,12 +19,6 @@ class FetchedSpotifyAlbumDto:
     artist: str
     image: bytes
     image_color: str
-
-
-@dataclass
-class SpotifyAlbum:
-    id: str
-    image_filename: str
 
 
 class AlbumFetcher:
@@ -97,34 +92,15 @@ class AlbumFetcher:
             await route.continue_()
 
 
-def album_to_filename(name: str, artist: str):
-    return re.sub(r'[\\/*?:"<>|]', "", f"{artist}-{name}.jpg")
-
-
 class FileHandle:
     def __init__(self, fh):
         self._fh = fh
 
     def __enter__(self):
             return self
-    
+
     def __exit__(self, exc_type, exc_val, exc_tb):
         self._fh.close()
-
-class AlbumPersister(FileHandle):
-    def __init__(self, csv_name: str | Path, image_root: str | Path):
-        super().__init__(open(csv_name, "w", newline="", encoding="utf-8"))
-        self._image_root = Path(image_root)
-        os.makedirs(image_root, exist_ok=True)
-        self._writer = csv.writer(self._fh)
-        self._writer.writerow(["id", "image_path", "color"])
-
-    def save(self, album: FetchedSpotifyAlbumDto):
-        filename = album_to_filename(album.name, album.artist)
-        path = self._image_root / filename
-        with open(path, 'wb') as img_fh:
-            img_fh.write(album.image)
-        self._writer.writerow([album.id, str(filename), album.image_color])
 
 
 @dataclass
@@ -161,16 +137,16 @@ class AlbumScraper:
         async with (async_playwright() as playwright,
                     await playwright.chromium.launch(headless=True) as browser,
                     AlbumFetcher(self._spotify, browser) as fetcher):
-            with (AlbumPersister(csv_name="albums.csv", image_root="covers") as persister,
+            with (AlbumStore().writer() as album_writer,
                   AlbumNameReader("queries.csv") as reader):
-                await self._process(fetcher, persister, reader)
-                
-    async def _process(self, fetcher: AlbumFetcher, persister: AlbumPersister, reader: AlbumNameReader):
+                await self._process(fetcher, album_writer, reader)
+
+    async def _process(self, fetcher: AlbumFetcher, album_writer: AlbumWriter, reader: AlbumNameReader):
         async with asyncio.TaskGroup() as tg:
             for query in reader:
-                tg.create_task(self._process_one(fetcher, persister, query))
+                tg.create_task(self._process_one(fetcher, album_writer, query))
 
-    async def _process_one(self, fetcher: AlbumFetcher, persister: AlbumPersister, query: SpotifyAlbumQuery):
+    async def _process_one(self, fetcher: AlbumFetcher, album_writer: AlbumWriter, query: SpotifyAlbumQuery):
         async with self._semaphore:
             try:
                 album = await fetcher.get_album(query.query)
@@ -180,7 +156,8 @@ class AlbumScraper:
             if not album:
                 print(f"failed to fetch {query.query}")
                 return
-            persister.save(album)
+            album_writer.save(id=album.id, name=album.name, artist=album.artist,
+                              image=album.image, color=album.image_color)
             print("ok")
 
 
