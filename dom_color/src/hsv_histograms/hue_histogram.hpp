@@ -67,6 +67,8 @@ template <I_HueHistogram H> class GreyFilterHueHistogram {
     void set_alpha(uint8_t alpha) { this->alpha = alpha; };
     uint8_t get_beta() const { return beta; };
     void set_beta(uint8_t beta) { this->beta = beta; };
+    H &get_wrapped() { return hue_histogram; }
+    const H &get_wrapped() const { return hue_histogram; }
 
   private:
     uint8_t calculate_beta() const;
@@ -77,8 +79,34 @@ template <I_HueHistogram H> class GreyFilterHueHistogram {
     uint16_t grey_count = 0;
 };
 
+// Drops pixels on which white text would have a WCAG contrast ratio below
+// gamma / 10 (45 is AA for normal text, 30 for large text, 0 keeps all).
+template <I_HueHistogram H> class WCAGFilterHueHistogram {
+  public:
+    WCAGFilterHueHistogram(uint8_t gamma = 45)
+        requires std::default_initializable<H>;
+    // make_hue_histogram() returns H by value; it is constructed in place.
+    template <std::invocable F>
+        requires std::same_as<std::invoke_result_t<F>, H>
+    WCAGFilterHueHistogram(F &&make_hue_histogram, uint8_t gamma = 45);
+    hue_hist::Dominant get_dominant() { return hue_histogram.get_dominant(); }
+    void reset() { hue_histogram.reset(); }
+    void add_pixel(const HSV &hsv);
+    void set_alpha(uint8_t alpha) { hue_histogram.set_alpha(alpha); }
+    uint32_t get_count() const { return hue_histogram.get_count(); }
+    uint8_t get_gamma() const { return gamma; };
+    void set_gamma(uint8_t gamma) { this->gamma = gamma; };
+
+  private:
+    H hue_histogram;
+    uint8_t gamma;
+};
+
 static_assert(I_HueHistogram<HueHistogram>);
 static_assert(I_HueHistogram<GreyFilterHueHistogram<HueHistogram>>);
+static_assert(I_HueHistogram<WCAGFilterHueHistogram<HueHistogram>>);
+static_assert(I_HueHistogram<
+              GreyFilterHueHistogram<WCAGFilterHueHistogram<HueHistogram>>>);
 
 #include "hue_histogram.tpp"
 

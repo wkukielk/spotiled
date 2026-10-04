@@ -76,13 +76,22 @@ class TestGetDominatingColor:
 class TestReusedHistograms:
     def test_defaults(self):
         hue = dom_color.HueHistogram()
-        assert (hue.alpha, hue.beta) == (3, 23)
+        assert (hue.alpha, hue.beta, hue.gamma) == (3, 23, 0)
 
-    def test_alpha_beta_settable(self):
-        hue = dom_color.HueHistogram(alpha=5, beta=40)
-        assert (hue.alpha, hue.beta) == (5, 40)
-        hue.alpha, hue.beta = 7, 50
-        assert (hue.alpha, hue.beta) == (7, 50)
+    def test_alpha_beta_gamma_settable(self):
+        hue = dom_color.HueHistogram(alpha=5, beta=40, gamma=45)
+        assert (hue.alpha, hue.beta, hue.gamma) == (5, 40, 45)
+        hue.alpha, hue.beta, hue.gamma = 7, 50, 30
+        assert (hue.alpha, hue.beta, hue.gamma) == (7, 50, 30)
+
+    def test_gamma_drops_low_contrast_colors(self):
+        # Pure yellow has ~1.07:1 contrast with white text.
+        yellow = pixel_buffer(*([pack_rgb565(248, 252, 0)] * 100))
+        sv = dom_color.SVHistogram()
+        kept = dom_color.get_dominating_color(yellow, dom_color.HueHistogram(gamma=0), sv)
+        dropped = dom_color.get_dominating_color(yellow, dom_color.HueHistogram(gamma=45), sv)
+        assert kept == dom_color.get_dominating_color(yellow)
+        assert dropped != kept
 
     def test_matches_default_call(self):
         buf = pixel_buffer(*([RED] * 90 + [BLUE] * 10))

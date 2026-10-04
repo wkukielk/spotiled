@@ -13,8 +13,9 @@ class RGB:
 class HueHistogram:
     alpha: int
     beta: int
+    gamma: int
 
-    def __init__(self, alpha: int = 3, beta: int = 23) -> None: ...
+    def __init__(self, alpha: int = 3, beta: int = 23, gamma: int = 0) -> None: ...
 
 class SVHistogram:
     def __init__(self) -> None: ...

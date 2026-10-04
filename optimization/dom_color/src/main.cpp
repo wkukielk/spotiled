@@ -26,7 +26,7 @@ namespace
         return get_dominating_color(pixel_span(info));
     }
 
-    using PyHueHistogram = GreyFilterHueHistogram<HueHistogram>;
+    using PyHueHistogram = GreyFilterHueHistogram<WCAGFilterHueHistogram<HueHistogram>>;
 
     RGB get_dominating_color_buffer_reusing(py::buffer pixels, PyHueHistogram &hue_histogram,
                                             SVHistogram &sv_histogram)
@@ -61,11 +61,20 @@ PYBIND11_MODULE(_core, m, py::mod_gil_not_used(), py::multiple_interpreters::per
     )pbdoc");
 
     py::class_<PyHueHistogram>(m, "HueHistogram")
-        .def(py::init<uint8_t, uint8_t>(), py::arg("alpha") = 3, py::arg("beta") = 23)
+        // gamma defaults to 0 (no filtering) so results match get_dominating_color(pixels).
+        .def(py::init([](uint8_t alpha, uint8_t beta, uint8_t gamma)
+                      { return new PyHueHistogram{
+                            [gamma] { return WCAGFilterHueHistogram<HueHistogram>{gamma}; },
+                            alpha, beta}; }),
+             py::arg("alpha") = 3, py::arg("beta") = 23, py::arg("gamma") = 0)
         .def_property("alpha", &PyHueHistogram::get_alpha, &PyHueHistogram::set_alpha,
                       "Dominant is grey if alpha * grey_count > count")
         .def_property("beta", &PyHueHistogram::get_beta, &PyHueHistogram::set_beta,
-                      "Base alpha coefficient passed to the hue analyzer");
+                      "Base alpha coefficient passed to the hue analyzer")
+        .def_property(
+            "gamma", [](const PyHueHistogram &h) { return h.get_wrapped().get_gamma(); },
+            [](PyHueHistogram &h, uint8_t gamma) { h.get_wrapped().set_gamma(gamma); },
+            "Drop pixels where white text has WCAG contrast below gamma / 10");
 
     py::class_<SVHistogram>(m, "SVHistogram")
         .def(py::init<>());

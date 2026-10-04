@@ -41,3 +41,21 @@ uint8_t GreyFilterHueHistogram<H>::calculate_beta() const {
     uint64_t grey = (uint64_t)alpha * grey_count;
     return beta + (255 - beta) * grey / get_count();
 }
+
+template <I_HueHistogram H>
+WCAGFilterHueHistogram<H>::WCAGFilterHueHistogram(uint8_t gamma)
+    requires std::default_initializable<H>
+    : gamma{gamma} {}
+
+template <I_HueHistogram H>
+template <std::invocable F>
+    requires std::same_as<std::invoke_result_t<F>, H>
+WCAGFilterHueHistogram<H>::WCAGFilterHueHistogram(F &&make_hue_histogram,
+                                                  uint8_t gamma)
+    : hue_histogram{std::forward<F>(make_hue_histogram)()}, gamma{gamma} {}
+
+template <I_HueHistogram H>
+void WCAGFilterHueHistogram<H>::add_pixel(const HSV &hsv) {
+    if (color::white_text_contrast_at_least(RGB{hsv}, gamma))
+        hue_histogram.add_pixel(hsv);
+}

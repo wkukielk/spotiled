@@ -10,7 +10,7 @@ from run_dom_color import LoadedAlbum, errors_of, evaluate, load_albums, summary
 N_TRIALS = 1000
 VALIDATION_FRACTION = 0.25
 SEED = 0
-DEFAULT_PARAMS = {"alpha": 3, "beta": 23}
+DEFAULT_PARAMS = {"alpha": 3, "beta": 23, "gamma": 0}
 
 
 def split(albums: list[LoadedAlbum]) -> tuple[list[LoadedAlbum], list[LoadedAlbum]]:
@@ -26,11 +26,13 @@ def suggest_params(trial: optuna.Trial) -> dict:
     return {
         "alpha": trial.suggest_int("alpha", 0, 255),
         "beta": trial.suggest_int("beta", 0, 255),
+        # Contrast in tenths; above 210 (21:1) even black is dropped.
+        "gamma": trial.suggest_int("gamma", 0, 210),
     }
 
 
 def make_histograms(params: dict) -> tuple[HueHistogram, SVHistogram]:
-    return HueHistogram(alpha=params["alpha"], beta=params["beta"]), SVHistogram()
+    return HueHistogram(**params), SVHistogram()
 
 
 def loss_on(albums: list[LoadedAlbum], params: dict) -> float:

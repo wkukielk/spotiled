@@ -67,3 +67,45 @@ TEST_F(GreyFilterHistogram, ResetClearsCounts) {
     EXPECT_EQ(histogram.get_count(), 0u);
     EXPECT_EQ(histogram.get_grey_count(), 0u);
 }
+
+class WCAGFilterHistogram : public testing::Test {
+  protected:
+    WCAGFilterHueHistogram<HueHistogram> histogram{[] { return HueHistogram{}; },
+                                                   45};
+};
+
+TEST_F(WCAGFilterHistogram, KeepsDarkColor) {
+    histogram.add_pixel(HSV{RGB{0, 0, 128}}); // contrast ~16:1
+    EXPECT_GT(histogram.get_count(), 0u);
+}
+
+TEST_F(WCAGFilterHistogram, DropsLightColor) {
+    histogram.add_pixel(HSV{RGB{255, 255, 0}}); // contrast ~1.07:1
+    EXPECT_EQ(histogram.get_count(), 0u);
+    EXPECT_TRUE(histogram.get_dominant().is_grey);
+}
+
+TEST_F(WCAGFilterHistogram, ThresholdFollowsGamma) {
+    auto red = HSV{RGB{255, 0, 0}}; // contrast ~4.0:1
+    histogram.add_pixel(red);
+    EXPECT_EQ(histogram.get_count(), 0u);
+    histogram.set_gamma(35);
+    histogram.add_pixel(red);
+    EXPECT_GT(histogram.get_count(), 0u);
+}
+
+TEST_F(WCAGFilterHistogram, GammaZeroKeepsEverything) {
+    histogram.set_gamma(0);
+    histogram.add_pixel(HSV{RGB{255, 255, 0}});
+    EXPECT_GT(histogram.get_count(), 0u);
+}
+
+TEST(WhiteTextContrast, WhiteBackgroundIsExactlyOne) {
+    EXPECT_TRUE(color::white_text_contrast_at_least(RGB{255, 255, 255}, 10));
+    EXPECT_FALSE(color::white_text_contrast_at_least(RGB{255, 255, 255}, 11));
+}
+
+TEST(WhiteTextContrast, BlackBackgroundIsExactlyTwentyOne) {
+    EXPECT_TRUE(color::white_text_contrast_at_least(RGB{0, 0, 0}, 210));
+    EXPECT_FALSE(color::white_text_contrast_at_least(RGB{0, 0, 0}, 211));
+}
