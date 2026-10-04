@@ -6,12 +6,14 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "asyncio>=4.0.0",
+    "chromium>=0.0.0",
     "dom_color",
     "httpx>=0.28.1",
     "matplotlib>=3.11.0",
     "numpy>=2.0",
     "pandas>=3.0.6",
     "pillow>=11.0",
+    "playwright>=1.63.0",
     "tekore>=6.2.0",
 ]
 
