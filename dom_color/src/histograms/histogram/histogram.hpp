@@ -2,7 +2,6 @@
 #define HISTOGRAM_HPP
 
 #include "histogram_aux.hpp"
-#include <array>
 
 namespace hist {
 enum AddError : uint16_t {

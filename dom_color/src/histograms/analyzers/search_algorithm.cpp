@@ -37,7 +37,7 @@ const hist::MyCluster *BasicSearchAlgorithm::get_best() const {
             return sumator.count({&c, current_size});
         });
     auto best = std::max_element(counts.begin(), counts_end);
-    return begin + (best - counts.begin());
+    return clusters.data() + (best - counts.begin());
 }
 
 WrappingSearchAlgorithm::WrappingSearchAlgorithm(
@@ -65,7 +65,7 @@ const hist::MyCluster *WrappingSearchAlgorithm::get_best() const {
                        return sumator.count({&c, current_size});
                    });
     auto best = std::max_element(counts.begin(), counts.end());
-    return clusters.begin() + (best - counts.begin());
+    return clusters.data() + (best - counts.begin());
 }
 
 NonLinearSearchAlgorithm::NonLinearSearchAlgorithm(
@@ -94,5 +94,5 @@ const hist::MyCluster *NonLinearSearchAlgorithm::get_best() const {
         clusters.begin(), clusters.end(), counts.begin(),
         [this](const auto &c) { return sumator.count({&c, depth}); });
     auto best = std::max_element(counts.begin(), counts.end());
-    return clusters.begin() + (best - counts.begin());
+    return clusters.data() + (best - counts.begin());
 }

@@ -1,9 +1,9 @@
 import numpy as np
 
-from dom_color import RGB
+from dom_color import RGB, is_grey
 
 # Below this CIE76 distance two colors read as "the same color".
-HIT_THRESHOLD = 10.0
+HIT_THRESHOLD = 10
 
 # sRGB (D65) -> XYZ
 _RGB_TO_XYZ = np.array([
@@ -32,17 +32,19 @@ def srgb_to_lab(rgb: np.ndarray) -> np.ndarray:
 
 
 def delta_e(predicted: list[RGB], expected: list[RGB]) -> np.ndarray:
-    """Per-album CIE76 distance."""
+    """Per-album CIE76 distance; 0 when both colors are grey per dom_color."""
     diff = srgb_to_lab(rgb_to_array(predicted)) - srgb_to_lab(rgb_to_array(expected))
-    return np.linalg.norm(diff, axis=-1)
+    both_grey = np.array([is_grey(p) and is_grey(e) for p, e in zip(predicted, expected)],
+                         dtype=bool)
+    return np.where(both_grey, 0.0, np.linalg.norm(diff, axis=-1))
 
 
 def loss(errors: np.ndarray) -> float:
-    return float(np.mean(errors))
-
-
-def loss_sqrt(errors: np.ndarray) -> float:
     return float(np.mean(np.sqrt(errors)))
+
+
+# def loss_sqrt(errors: np.ndarray) -> float:
+#     return float(np.mean(np.sqrt(errors)))
 
 
 def hit_rate(errors: np.ndarray, threshold: float = HIT_THRESHOLD) -> float:

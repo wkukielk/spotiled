@@ -37,10 +37,20 @@ TEST(HueHistogram, EmptyIsGrey) {
     EXPECT_EQ(dominant.count, 0u);
 }
 
+TEST(HueHistogram, StillWorksAfterMove) {
+    HueHistogram original;
+    for (int i = 0; i < 100; ++i)
+        original.add_pixel(HSV{deg(200), HSV::kMaxSat, HSV::kMaxVal});
+    HueHistogram moved{std::move(original)};
+    moved.add_pixel(HSV{deg(200), HSV::kMaxSat, HSV::kMaxVal});
+    auto dominant = moved.get_dominant();
+    EXPECT_FALSE(dominant.is_grey);
+    EXPECT_NEAR(dominant.hue, deg(200), deg(1));
+}
+
 class GreyFilterHistogram : public testing::Test {
   protected:
-    GreyFilterHueHistogram<HueHistogram> histogram{[] { return HueHistogram{}; },
-                                                   3};
+    GreyFilterHueHistogram<HueHistogram> histogram{HueHistogram{}, 3};
 };
 
 TEST_F(GreyFilterHistogram, MostlyGreyIsGrey) {
@@ -70,8 +80,7 @@ TEST_F(GreyFilterHistogram, ResetClearsCounts) {
 
 class WCAGFilterHistogram : public testing::Test {
   protected:
-    WCAGFilterHueHistogram<HueHistogram> histogram{[] { return HueHistogram{}; },
-                                                   45};
+    WCAGFilterHueHistogram<HueHistogram> histogram{HueHistogram{}, 45};
 };
 
 TEST_F(WCAGFilterHistogram, KeepsDarkColor) {

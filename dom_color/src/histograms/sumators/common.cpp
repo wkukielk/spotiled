@@ -3,7 +3,7 @@
 
 namespace hist {
 Bounds get_bounds(const Histogram &histogram, BasicWindow w) {
-    auto begin = histogram.get_clusters().begin();
+    auto begin = histogram.get_clusters().data();
     auto upper = histogram.get_upper_bound();
     auto bounds = Bounds{};
     bounds.lower = upper * (w.first - begin) / sz;
@@ -12,7 +12,7 @@ Bounds get_bounds(const Histogram &histogram, BasicWindow w) {
 };
 
 Bounds get_bounds(const Histogram &histogram, CenterWindow w) {
-    auto begin = histogram.get_clusters().begin();
+    auto begin = histogram.get_clusters().data();
 
     auto index_low = w.center - (1 << w.depth) + 1 - begin;
     if (index_low < 0)

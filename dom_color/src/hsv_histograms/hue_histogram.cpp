@@ -23,7 +23,9 @@ Dominant convert_dominant(const hist::Dominant &dominant) {
 }
 } // namespace hue_hist
 
-HueHistogram::HueHistogram() : histogram{HSV::kMaxHue}, analyzer{histogram} {}
+HueHistogram::HueHistogram()
+    : histogram{std::make_unique<hist::Histogram>(HSV::kMaxHue)},
+      analyzer{*histogram} {}
 
 hue_hist::Dominant HueHistogram::get_dominant() const {
     if (get_count() == 0)
@@ -43,7 +45,7 @@ void HueHistogram::add_pixel(const HSV &hsv) {
     uint16_t temp_sv = hsv.s * hsv.v >> 15;
     temp_sv = std::min<uint16_t>(temp_sv, 0x7FFF);
     uint8_t weight = temp_sv >> 7;
-    histogram.add(hsv.h, weight);
+    histogram->add(hsv.h, weight);
 }
 
-void HueHistogram::reset() { histogram.reset(); }
+void HueHistogram::reset() { histogram->reset(); }

@@ -2,8 +2,8 @@
 #define HISTOGRAM_AUX
 
 #include "cluster.hpp"
-#include <array>
 #include <cstddef>
+#include <vector>
 
 namespace hist {
 static const uint8_t basesz = 6;
@@ -11,7 +11,8 @@ static const uint8_t halvings = 5;
 static const size_t sz = basesz * (1 << halvings);
 static const uint8_t hshift = 4;
 using MyCluster = Cluster<hshift>;
-using ClusterArray = std::array<MyCluster, sz>;
+// Heap allocated; always holds exactly sz clusters.
+using ClusterArray = std::vector<MyCluster>;
 
 struct Bounds {
     uint16_t lower;

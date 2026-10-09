@@ -1,6 +1,8 @@
 #include <pybind11/pybind11.h>
 
+#include "color_aux.hpp"
 #include "dominant_color.hpp"
+#include "hsv.hpp"
 #include "rgb.hpp"
 
 namespace py = pybind11;
@@ -53,6 +55,9 @@ PYBIND11_MODULE(_core, m, py::mod_gil_not_used(), py::multiple_interpreters::per
         .def("__repr__", [](const RGB &c)
              { return "RGB(r=" + std::to_string(c.r) + ", g=" + std::to_string(c.g) + ", b=" + std::to_string(c.b) + ")"; });
 
+    m.def("is_grey", [](const RGB &rgb) { return color::is_grey(HSV{rgb}); }, py::arg("rgb"),
+          "True if dom_color treats this color as grey (low saturation or value)");
+
     m.def("get_dominating_color", &get_dominating_color_buffer, py::arg("pixels"), R"pbdoc(
         Compute the dominant color of an image.
 
@@ -64,7 +69,7 @@ PYBIND11_MODULE(_core, m, py::mod_gil_not_used(), py::multiple_interpreters::per
         // gamma defaults to 0 (no filtering) so results match get_dominating_color(pixels).
         .def(py::init([](uint8_t alpha, uint8_t beta, uint8_t gamma)
                       { return new PyHueHistogram{
-                            [gamma] { return WCAGFilterHueHistogram<HueHistogram>{gamma}; },
+                            WCAGFilterHueHistogram<HueHistogram>{gamma},
                             alpha, beta}; }),
              py::arg("alpha") = 3, py::arg("beta") = 23, py::arg("gamma") = 0)
         .def_property("alpha", &PyHueHistogram::get_alpha, &PyHueHistogram::set_alpha,

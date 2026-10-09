@@ -35,17 +35,16 @@ concept I_HueHistogram = requires(T t, HSV hsv, uint8_t alpha) {
 class HueHistogram {
   public:
     HueHistogram();
-    // analyzer refers to histogram, so the object must never be relocated.
-    HueHistogram(const HueHistogram &) = delete;
-    HueHistogram &operator=(const HueHistogram &) = delete;
-    uint32_t get_count() const { return histogram.get_count(); };
+    // analyzer refers to *histogram, which stays put on the heap when moved.
+    HueHistogram(HueHistogram &&) = default;
+    uint32_t get_count() const { return histogram->get_count(); };
     hue_hist::Dominant get_dominant() const;
     void add_pixel(const HSV &);
     void set_alpha(uint8_t alpha);
     void reset();
 
   private:
-    hist::Histogram histogram;
+    std::unique_ptr<hist::Histogram> histogram;
     hist::analyzers::Analyzer<WrappingSearchAlgorithm> analyzer;
 };
 
@@ -53,10 +52,7 @@ template <I_HueHistogram H> class GreyFilterHueHistogram {
   public:
     GreyFilterHueHistogram(uint8_t alpha = 3, uint8_t beta = 23)
         requires std::default_initializable<H>;
-    // make_hue_histogram() returns H by value; it is constructed in place.
-    template <std::invocable F>
-        requires std::same_as<std::invoke_result_t<F>, H>
-    GreyFilterHueHistogram(F &&make_hue_histogram, uint8_t alpha = 3,
+    GreyFilterHueHistogram(H &&hue_histogram, uint8_t alpha = 3,
                            uint8_t beta = 23);
     hue_hist::Dominant get_dominant();
     void reset();
@@ -83,9 +79,7 @@ template <I_HueHistogram H> class WCAGFilterHueHistogram {
   public:
     WCAGFilterHueHistogram(uint8_t gamma = 45)
         requires std::default_initializable<H>;
-    template <std::invocable F>
-        requires std::same_as<std::invoke_result_t<F>, H>
-    WCAGFilterHueHistogram(F &&make_hue_histogram, uint8_t gamma = 45);
+    WCAGFilterHueHistogram(H &&hue_histogram, uint8_t gamma = 45);
     hue_hist::Dominant get_dominant() { return hue_histogram.get_dominant(); }
     void reset() { hue_histogram.reset(); }
     void add_pixel(const HSV &hsv);

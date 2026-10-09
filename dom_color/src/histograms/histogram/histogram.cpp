@@ -1,4 +1,5 @@
 #include "histogram.hpp"
+#include <algorithm>
 #include <cmath>
 
 namespace hist {
@@ -11,7 +12,7 @@ struct MaxCluster {
 } // namespace
 
 Histogram::Histogram(uint16_t exclusive_upper_bound)
-    : upper_bound{exclusive_upper_bound} {}
+    : clusters(sz), upper_bound{exclusive_upper_bound} {}
 
 uint16_t Histogram::add(uint16_t value) { return add(value, 1); }
 
@@ -29,6 +30,6 @@ uint16_t Histogram::add(uint16_t value, uint8_t weight) {
 
 void Histogram::reset() {
     count = 0;
-    clusters.fill(MyCluster{});
+    std::fill(clusters.begin(), clusters.end(), MyCluster{});
 }
 }; // namespace hist

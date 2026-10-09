@@ -6,12 +6,9 @@ GreyFilterHueHistogram<H>::GreyFilterHueHistogram(uint8_t alpha, uint8_t beta)
     : alpha{alpha}, beta{beta} {}
 
 template <I_HueHistogram H>
-template <std::invocable F>
-    requires std::same_as<std::invoke_result_t<F>, H>
-GreyFilterHueHistogram<H>::GreyFilterHueHistogram(F &&make_hue_histogram,
+GreyFilterHueHistogram<H>::GreyFilterHueHistogram(H &&hue_histogram,
                                                   uint8_t alpha, uint8_t beta)
-    : hue_histogram{std::forward<F>(make_hue_histogram)()}, alpha{alpha},
-      beta{beta} {}
+    : hue_histogram{std::move(hue_histogram)}, alpha{alpha}, beta{beta} {}
 
 template <I_HueHistogram H>
 hue_hist::Dominant GreyFilterHueHistogram<H>::get_dominant() {
@@ -48,11 +45,9 @@ WCAGFilterHueHistogram<H>::WCAGFilterHueHistogram(uint8_t gamma)
     : gamma{gamma} {}
 
 template <I_HueHistogram H>
-template <std::invocable F>
-    requires std::same_as<std::invoke_result_t<F>, H>
-WCAGFilterHueHistogram<H>::WCAGFilterHueHistogram(F &&make_hue_histogram,
+WCAGFilterHueHistogram<H>::WCAGFilterHueHistogram(H &&hue_histogram,
                                                   uint8_t gamma)
-    : hue_histogram{std::forward<F>(make_hue_histogram)()}, gamma{gamma} {}
+    : hue_histogram{std::move(hue_histogram)}, gamma{gamma} {}
 
 template <I_HueHistogram H>
 void WCAGFilterHueHistogram<H>::add_pixel(const HSV &hsv) {
