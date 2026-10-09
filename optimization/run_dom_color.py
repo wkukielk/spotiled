@@ -49,8 +49,12 @@ def album_tile(store: AlbumStore, evaluated: EvaluatedAlbum) -> Image.Image:
 
 def save_worst_collage(store: AlbumStore, evaluated: list[EvaluatedAlbum], path: str, count: int):
     worst = sorted(evaluated, key=lambda e: e.error, reverse=True)[:count]
-    tiles = [album_tile(store, e) for e in worst]
-    collage(tiles, columns=4).save(path)
+    make_collage(store, worst).save(path)
+
+
+def make_collage(store: AlbumStore, albums: list[EvaluatedAlbum]):
+    tiles = [album_tile(store, e) for e in albums]
+    return collage(tiles, columns=4)
 
 
 def evaluate(albums: list[LoadedAlbum], hue_histogram: HueHistogram,

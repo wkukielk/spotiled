@@ -79,13 +79,10 @@ template <I_HueHistogram H> class GreyFilterHueHistogram {
     uint16_t grey_count = 0;
 };
 
-// Drops pixels on which white text would have a WCAG contrast ratio below
-// gamma / 10 (45 is AA for normal text, 30 for large text, 0 keeps all).
 template <I_HueHistogram H> class WCAGFilterHueHistogram {
   public:
     WCAGFilterHueHistogram(uint8_t gamma = 45)
         requires std::default_initializable<H>;
-    // make_hue_histogram() returns H by value; it is constructed in place.
     template <std::invocable F>
         requires std::same_as<std::invoke_result_t<F>, H>
     WCAGFilterHueHistogram(F &&make_hue_histogram, uint8_t gamma = 45);

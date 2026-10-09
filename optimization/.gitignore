@@ -2,3 +2,5 @@ __pycache__/
 *.csv
 covers/
 !queries.csv
+.ipynb_checkpoints/
+build-example/

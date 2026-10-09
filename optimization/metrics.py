@@ -38,8 +38,11 @@ def delta_e(predicted: list[RGB], expected: list[RGB]) -> np.ndarray:
 
 
 def loss(errors: np.ndarray) -> float:
-    """Mean delta E: unlike MSE, a hopeless album can't dominate."""
     return float(np.mean(errors))
+
+
+def loss_sqrt(errors: np.ndarray) -> float:
+    return float(np.mean(np.sqrt(errors)))
 
 
 def hit_rate(errors: np.ndarray, threshold: float = HIT_THRESHOLD) -> float:

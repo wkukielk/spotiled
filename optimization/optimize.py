@@ -1,5 +1,7 @@
 import random
 
+import matplotlib.pyplot as plt
+import numpy as np
 import optuna
 
 import metrics
@@ -43,6 +45,25 @@ def report(name: str, albums: list[LoadedAlbum], params: dict):
     print(f"  {name:<10} {summary(errors_of(evaluate(albums, *make_histograms(params))))}")
 
 
+def plot_loss(study: optuna.Study):
+    trials = [t for t in study.trials if t.state == optuna.trial.TrialState.COMPLETE]
+    numbers = [t.number for t in trials]
+    losses = [t.value for t in trials]
+
+    fig, ax = plt.subplots(figsize=(9, 4.5))
+    ax.scatter(numbers, losses, s=10, color="#2a78d6", alpha=0.35, linewidths=0, label="trial")
+    ax.step(numbers, np.minimum.accumulate(losses), where="post",
+            color="#eb6834", linewidth=2, label="best so far")
+    ax.set_xlabel("trial")
+    ax.set_ylabel("train loss")
+    ax.grid(axis="y", color="#e4e3df", linewidth=0.8)
+    ax.spines[["top", "right"]].set_visible(False)
+    ax.legend(frameon=False)
+    fig.tight_layout()
+
+    return fig
+
+
 def main():
     train, validation = split(load_albums(AlbumStore()))
     print(f"{len(train)} train / {len(validation)} validation albums")
@@ -58,6 +79,9 @@ def main():
         print(f"{label} {params}")
         report("train", train, params)
         report("validation", validation, params)
+
+    fig = plot_loss(study)
+    fig.savefig("test.png")
 
 
 if __name__ == "__main__":

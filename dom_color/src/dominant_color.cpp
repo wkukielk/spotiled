@@ -12,7 +12,8 @@ sv_hist::Dominant avg_sv(std::span<const uint16_t> bmp, hist::Bounds bounds,
     sv_histogram.reset();
     for (auto px : bmp) {
         auto hsv = HSV{px};
-        if (color::in_hue_interval(bounds.lower, bounds.upper, hsv.h))
+        auto in_ivl = color::in_hue_interval(bounds.lower, bounds.upper, hsv.h);
+        if (in_ivl && !color::is_grey(hsv))
             sv_histogram.add_pixel(hsv);
     }
     return sv_histogram.get_dominant();
