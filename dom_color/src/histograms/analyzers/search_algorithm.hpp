@@ -9,25 +9,18 @@
 #include <concepts>
 #include <optional>
 
-// A dominant window found by a search, with the range its count is judged in.
-struct Candidate {
-    hist::Dominant dominant;
-    uint64_t min_count; // some window of the search is guaranteed to reach it
-    uint64_t max_count; // no window of the search can exceed it
-};
-
 template <typename S>
 concept SearchAlgorithm = std::constructible_from<S, const hist::Histogram &> &&
                           requires(S s) {
                               {
                                   s.get_next()
-                              } -> std::same_as<std::optional<Candidate>>;
+                              } -> std::same_as<std::optional<hist::Dominant>>;
                           };
 
 class BasicSearchAlgorithm {
   public:
     BasicSearchAlgorithm(const hist::Histogram &histogram);
-    std::optional<Candidate> get_next();
+    std::optional<hist::Dominant> get_next();
 
   private:
     const hist::MyCluster *get_best() const;
@@ -41,7 +34,7 @@ class BasicSearchAlgorithm {
 class WrappingSearchAlgorithm {
   public:
     WrappingSearchAlgorithm(const hist::Histogram &histogram);
-    std::optional<Candidate> get_next();
+    std::optional<hist::Dominant> get_next();
 
   private:
     const hist::MyCluster *get_best() const;
@@ -55,7 +48,7 @@ class WrappingSearchAlgorithm {
 class NonLinearSearchAlgorithm {
   public:
     NonLinearSearchAlgorithm(const hist::Histogram &histogram);
-    std::optional<Candidate> get_next();
+    std::optional<hist::Dominant> get_next();
 
   private:
     const hist::MyCluster *get_best() const;

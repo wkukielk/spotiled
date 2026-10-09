@@ -5,6 +5,10 @@ from dom_color import RGB, is_grey
 # Below this CIE76 distance two colors read as "the same color".
 HIT_THRESHOLD = 10
 
+# Predicting grey when the expected color is not grey is worse than picking
+# the wrong hue, so its distance is scaled up by this factor.
+GREY_MISS_PENALTY = 2.0
+
 # sRGB (D65) -> XYZ
 _RGB_TO_XYZ = np.array([
     [0.4124564, 0.3575761, 0.1804375],
@@ -32,11 +36,14 @@ def srgb_to_lab(rgb: np.ndarray) -> np.ndarray:
 
 
 def delta_e(predicted: list[RGB], expected: list[RGB]) -> np.ndarray:
-    """Per-album CIE76 distance; 0 when both colors are grey per dom_color."""
+    """Per-album CIE76 distance; 0 when both colors are grey per dom_color,
+    scaled by GREY_MISS_PENALTY when only the prediction is grey."""
     diff = srgb_to_lab(rgb_to_array(predicted)) - srgb_to_lab(rgb_to_array(expected))
-    both_grey = np.array([is_grey(p) and is_grey(e) for p, e in zip(predicted, expected)],
-                         dtype=bool)
-    return np.where(both_grey, 0.0, np.linalg.norm(diff, axis=-1))
+    predicted_grey = np.array([is_grey(p) for p in predicted], dtype=bool)
+    expected_grey = np.array([is_grey(e) for e in expected], dtype=bool)
+    distance = np.linalg.norm(diff, axis=-1)
+    distance = np.where(predicted_grey & ~expected_grey, GREY_MISS_PENALTY * distance, distance)
+    return np.where(predicted_grey & expected_grey, 0.0, distance)
 
 
 def loss(errors: np.ndarray) -> float:

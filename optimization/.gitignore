@@ -4,3 +4,4 @@ covers/
 !queries.csv
 .ipynb_checkpoints/
 build-example/
+*.png

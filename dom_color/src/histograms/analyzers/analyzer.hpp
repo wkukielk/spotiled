@@ -5,10 +5,10 @@
 #include "histogram.hpp"
 #include "histogram_aux.hpp"
 #include "search_algorithm.hpp"
+#include "sumators/wrap_around.hpp"
 
 namespace hist {
 namespace analyzers {
-// Returns the first candidate of the search whose count alpha accepts.
 template <SearchAlgorithm Search> class Analyzer {
   public:
     Analyzer(const Histogram &histogram, uint8_t alpha = 1);
@@ -17,7 +17,10 @@ template <SearchAlgorithm Search> class Analyzer {
     Dominant get_dominant() const;
 
   private:
+    BasicWindow to_window(Bounds bounds) const;
+
     const Histogram &histogram;
+    sumators::WrapAround sumator;
     AlphaCoefficient alpha;
 };
 }; // namespace analyzers

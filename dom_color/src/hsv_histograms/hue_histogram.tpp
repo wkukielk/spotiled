@@ -36,7 +36,7 @@ template <I_HueHistogram H> void GreyFilterHueHistogram<H>::reset() {
 template <I_HueHistogram H>
 uint8_t GreyFilterHueHistogram<H>::calculate_beta() const {
     uint64_t grey = (uint64_t)alpha * grey_count;
-    return beta + (255 - beta) * grey / get_count();
+    return std::min<unsigned>(beta + grey / get_count(), 255u);
 }
 
 template <I_HueHistogram H>
