@@ -13,6 +13,7 @@ from sqlalchemy.ext.asyncio import (
     AsyncSession
 )
 
+from sqlalchemy import event
 from sqlalchemy.pool import StaticPool
 from sqlmodel import SQLModel
 
@@ -26,6 +27,15 @@ async def engine():
         "sqlite+aiosqlite:///:memory:",
         connect_args={"check_same_thread": False},
         poolclass=StaticPool)
+
+    @event.listens_for(engine.sync_engine, "connect")
+    def do_connect(dbapi_connection, connection_record):
+        dbapi_connection.isolation_level = None
+
+    @event.listens_for(engine.sync_engine, "begin")
+    def do_begin(conn):
+        conn.exec_driver_sql("BEGIN")
+
     async with engine.begin() as conn:
         await conn.run_sync(SQLModel.metadata.create_all)
 
@@ -36,10 +46,14 @@ async def engine():
 
 @pytest_asyncio.fixture
 async def session(engine):
-    async_session = async_sessionmaker(engine, class_=AsyncSession,
-                                       expire_on_commit=False)
-    async with async_session() as session:
-        yield session
+    async with engine.connect() as conn:
+        trans = await conn.begin()
+        async_session = async_sessionmaker(
+            bind=conn, class_=AsyncSession, expire_on_commit=False,
+            join_transaction_mode="create_savepoint")
+        async with async_session() as session:
+            yield session
+        await trans.rollback()
 
 
 def mock_session(app: FastAPI, session: AsyncSession):

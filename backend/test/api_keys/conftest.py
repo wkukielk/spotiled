@@ -7,6 +7,6 @@ from app.api_keys.services import create_key
 
 @pytest_asyncio.fixture
 async def apikey(session: AsyncSession):
-    key, secret = await create_key(session)
+    key, secret = await create_key(session, "test")
     await session.commit()
     return secret
