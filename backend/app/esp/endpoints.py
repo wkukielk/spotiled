@@ -1,30 +1,29 @@
-from typing import Annotated
+from typing import Annotated, Any
 from fastapi import APIRouter, Depends, Response, status
 from fastapi.responses import FileResponse
-from fastapi_api_key import ApiKey
 
-from .services import (
+from .dependencies import (
     validate_requested_firmware as val_req_fware,
     validate_owned_version as val_owned_ver
 )
-from .models import Version, FirmwareRead
-from app.api_keys.services import authorize
 
-from app.config import settings
+from .models import SpecificVersion, RequestedFirmware
+from . import services
+from app.api_keys.services import authorize
 
 
 router = APIRouter()
 
-responses = {304: {"description": "You own the latest stable version"}}
+responses: dict[int | str, dict[str, Any]] = {
+    304: {"description": "You own the latest stable version"}
+}
 
 
-@router.get("/firmware/{chip}/{version}", responses=responses)
+@router.get("/firmware/{chip}/{version}", responses=responses,
+            dependencies=[Depends(authorize)])
 async def firmware(
-        req_firmware: Annotated[FirmwareRead, Depends(val_req_fware)],
-        owned_version: Annotated[Version | None, Depends(val_owned_ver)],
-        apikey: Annotated[ApiKey, Depends(authorize)]):
-    is_update_request = req_firmware.is_latest and owned_version is not None
-    if is_update_request and owned_version >= req_firmware.version:
+        req_firmware: Annotated[RequestedFirmware, Depends(val_req_fware)],
+        owned_version: Annotated[SpecificVersion | None, Depends(val_owned_ver)]):
+    if services.is_up_to_date(req_firmware, owned_version):
         return Response(status_code=status.HTTP_304_NOT_MODIFIED)
-    path = settings.firmware_root_folder / req_firmware.relative_path
-    return FileResponse(path)
+    return FileResponse(services.firmware_path(req_firmware.firmware))

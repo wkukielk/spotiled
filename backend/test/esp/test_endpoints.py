@@ -64,3 +64,20 @@ async def test_get_firmware_none(client: AsyncClient):
 async def test_get_firmware_none_latest(client: AsyncClient):
     response = await client.get(str(FIRMWARE_URL / "latest"))
     assert response.status_code == 404
+
+
+async def test_get_firmware_401_before_404(aclient: AsyncClient):
+    response = await aclient.get(str(FIRMWARE_URL / "9.9"))
+    assert response.status_code == 401
+
+
+@pytest.mark.parametrize("version", ["1.2abc", "xlatest", "1.2.3"])
+async def test_get_firmware_bad_version_422(client: AsyncClient, version):
+    response = await client.get(str(FIRMWARE_URL / version))
+    assert response.status_code == 422
+
+
+async def test_get_firmware_bad_blacklist_422(client: AsyncClient):
+    params = {"blacklist": "foo"}
+    response = await client.get(str(FIRMWARE_URL / "latest"), params=params)
+    assert response.status_code == 422

@@ -31,10 +31,12 @@ class Firmware(SQLModel, table=True):
     chip: Chip
 
     @computed_field(return_type=str)
+    @property
     def version_str(self) -> str:
         return f"{self.major}.{self.minor}"
 
     @computed_field(return_type=SpecificVersion)
+    @property
     def version(self) -> SpecificVersion:
         return SpecificVersion(self.major, self.minor)
 
@@ -46,5 +48,6 @@ class Firmware(SQLModel, table=True):
     )
 
 
-class FirmwareRead(Firmware):
+class RequestedFirmware(NamedTuple):
+    firmware: Firmware
     is_latest: bool = False
