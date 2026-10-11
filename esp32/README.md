@@ -30,8 +30,23 @@ There should be ISRG cert and your local cert sitting next to each other in that
 
 #### Encrypted nvs
 
-For now, there is no flash enryption in Dev nor Release build, but "encnvs" partition is ultimately
-supposed to be encrypted because it contains e.g. and api key (see `firmware/partitions.csv`).
+`encnvs` partition is encrypted in `RELEASE` mode because it contains an api key (see `firmware/partitions.csv`).
+
+#### Encrypted flash
+
+Switch to `RELEASE` mode, then:
+```
+scrips/gen_flash_key.sh
+scrips/burn_flash_key.sh
+scrips/gen_nvs_key.sh
+idf.py erase-flash
+
+# first flash
+idf.py build flash monitor
+# subsequent flashes
+idf.py build
+scripts/flash_encrypted.sh
+```
 
 Similarly to "cfg" partition, "encnvs" is populated based on `firmware/nvs/encnvs.csv`. This file can
 be generated automatically, refer to backend's README.

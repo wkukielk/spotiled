@@ -13,6 +13,7 @@ App::App(AppHandles &&handles) : handles{move(handles)} {}
 
 struct NVSHandles {
     u_ptr<NVSSecurity> nvs_security;
+    u_ptr<NVSUnencrypted> nvs_plain;
     NVS cfg;
     NVS enc;
     NVSHandle dft;
@@ -20,14 +21,16 @@ struct NVSHandles {
 
 NVSHandles init_nvs() {
     auto nvs_security = mkuptr<NVSSecurity>();
-    auto cfgnvs = NVS{"cfg", *nvs_security};
+    auto nvs_plain = mkuptr<NVSUnencrypted>();
+    auto cfgnvs = NVS{"cfg", *nvs_plain};
     auto encnvs = NVS{"encnvs", *nvs_security};
-    auto nvs = mkuptr<NVS>(*nvs_security);
+    auto nvs = mkuptr<NVS>(*nvs_plain);
     nvs->init();
     cfgnvs.init();
     encnvs.init();
 
     return {.nvs_security{move(nvs_security)},
+            .nvs_plain{move(nvs_plain)},
             .cfg{move(cfgnvs)},
             .enc{move(encnvs)},
             .dft{move(nvs)}};
@@ -54,6 +57,7 @@ App App::create() {
         .eloop{move(eloop)},
         .netif{move(netif)},
         .nvs_security{move(nvs_handles.nvs_security)},
+        .nvs_plain{move(nvs_handles.nvs_plain)},
         .nvs{move(nvs_handles.dft)},
         .time{move(time)},
         .mdns{move(mdns)},

@@ -46,6 +46,7 @@ struct AppHandles {
     Handle<DftEventLoop> eloop;
     Netif netif;
     u_ptr<NVSSecurity> nvs_security;
+    u_ptr<NVSUnencrypted> nvs_plain;
     NVSHandle nvs;
     TimeHandle time;
     MDNSHandle mdns;

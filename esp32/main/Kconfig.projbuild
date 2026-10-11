@@ -2,13 +2,15 @@ menu "Project configuration"
 
     choice BUILD_TYPE
         prompt "Build type"
-        default RELEASE
+        default DEV
 
         config DEV
             bool "Development build"
 
         config RELEASE
             bool "Release build"
+            select SECURE_FLASH_ENC_ENABLED
+            select NVS_ENCRYPTION
 
         config CI
             bool "CI build"

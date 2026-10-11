@@ -14,7 +14,7 @@ elseif(CONFIG_RELEASE)
      nvs_create_partition_image(cfg "${PROJECT_DIR}/firmware/nvs/config.csv" FLASH_IN_PROJECT)
 endif()
 
-if(NOT CONFIG_CI)
+if(CONFIG_DEV)
      nvs_create_partition_image(encnvs "${PROJECT_DIR}/firmware/nvs/enc.csv" FLASH_IN_PROJECT)
 endif()
 
