@@ -2,6 +2,11 @@
 Depending on the value of `DEV` env variable, app uses either `config.yaml` or `devconfig.yaml`.
 See `example_config.yaml`.
 
+#### env
+
+Modify `backend.env` appropriately. `APP_UID` and `APP_GID` are for app user in docker container.
+They should be the same as those which `firmware_root_folder` owner has.
+
 #### Database
 
 To prefill the database:

@@ -1,15 +1,21 @@
 services:
   backend:
-    build: backend/
+    build:
+      context: backend/
+      args:
+        APP_UID: ${APP_UID:?set APP_UID to the uid owning backend/db}
+        APP_GID: ${APP_GID:?set APP_GID to the gid owning backend/db}
     ports:
       - "8000:8000"
     volumes:
       - ./backend/db:/app/db
+    restart: unless-stopped
 
   proxy:
     build: proxy/
     ports:
-      - "443:443"
+      - "443:8443"
     depends_on:
       backend:
         condition: service_healthy
+    restart: unless-stopped
