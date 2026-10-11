@@ -15,5 +15,6 @@ extern "C" void app_main(void) {
     } catch (...) {
         ESP_LOGE("MAIN", "unknown exception");
     }
+    vTaskDelay(10000 / portTICK_PERIOD_MS);
     ESP_LOGI("MAIN", "main return");
 }

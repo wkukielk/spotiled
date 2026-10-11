@@ -4,6 +4,7 @@
 #include "nvs_flash.h"
 #include "nvs_handle.hpp"
 #include <cstring>
+#include <utility>
 
 static const char *TAG = "NVS";
 
@@ -45,9 +46,13 @@ NVS::NVS(I_NVSSecurity &security) : NVS{NVS_DEFAULT_PART_NAME, security} {}
 NVS::NVS(std::string_view part, I_NVSSecurity &security)
     : part{part.data() ? part.data() : ""}, security{security} {}
 
-NVS::~NVS() noexcept { nvs_flash_deinit_partition(this->part.data()); }
+NVS::~NVS() noexcept {
+    if (!part.empty())
+        nvs_flash_deinit_partition(this->part.data());
+}
 
-NVS::NVS(NVS &&other) : security{other.security} {}
+NVS::NVS(NVS &&other)
+    : part{std::exchange(other.part, {})}, security{other.security} {}
 
 esp_err_t NVS::init() {
     UTIL_THROW(part.empty(), NullError, "nvs part null name");

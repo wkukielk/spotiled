@@ -6,7 +6,7 @@
 class LogConfig {
   public:
     explicit LogConfig(I_NVS &cfgnvs);
-    void configure() const noexcept;
+    void configure() const;
 
   private:
     I_NVS *cfgnvs{};

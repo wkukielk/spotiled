@@ -24,7 +24,8 @@ ARG APP_GID
 RUN test -n "$APP_UID" && test -n "$APP_GID" \
     && groupadd --non-unique --gid ${APP_GID} app \
     && useradd --non-unique --uid ${APP_UID} --gid ${APP_GID} --create-home app \
-    && chown -R app:app db
+    && chown -R app:app db/ \
+    && chown -R app:app data/
 
 ENV UV_NO_SYNC=1
 

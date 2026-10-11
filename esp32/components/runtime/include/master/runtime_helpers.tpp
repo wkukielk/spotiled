@@ -16,6 +16,7 @@ OTAThread<T_OTAClient>::OTAThread(T_OTAClient &&ota_client,
 template <typename T_OTAClient> void OTAThread<T_OTAClient>::start() {
     thread.emplace(util::thread_params{.fun = ota_thread_fun,
                                        .name = "ota",
+                                       .stack_depth = 8192,
                                        .fun_parameters = this,
                                        .join_group = join_group.egroup,
                                        .join_bit = join_group.join_bit});

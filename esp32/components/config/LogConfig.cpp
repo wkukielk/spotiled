@@ -17,7 +17,7 @@ inline esp_log_level_t log_level(const char *level) noexcept {
 
 LogConfig::LogConfig(I_NVS &cfgnvs) : cfgnvs{&cfgnvs} {}
 
-void LogConfig::configure() const noexcept {
+void LogConfig::configure() const {
     auto level_str = cfgnvs->read(key::LOG_LEVEL);
     auto level = log_level(level_str.data());
     if (level >= ESP_LOG_MAX)

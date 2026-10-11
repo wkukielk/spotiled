@@ -2,7 +2,8 @@
 
 # Self-signed certificate for local development, laid out like certbot's output
 
-CERT_DIR="$(dirname "$0")/../certbot/conf/live/localhost"
+SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &> /dev/null && pwd)
+CERT_DIR="${SCRIPT_DIR}/../certbot/conf/live/localhost"
 mkdir -p "$CERT_DIR"
 
 CERT_FILE="$CERT_DIR/fullchain.pem"
@@ -16,3 +17,5 @@ if [ ! -f "$CERT_FILE" ]; then
     # nginx runs as uid 101; fine for a throwaway dev key
     chmod 644 "$KEY_FILE"
 fi
+
+ln -s "${CERT_FILE}" "$SCRIPT_DIR/../esp32/components/config/nginx.pem"

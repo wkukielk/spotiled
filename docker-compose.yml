@@ -9,6 +9,7 @@ services:
       - "8000:8000"
     volumes:
       - ./backend/db:/app/db
+      - ./backend/data:/app/data
     restart: unless-stopped
 
   proxy:

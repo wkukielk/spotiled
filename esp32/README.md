@@ -22,11 +22,11 @@ For options needed, refer to `firmware/nvs/example_config.csv` or `config` modul
 
 #### SSL cert
 
-Dev and Release also use different CA files. In release it's letsencrypt's ISRG Root 1,
+Dev and Release also use different CA files. In release it's ISRG Root 2,
 in Dev it's self-signed locally generated cert, the same which 'proxy' uses.
 
 Create that cert (refer to proxy's README) and create a symbolic link to it in `components/config` directory.
-There should be letsencrypt's cert and your local cert sitting next to each other in that directory.
+There should be ISRG cert and your local cert sitting next to each other in that directory.
 
 #### Encrypted nvs
 

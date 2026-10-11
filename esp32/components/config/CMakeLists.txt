@@ -1,9 +1,9 @@
 if(CONFIG_DEV)
-    set(cert "nginx.crt")
+    set(cert "nginx.pem")
 elseif(CONFIG_RELEASE)
-    set(cert "letsencrypt-org.pem")     
+    set(cert "isrg-root-x2.pem")
 else()
-    set(cert "cert_stub.crt")     
+    set(cert "cert_stub.pem")     
 endif()
 
 

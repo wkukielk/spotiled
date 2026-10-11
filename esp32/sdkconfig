@@ -974,8 +974,8 @@ CONFIG_PARTITION_TABLE_MD5=y
 #
 # Project configuration
 #
-CONFIG_DEV=y
-# CONFIG_RELEASE is not set
+# CONFIG_DEV is not set
+CONFIG_RELEASE=y
 # CONFIG_CI is not set
 # end of Project configuration
 
