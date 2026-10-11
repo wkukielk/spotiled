@@ -1,6 +1,6 @@
 from sqlmodel import Field, SQLModel, Index
 from enum import Enum
-from typing import Annotated, NamedTuple, Literal, Self
+from typing import NamedTuple, Literal, Self
 from pydantic import computed_field
 from functools import total_ordering
 
@@ -24,7 +24,7 @@ class Release(str, Enum):
 
 @total_ordering
 class Firmware(SQLModel, table=True):
-    id: Annotated[int | None, Field(default=None, primary_key=True)]
+    id: int | None = Field(default=None, primary_key=True)
     relative_path: str
     major: int
     minor: int

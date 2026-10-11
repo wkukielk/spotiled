@@ -8,6 +8,7 @@ from app.database import get_session
 from app.utils import get_or_404
 from .models import SpecificVersion, Version, RequestedFirmware, Chip
 from . import services
+from .utils import parse_specific_version
 
 type PathVersion = Annotated[str, Path(pattern=r"^(\d+\.\d+|latest)$",
                                        examples=["1.11", "latest"])]
@@ -16,15 +17,10 @@ type VersionStr = Annotated[str, StringConstraints(pattern=r"^\d+\.\d+$")]
 type Blacklist = Annotated[list[VersionStr], Query(examples=[["1.11", "1.12"]])]
 
 
-def _parse_specific_version(version: str) -> SpecificVersion:
-    major, minor = version.split('.')
-    return SpecificVersion(int(major), int(minor))
-
-
 def _parse_version(version: str) -> Version:
     if version == "latest":
         return "latest"
-    return _parse_specific_version(version)
+    return parse_specific_version(version)
 
 
 async def validate_requested_firmware(
@@ -33,7 +29,7 @@ async def validate_requested_firmware(
         session: Annotated[AsyncSession, Depends(get_session)],
         blacklist: Blacklist = []) -> RequestedFirmware:
     version_v = _parse_version(version)
-    blacklist_v = [_parse_specific_version(v) for v in blacklist]
+    blacklist_v = [parse_specific_version(v) for v in blacklist]
     firmware = await services.get_firmware(session, chip, version_v,
                                            blacklist_v)
     return RequestedFirmware(get_or_404(firmware),
@@ -43,4 +39,4 @@ async def validate_requested_firmware(
 async def validate_owned_version(
         owned_version: Annotated[VersionStr | None, Header(examples=["1.11"])] = None
 ) -> SpecificVersion | None:
-    return None if owned_version is None else _parse_specific_version(owned_version)
+    return None if owned_version is None else parse_specific_version(owned_version)
