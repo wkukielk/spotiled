@@ -13,9 +13,26 @@ services:
 
   proxy:
     build: proxy/
+    environment:
+      DOMAIN: ${DOMAIN:?set DOMAIN to the server's domain name}
     ports:
+      - "80:8080"
       - "443:8443"
+    volumes:
+      - ./certbot/conf:/etc/letsencrypt:ro
+      - ./certbot/www:/var/www/certbot:ro
     depends_on:
       backend:
         condition: service_healthy
     restart: unless-stopped
+
+  # Not started by `up`; invoked via `docker compose run`, see proxy/*-certs.sh
+  certbot:
+    image: certbot/certbot:v5.8.0
+    profiles: [certbot]
+    # Same uid as nginx-unprivileged so the proxy can read the private keys
+    user: "101:101"
+    entrypoint: [certbot, --work-dir, /tmp/certbot, --logs-dir, /etc/letsencrypt/logs]
+    volumes:
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot

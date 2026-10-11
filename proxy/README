@@ -1,0 +1,4 @@
+# setup certs
+
+When developing locally, run `./setup-certs.sh` to generate self-signed certs for
+localhost. Set `DOMAIN` env variable to `localhost`.

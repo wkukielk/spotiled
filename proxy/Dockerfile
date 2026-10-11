@@ -1,7 +1,6 @@
 FROM nginxinc/nginx-unprivileged:alpine
 WORKDIR /usr/share/nginx/
 
-COPY nginx-default.conf /etc/nginx/conf.d/default.conf
-COPY --chown=nginx:nginx ssl/ /etc/nginx/ssl/
+COPY default.conf.template /etc/nginx/templates/default.conf.template
 
-EXPOSE 8443
+EXPOSE 8080 8443

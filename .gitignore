@@ -1,3 +1,5 @@
 project.code-workspace
 .vscode/
 .DS_Store
+certbot/
+.env

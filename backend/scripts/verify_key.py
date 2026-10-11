@@ -13,7 +13,7 @@ from typing import Annotated
 
 
 async def verify_key(session: Annotated[AsyncSession, Depends(get_session)],
-                     key: str) -> tuple[ApiKey, str]:
+                     key: str) -> ApiKey:
     svc = await get_api_key_svc(session)
     return await svc.verify_key(key)
 
