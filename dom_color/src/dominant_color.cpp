@@ -44,7 +44,13 @@ RGB detail::from_dominant_hue(std::span<const uint16_t> pixels,
 }
 
 RGB get_dominating_color(std::span<const uint16_t> pixels) {
-    GreyFilterHueHistogram<HueHistogram> hue_histogram{};
+    using WCAGHist = WCAGFilterHueHistogram<HueHistogram>;
+    using Hist = GreyFilterHueHistogram<WCAGHist>;
+    uint8_t alpha = 2;
+    uint8_t beta = 59;
+    uint8_t gamma = 25;
+
+    auto hue_histogram = Hist{WCAGHist{gamma}, alpha, beta};
     SVHistogram sv_histogram{};
     return get_dominating_color(pixels, hue_histogram, sv_histogram);
 }
