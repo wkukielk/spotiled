@@ -60,3 +60,17 @@ struct LabeledNumberField: View {
         }
     }
 }
+
+extension View {
+    func hideKeyboardOnTap() -> some View {
+        self.contentShape(Rectangle()).onTapGesture {
+            UIApplication.shared.sendAction(
+                #selector(UIResponder.resignFirstResponder),
+                to: nil,
+                from: nil,
+                for: nil
+            )
+        }
+    }
+}
+

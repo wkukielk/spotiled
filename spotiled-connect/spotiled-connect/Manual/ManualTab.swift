@@ -7,6 +7,7 @@
 
 import SwiftUI
 import SpotiLEDKit
+import Network
 
 private enum ManualAnimation: String, CaseIterable, Identifiable {
     case pulsate = "Pulsate"
@@ -15,6 +16,7 @@ private enum ManualAnimation: String, CaseIterable, Identifiable {
 }
 
 struct ManualTab: View {
+    @State private var color: Color = .mint;
     @State private var controller = ManualColorController()
     @State private var esp32Connection = DirectESP32Connection()
     @State private var autoBrowser = DeviceBrowser(discovery: BonjourServiceDiscovery(serviceType: "_s-led-auto._tcp"))
@@ -32,7 +34,7 @@ struct ManualTab: View {
         NavigationStack {
             VStack {
                 SelectedESP32Label(device: esp32Store.device)
-                ColorPicker("Color", selection: $controller.color, supportsOpacity: false)
+                ColorPicker("Color", selection: $color, supportsOpacity: false)
 
                 Picker("Animation", selection: $selectedAnimation) {
                     ForEach(ManualAnimation.allCases) { animation in
@@ -57,6 +59,7 @@ struct ManualTab: View {
             .sheet(isPresented: $showDeviceSettings) {
                 DeviceSettingsSheet(connection: esp32Connection, esp32Store: esp32Store)
             }
+            .hideKeyboardOnTap()
         }
         .onAppear {
             autoBrowser.start()
@@ -70,6 +73,9 @@ struct ManualTab: View {
             guard let matchedAutoDevice else { return }
             esp32Connection.connect(to: matchedAutoDevice)
         }
+        .onChange(of: color) { _, newColor in
+            controller.send(color: newColor)
+        }
         .onDisappear {
             esp32Connection.disconnect()
             autoBrowser.stop()
@@ -80,20 +86,19 @@ struct ManualTab: View {
     private var animationPanel: some View {
         switch selectedAnimation {
         case .pulsate:
-            PulsateAnimationPanel(connection: esp32Connection)
+            PulsateAnimationPanel(connection: esp32Connection, color: color)
         }
     }
 }
 
 private struct PulsateAnimationPanel: View {
     let connection: any DirectESP32Connecting
+    let color: Color
 
-    @State private var color = Color(.mint)
-    @State private var durationMs: Int32 = 500
-
+    @State private var durationMs: Int32 = 5000
+    
     var body: some View {
         VStack(spacing: 8) {
-            ColorPicker("Color", selection: $color, supportsOpacity: false)
             LabeledNumberField(title: "Duration (ms)", value: $durationMs)
             Button("Play") {
                 Task {
@@ -107,6 +112,22 @@ private struct PulsateAnimationPanel: View {
         .border(Color.cardBorder, width: 1)
     }
 }
+
+@Observable
+public final class ManualColorController {
+    private var sender: RGBSending? = nil;
+    
+    public init() {}
+    
+    public func send(color: Color) {
+        sender?.send(RGBColor(color))
+    }
+
+    public func updateTarget(_ endpoint: NWEndpoint) {
+        sender = UDPRGBSender(endpoint: endpoint)
+    }
+}
+
 
 #Preview {
     ManualTab()
