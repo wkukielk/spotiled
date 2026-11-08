@@ -15,6 +15,9 @@ ConnectRequest::ConnectRequest(runtime::TaskID task_id)
 
 StartRequest::StartRequest(runtime::TaskID task_id)
     : runtime::Data<DataType>{DataType::START_REQUEST, task_id} {}
+
+RestartRequest::RestartRequest(runtime::TaskID task_id)
+    : runtime::Data<DataType>{DataType::RESTART_REQUEST, task_id} {}
 } // namespace master
 
 namespace server {

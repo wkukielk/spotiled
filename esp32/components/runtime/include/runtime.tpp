@@ -94,12 +94,32 @@ template <typename T> void Runtime<T>::handle_connect() noexcept {
         status_light.blink(wifi_error_blink);
         return;
     }
-    // Sent from the queue's own consumer, so it must not block.
-    auto status = queue.send_nowait(
-        mkuptr<master::Data>(master::StartRequest{runtime::TaskID::MASTER}));
+    post_nowait(master::StartRequest{runtime::TaskID::MASTER});
+}
+
+// Sends to our own queue from its consumer, so it must not block.
+template <typename T>
+void Runtime<T>::post_nowait(master::Data &&data) noexcept {
+    const auto *name = std::visit(master::DataPrinter{}, data);
+    auto status = queue.send_nowait(mkuptr<master::Data>(std::move(data)));
     if (status != util::SendStatus::success) {
-        ESP_LOGE(runtime_tag, "%s", "Queue full, can't start");
+        ESP_LOGE(runtime_tag, "Queue full, dropped: %s", name);
         status_light.blink(error_blink);
+    }
+}
+
+// Long press restarts; short press reprovisions, only while WiFi is down.
+template <typename T> void Runtime<T>::poll_button() noexcept {
+    switch (button.get_last_press()) {
+    case btn_press::long_:
+        post_nowait(master::RestartRequest{runtime::TaskID::MASTER});
+        break;
+    case btn_press::short_:
+        if (!wifi_mgr->is_connected())
+            post_nowait(master::ReprovisionRequest{runtime::TaskID::MASTER});
+        break;
+    case btn_press::no:
+        break;
     }
 }
 
@@ -127,6 +147,7 @@ template <typename T> esp_err_t Runtime<T>::start() {
 }
 
 template <typename T> int Runtime<T>::perform() {
+    poll_button();
     auto data = pop_queue();
     int ret = data ? process(*data) : ESP_OK;
     return ret;
@@ -140,22 +161,28 @@ template <typename T> void Runtime<T>::cleanup() {
 }
 
 template <typename T> std::unique_ptr<master::Data> Runtime<T>::pop_queue() {
-    const auto delay_ms = 5000;
-    auto data = queue.receive(delay_ms);
+    auto data = queue.receive(queue_wait_ms);
     if (data.get())
         ESP_LOGE(runtime_tag, "Queue: %s\n",
                  std::visit(master::DataPrinter{}, *data));
     return data;
 }
 
+// No catch-all: a new master::Data alternative must get a handler here.
 template <typename T> esp_err_t Runtime<T>::process(master::Data &data) {
-    if (std::holds_alternative<master::ConnectRequest>(data))
-        handle_connect();
-    else if (std::holds_alternative<master::StartRequest>(data))
-        handle_start();
-    else if (std::holds_alternative<master::ConnectionErrorData>(data))
-        status_light.blink(wifi_error_blink);
-    else if (std::holds_alternative<master::ReprovisionRequest>(data))
-        wifi_mgr->reprovision();
+    std::visit(
+        overloaded{
+            [this](const master::ConnectRequest &) { handle_connect(); },
+            [this](const master::StartRequest &) { handle_start(); },
+            [this](const master::ConnectionErrorData &) {
+                status_light.blink(wifi_error_blink);
+            },
+            [](const master::ErrorData &) {},
+            [this](const master::ReprovisionRequest &) {
+                wifi_mgr->reprovision();
+            },
+            [](const master::RestartRequest &) { esp_restart(); },
+        },
+        data);
     return ESP_OK;
 }

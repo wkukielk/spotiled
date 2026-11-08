@@ -4,6 +4,7 @@
 #include "OTAClient.hpp"
 #include "URL.hpp"
 #include "WiFiManager.hpp"
+#include "button.hpp"
 #include "light.hpp"
 #include "master/runtime_helpers.hpp"
 #include "queue.hpp"
@@ -31,6 +32,7 @@ template <typename T> class Runtime : public util::Notifiable<master::Data> {
     using T_UDPThread = typename T::T_UDPThread;
     using T_LEDC = typename T::T_LEDC;
     using T_Light = typename T::T_Light;
+    using T_Button = typename T::T_Button;
     using T_ServerHandler = typename T_ServerThread::Handler;
     using T_UDPHandler = typename T_UDPThread::Handler;
 
@@ -48,6 +50,8 @@ template <typename T> class Runtime : public util::Notifiable<master::Data> {
     void handle_start() noexcept;
     esp_err_t start();
     std::expected<T_OTAClient, esp_err_t> make_ota_client();
+    void poll_button() noexcept;
+    void post_nowait(master::Data &&data) noexcept;
     int perform();
     void cleanup();
     std::unique_ptr<master::Data> pop_queue();
@@ -55,6 +59,8 @@ template <typename T> class Runtime : public util::Notifiable<master::Data> {
 
   protected:
     static constexpr gpio_num_t status_light_pin = GPIO_NUM_4;
+    // Max wait for a queue message; also the button polling latency.
+    static constexpr uint32_t queue_wait_ms = 100;
     static constexpr light::pattern wifi_error_blink{std::chrono::seconds{3},
                                                      std::chrono::seconds{1}};
     static constexpr light::pattern provisioning_blink{std::chrono::seconds{1},
@@ -65,6 +71,7 @@ template <typename T> class Runtime : public util::Notifiable<master::Data> {
     backend_config_t backend_cfg;
     u_ptr<I_WiFiManager> wifi_mgr{};
     T_Light status_light;
+    T_Button button{};
     EGroup egroup{};
     // Needs the resolved backend URL, so it's created in setup().
     std::optional<T_OTAThread> ota_thread{};

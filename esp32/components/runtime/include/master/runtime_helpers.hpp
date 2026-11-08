@@ -49,6 +49,9 @@ class DataPrinter {
     const char *operator()(const master::StartRequest &) const noexcept {
         return "start request";
     }
+    const char *operator()(const master::RestartRequest &) const noexcept {
+        return "restart request";
+    }
 };
 } // namespace master
 

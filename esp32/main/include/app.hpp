@@ -35,6 +35,12 @@ struct RuntimeUDPThreadTypes {
     using Handler = LedColorHandler<MyAnimator>;
 };
 
+struct ButtonHWTypes {
+    using GPIO = GPIO_IN;
+    using PeriodicTimer = ::PeriodicTimer;
+    using OneShotTimer = ::OneShotTimer;
+};
+
 struct RuntimeTypes {
     using EGroup = util::EventGroup;
     using T_OTAThread = OTAThread<OTAClient<OTA>>;
@@ -42,6 +48,7 @@ struct RuntimeTypes {
     using T_UDPThread = UDPThread<RuntimeUDPThreadTypes>;
     using T_LEDC = MyAnimator;
     using T_Light = Light<GPIO_OUT, OneShotTimer>;
+    using T_Button = Button<ButtonHWTypes>;
 };
 
 using runtime_t = Runtime<RuntimeTypes>;

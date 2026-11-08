@@ -25,7 +25,8 @@ enum class DataType {
     ERROR,
     REPROVISION_REQUEST,
     CONNECT_REQUEST,
-    START_REQUEST
+    START_REQUEST,
+    RESTART_REQUEST
 };
 
 struct ConnectionErrorData : public runtime::Data<DataType> {
@@ -46,8 +47,12 @@ struct StartRequest : public runtime::Data<DataType> {
     StartRequest(runtime::TaskID task_id);
 };
 
+struct RestartRequest : public runtime::Data<DataType> {
+    RestartRequest(runtime::TaskID task_id);
+};
+
 using Data = std::variant<ConnectionErrorData, ErrorData, ReprovisionRequest,
-                          ConnectRequest, StartRequest>;
+                          ConnectRequest, StartRequest, RestartRequest>;
 
 } // namespace master
 
