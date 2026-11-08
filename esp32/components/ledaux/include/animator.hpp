@@ -22,11 +22,6 @@ concept I_Animatable = I_LEDC<T> && requires(T t, led::AnimationSpec spec) {
     { t.start_animation(spec) } -> std::same_as<void>;
 };
 
-// Wraps an I_LEDC and adds a cancellable background animation on top of it.
-// set_color() always wins over an in-progress animation: it stops the
-// animation (blocking until the animation task has provably issued its last
-// write) before writing the requested color, so a direct color command can
-// never be clobbered by a stale animation frame.
 template <I_LEDC LEDC> class Animator {
   public:
     Animator() noexcept = default;

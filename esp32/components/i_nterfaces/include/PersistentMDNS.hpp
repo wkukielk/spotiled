@@ -8,9 +8,6 @@
 #include <exception>
 #include <utility>
 
-// T decorated with persistence: set_instance_name() also writes the
-// instance name to NVS under `key`, so it overrides what would otherwise be
-// read back at the next boot.
 template <typename T>
     requires std::derived_from<T, I_mDNSFacade>
 class PersistentMDNS : public T {

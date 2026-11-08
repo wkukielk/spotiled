@@ -11,9 +11,6 @@ struct txt_item_t {
 };
 } // namespace mdns
 
-// Setup-only mDNS operations, used once at boot to configure the service.
-// set_instance_name/query_a (the operations still used at runtime) live on
-// the smaller I_mDNSFacade base instead.
 class I_mDNS : public I_mDNSFacade {
     using K = const char *;
 
