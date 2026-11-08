@@ -56,16 +56,42 @@ std::string OTAClient<T_OTA>::get_app_version() const noexcept {
     return (char *)desc.version;
 }
 
+template <typename T_OTA>
+std::optional<std::string>
+OTAClient<T_OTA>::get_invalid_version() const noexcept {
+    auto partition = ota.get_other_partition();
+    if (!partition)
+        return std::nullopt;
+    auto desc = esp_app_desc_t{};
+    if (partition->get_description(&desc) != ESP_OK)
+        return std::nullopt;
+    return std::string{desc.version};
+}
+
+template <typename T_OTA>
+std::string OTAClient<T_OTA>::get_update_url() const {
+    if (httpcfg.skip_blacklist)
+        return httpcfg.url;
+    auto invalid = get_invalid_version();
+    if (!invalid)
+        return httpcfg.url;
+    auto separator = httpcfg.url.contains('?') ? '&' : '?';
+    return httpcfg.url + separator + "blacklist=" + *invalid;
+}
+
 template <typename T_OTA> esp_err_t OTAClient<T_OTA>::update() noexcept {
-    auto http_config = esp_http_client_config_t{.url = httpcfg.url.c_str(),
+    auto url = std::string{};
+    try {
+        url = get_update_url();
+    } catch (const std::exception &) {
+        return ESP_ERR_NO_MEM;
+    }
+    auto http_config = esp_http_client_config_t{.url = url.c_str(),
                                                 .cert_pem = httpcfg.cert_pem,
                                                 .cert_len = httpcfg.cert_len,
                                                 .skip_cert_common_name_check =
                                                     httpcfg.skip_cn_check};
     auto config = ota::config{.http_config = &http_config,
                               .http_client_init_cb = attach_headers};
-    auto err = ota.update(&config);
-    if (err == ESP_OK)
-        err = ota.mark_app_valid();
-    return err;
+    return ota.update(&config);
 }

@@ -3,6 +3,8 @@
 
 #include "I_OTA.hpp"
 #include <atomic>
+#include <optional>
+#include <string>
 
 namespace ota {
 struct HTTPSConfig {
@@ -11,6 +13,8 @@ struct HTTPSConfig {
     const char *cert_pem;
     size_t cert_len;
     bool skip_cn_check;
+    // Don't blacklist the rolled-back version (forced update).
+    bool skip_blacklist = false;
 };
 } // namespace ota
 
@@ -22,6 +26,10 @@ template <typename T_OTA> class OTAClient {
     bool is_verify_pending() const;
     esp_err_t mark_app_valid() noexcept;
     std::string get_app_version() const noexcept;
+    // Version that was rolled back from; nullopt if none.
+    std::optional<std::string> get_invalid_version() const noexcept;
+    // Update URL, blacklisting the invalid version so it isn't offered again.
+    std::string get_update_url() const;
     esp_err_t update() noexcept;
 
   protected:

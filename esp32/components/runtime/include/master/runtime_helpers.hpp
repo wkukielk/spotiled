@@ -30,6 +30,13 @@ template <typename T_OTAClient> class OTAThread : public util::PostponedThread {
 
 std::expected<URL, esp_err_t> resolve_base(const URL &base_url);
 
+// NVS flag (default partition) for an update without blacklist on next boot.
+namespace force_update {
+void schedule(); // throws NVSError
+bool is_scheduled() noexcept;
+void clear() noexcept;
+} // namespace force_update
+
 namespace master {
 class DataPrinter {
   public:
@@ -51,6 +58,10 @@ class DataPrinter {
     }
     const char *operator()(const master::RestartRequest &) const noexcept {
         return "restart request";
+    }
+    const char *
+    operator()(const master::ForceUpdateRequest &) const noexcept {
+        return "force update request";
     }
 };
 } // namespace master

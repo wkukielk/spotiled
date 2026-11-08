@@ -22,7 +22,8 @@ auto Runtime<T>::make_ota_client() -> std::expected<T_OTAClient, esp_err_t> {
                                    .auth_header = move(backend_cfg.auth_header),
                                    .cert_pem = backend_cfg.cert_pem,
                                    .cert_len = backend_cfg.cert_len,
-                                   .skip_cn_check = backend_cfg.skip_cn_check};
+                                   .skip_cn_check = backend_cfg.skip_cn_check,
+                                   .skip_blacklist = force_update::is_scheduled()};
     return T_OTAClient{std::move(otacfg)};
 }
 
@@ -141,9 +142,10 @@ template <typename T> esp_err_t Runtime<T>::start() {
     if (!ota_client)
         return ota_client.error();
     ota_thread.emplace(std::move(*ota_client), get_ota_join_group(egroup));
-    ota_thread->start();
     UTIL_RETURN(server_thread.start());
-    return udp_thread.start();
+    UTIL_RETURN(udp_thread.start());
+    ota_thread->start();
+    return ESP_OK;
 }
 
 template <typename T> int Runtime<T>::perform() {
@@ -170,19 +172,27 @@ template <typename T> std::unique_ptr<master::Data> Runtime<T>::pop_queue() {
 
 // No catch-all: a new master::Data alternative must get a handler here.
 template <typename T> esp_err_t Runtime<T>::process(master::Data &data) {
-    std::visit(
-        overloaded{
-            [this](const master::ConnectRequest &) { handle_connect(); },
-            [this](const master::StartRequest &) { handle_start(); },
-            [this](const master::ConnectionErrorData &) {
-                status_light.blink(wifi_error_blink);
-            },
-            [](const master::ErrorData &) {},
-            [this](const master::ReprovisionRequest &) {
-                wifi_mgr->reprovision();
-            },
-            [](const master::RestartRequest &) { esp_restart(); },
-        },
-        data);
+    std::visit(overloaded{
+                   [this](const master::ConnectRequest &) { handle_connect(); },
+                   [this](const master::StartRequest &) { handle_start(); },
+                   [this](const master::ConnectionErrorData &) {
+                       status_light.blink(wifi_error_blink);
+                   },
+                   [](const master::ErrorData &) {},
+                   [this](const master::ReprovisionRequest &) {
+                       wifi_mgr->reprovision();
+                   },
+                   [](const master::RestartRequest &) { esp_restart(); },
+                   [this](const master::ForceUpdateRequest &) {
+                       auto err = guarded("Schedule force update", [] {
+                           force_update::schedule();
+                           return ESP_OK;
+                       });
+                       if (err == ESP_OK)
+                           esp_restart();
+                       status_light.blink(error_blink);
+                   },
+               },
+               data);
     return ESP_OK;
 }

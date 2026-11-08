@@ -5,7 +5,18 @@
 template <typename T_OTAClient>
 void OTAThread<T_OTAClient>::ota_thread_fun(void *ota_thread_ptr) {
     auto ota_thread = (OTAThread<T_OTAClient> *)ota_thread_ptr;
-    ota_thread->ota_client.update(); // TODO: reboot after successfull update
+    auto err = ota_thread->ota_client.update();
+    if (err == ESP_ERR_HTTP_NOT_MODIFIED)
+        ESP_LOGI(runtime_tag, "%s", "Firmware up to date");
+    else if (err != ESP_OK) {
+        ESP_LOGW(runtime_tag, "OTA update: %s", esp_err_to_name(err));
+        return;
+    }
+    // Backend answered, so a forced update has been served.
+    force_update::clear();
+    err = ota_thread->ota_client.mark_app_valid();
+    if (err != ESP_OK)
+        ESP_LOGE(runtime_tag, "Mark app valid: %s", esp_err_to_name(err));
 }
 
 template <typename T_OTAClient>

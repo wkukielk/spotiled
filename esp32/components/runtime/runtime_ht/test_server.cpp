@@ -54,6 +54,12 @@ TEST(ParseTest, Reprovision) {
     EXPECT_NE(std::get_if<server::Reprovision>(&*result), nullptr);
 }
 
+TEST(ParseTest, ForceUpdate) {
+    auto result = server::parse(R"({"cmd":"force_update"})");
+    ASSERT_TRUE(result.has_value());
+    EXPECT_NE(std::get_if<server::ForceUpdate>(&*result), nullptr);
+}
+
 // --- CommandHandler ---
 
 class CommandHandlerTest : public Test {
@@ -119,6 +125,19 @@ TEST_F(CommandHandlerTest, ReprovisionNotifiesRuntime) {
     EXPECT_EQ(response, server::Response::ok);
     ASSERT_TRUE(sent);
     EXPECT_TRUE(std::holds_alternative<master::ReprovisionRequest>(*sent));
+}
+
+TEST_F(CommandHandlerTest, ForceUpdateNotifiesRuntime) {
+    std::unique_ptr<master::Data> sent;
+    EXPECT_CALL(notifier, notify(_))
+        .WillOnce([&](std::unique_ptr<master::Data> &&data) {
+            sent = std::move(data);
+        });
+    auto response = handler.process(
+        MockWSServer::make_message(R"({"cmd":"force_update"})"));
+    EXPECT_EQ(response, server::Response::ok);
+    ASSERT_TRUE(sent);
+    EXPECT_TRUE(std::holds_alternative<master::ForceUpdateRequest>(*sent));
 }
 
 // --- ServerThread::perform ---

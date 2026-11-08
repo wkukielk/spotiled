@@ -25,6 +25,10 @@ struct CommandLogger {
     void operator()(const server::RenameEsp &cmd) const {
         ESP_LOGI("CommandHandler", "RenameEsp name=%s", cmd.name.c_str());
     }
+
+    void operator()(const server::ForceUpdate &) const {
+        ESP_LOGI("CommandHandler", "ForceUpdate");
+    }
 };
 
 template <I_Animatable LEDC>
@@ -66,6 +70,12 @@ std::unique_ptr<master::Data> CommandHandler<LEDC>::from_ws_server() {
 template <I_Animatable LEDC>
 server::Response CommandHandler<LEDC>::handle(const server::Reprovision &) {
     runtime_notifier.notify(from_ws_server<master::ReprovisionRequest>());
+    return server::Response::ok;
+}
+
+template <I_Animatable LEDC>
+server::Response CommandHandler<LEDC>::handle(const server::ForceUpdate &) {
+    runtime_notifier.notify(from_ws_server<master::ForceUpdateRequest>());
     return server::Response::ok;
 }
 

@@ -23,6 +23,7 @@ class I_OTA {
     virtual esp_err_t mark_app_valid() noexcept = 0;
     virtual std::unique_ptr<I_Partition>
     get_running_partition() const noexcept = 0;
+
     virtual std::unique_ptr<I_Partition>
     get_other_partition() const noexcept = 0;
 };

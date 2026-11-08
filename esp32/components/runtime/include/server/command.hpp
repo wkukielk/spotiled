@@ -30,7 +30,11 @@ struct RenameEsp {
     std::string name;
 };
 
-using Command = std::variant<FadeLed, PulsateLed, Reprovision, RenameEsp>;
+// Restart and fetch the latest firmware, ignoring the rollback blacklist.
+struct ForceUpdate {};
+
+using Command =
+    std::variant<FadeLed, PulsateLed, Reprovision, RenameEsp, ForceUpdate>;
 
 std::optional<Command> parse(std::string_view text);
 

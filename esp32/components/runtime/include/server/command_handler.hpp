@@ -21,6 +21,7 @@ template <I_Animatable LEDC> class CommandHandler {
     server::Response handle(const server::PulsateLed &);
     server::Response handle(const server::Reprovision &);
     server::Response handle(const server::RenameEsp &);
+    server::Response handle(const server::ForceUpdate &);
 
     template <typename D> static std::unique_ptr<master::Data> from_ws_server();
 };

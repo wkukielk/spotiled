@@ -66,6 +66,8 @@ std::optional<Command> parse(std::string_view text) {
         return Reprovision{};
     if (cmd_str == "rename")
         return parse_rename(root.get());
+    if (cmd_str == "force_update")
+        return ForceUpdate{};
     return std::nullopt;
 }
 

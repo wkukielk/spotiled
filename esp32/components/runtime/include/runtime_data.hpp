@@ -26,7 +26,8 @@ enum class DataType {
     REPROVISION_REQUEST,
     CONNECT_REQUEST,
     START_REQUEST,
-    RESTART_REQUEST
+    RESTART_REQUEST,
+    FORCE_UPDATE_REQUEST
 };
 
 struct ConnectionErrorData : public runtime::Data<DataType> {
@@ -51,8 +52,15 @@ struct RestartRequest : public runtime::Data<DataType> {
     RestartRequest(runtime::TaskID task_id);
 };
 
-using Data = std::variant<ConnectionErrorData, ErrorData, ReprovisionRequest,
-                          ConnectRequest, StartRequest, RestartRequest>;
+// Schedule an update without blacklist for the next boot, then restart.
+struct ForceUpdateRequest : public runtime::Data<DataType> {
+    ForceUpdateRequest(runtime::TaskID task_id);
+};
+
+using Data =
+    std::variant<ConnectionErrorData, ErrorData, ReprovisionRequest,
+                 ConnectRequest, StartRequest, RestartRequest,
+                 ForceUpdateRequest>;
 
 } // namespace master
 
