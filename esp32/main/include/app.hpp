@@ -2,15 +2,18 @@
 #define APP_HPP
 
 #include "Configurer.hpp"
+#include "GPIO.hpp"
 #include "HTTPD.hpp"
 #include "Handle.hpp"
 #include "LED.hpp"
 #include "NVSSecurity.hpp"
+#include "Timer.hpp"
 #include "UDPServer.hpp"
 #include "UDPSocket.hpp"
 #include "WSServer.hpp"
 #include "animator.hpp"
 #include "global.hpp"
+#include "light.hpp"
 #include "nvs.hpp"
 #include "runtime.hpp"
 #include "server/led_color_handler.hpp"
@@ -38,6 +41,7 @@ struct RuntimeTypes {
     using T_ServerThread = ServerThread<RuntimeServerThreadTypes>;
     using T_UDPThread = UDPThread<RuntimeUDPThreadTypes>;
     using T_LEDC = MyAnimator;
+    using T_Light = Light<GPIO_OUT, OneShotTimer>;
 };
 
 using runtime_t = Runtime<RuntimeTypes>;

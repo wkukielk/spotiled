@@ -38,7 +38,8 @@ GPIO_OUT::~GPIO_OUT() noexcept {
         UTIL_LOGW("gpio_out deinit");
 }
 
-void GPIO_OUT::set_level(level level) {
-    auto err = gpio_set_level(pin, (uint32_t)level);
-    UTIL_THROW(err, RuntimeError, "gpio set level");
+// Only fails for an invalid pin, which the constructor already rejected.
+void GPIO_OUT::set_level(level level) noexcept {
+    if (gpio_set_level(pin, (uint32_t)level) != ESP_OK)
+        UTIL_LOGE("gpio set level");
 }

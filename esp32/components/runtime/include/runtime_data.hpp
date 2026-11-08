@@ -20,7 +20,13 @@ template <typename DataType> struct Data : public sm::Data<DataType> {
 
 namespace master {
 
-enum class DataType { CONNECTION_ERROR, ERROR, REPROVISION_REQUEST };
+enum class DataType {
+    CONNECTION_ERROR,
+    ERROR,
+    REPROVISION_REQUEST,
+    CONNECT_REQUEST,
+    START_REQUEST
+};
 
 struct ConnectionErrorData : public runtime::Data<DataType> {
     ConnectionErrorData(runtime::TaskID task_id);
@@ -31,8 +37,17 @@ struct ErrorData : public runtime::Data<DataType> {
 struct ReprovisionRequest : public runtime::Data<DataType> {
     ReprovisionRequest(runtime::TaskID task_id);
 };
+// Connect to WiFi.
+struct ConnectRequest : public runtime::Data<DataType> {
+    ConnectRequest(runtime::TaskID task_id);
+};
+// Resolve backend and start OTA/server/UDP; queued after a successful connect.
+struct StartRequest : public runtime::Data<DataType> {
+    StartRequest(runtime::TaskID task_id);
+};
 
-using Data = std::variant<ConnectionErrorData, ErrorData, ReprovisionRequest>;
+using Data = std::variant<ConnectionErrorData, ErrorData, ReprovisionRequest,
+                          ConnectRequest, StartRequest>;
 
 } // namespace master
 

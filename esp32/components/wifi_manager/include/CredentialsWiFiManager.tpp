@@ -11,6 +11,7 @@ CredentialsWiFiManager<T>::CredentialsWiFiManager(std::string_view ssid,
 
 template <CredentialsWiFiManagerTypes T>
 CredentialsWiFiManager<T>::~CredentialsWiFiManager() noexcept {
+    Handler::set_on_fail({});
     auto err = WiFi::get().stop();
     if (err != ESP_OK)
         ESP_LOGI("WiFiManager", "wifi stop: %d", err);

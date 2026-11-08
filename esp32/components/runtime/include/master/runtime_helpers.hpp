@@ -6,6 +6,7 @@
 #include "runtime_data.hpp"
 #include "server/server.hpp"
 #include "util.hpp"
+#include <expected>
 #include <optional>
 
 extern const char *runtime_tag;
@@ -27,7 +28,7 @@ template <typename T_OTAClient> class OTAThread : public util::PostponedThread {
     T_OTAClient ota_client;
 };
 
-URL resolve_base(const URL &base_url);
+std::expected<URL, esp_err_t> resolve_base(const URL &base_url);
 
 namespace master {
 class DataPrinter {
@@ -41,6 +42,12 @@ class DataPrinter {
     const char *
     operator()(const master::ReprovisionRequest &) const noexcept {
         return "reprovision request";
+    }
+    const char *operator()(const master::ConnectRequest &) const noexcept {
+        return "connect request";
+    }
+    const char *operator()(const master::StartRequest &) const noexcept {
+        return "start request";
     }
 };
 } // namespace master

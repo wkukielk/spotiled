@@ -10,9 +10,9 @@ const EventBits_t OTA_BIT = 1 << 0;
 const EventBits_t SERVER_BIT = 1 << 1;
 const EventBits_t UDP_BIT = 1 << 2;
 
-URL resolve_base(const URL &base_url) {
+expected<URL, esp_err_t> resolve_base(const URL &base_url) {
     auto base = optional<URL>{};
-    util::retry(
+    auto err = util::retry(
         [&]() {
             auto err = esp_err_t{};
             base = resolve_url(base_url, err);
@@ -20,6 +20,9 @@ URL resolve_base(const URL &base_url) {
             return err;
         },
         15);
-    UTIL_THROW(!base.has_value(), InitError, "Failed to resolve backend");
+    if (!base.has_value()) {
+        ESP_LOGE("resolve_base", "Failed to resolve backend");
+        return unexpected(err != ESP_OK ? err : ESP_FAIL);
+    }
     return base.value();
 }

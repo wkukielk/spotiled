@@ -9,6 +9,12 @@ ErrorData::ErrorData(runtime::TaskID task_id)
 
 ReprovisionRequest::ReprovisionRequest(runtime::TaskID task_id)
     : runtime::Data<DataType>{DataType::REPROVISION_REQUEST, task_id} {}
+
+ConnectRequest::ConnectRequest(runtime::TaskID task_id)
+    : runtime::Data<DataType>{DataType::CONNECT_REQUEST, task_id} {}
+
+StartRequest::StartRequest(runtime::TaskID task_id)
+    : runtime::Data<DataType>{DataType::START_REQUEST, task_id} {}
 } // namespace master
 
 namespace server {

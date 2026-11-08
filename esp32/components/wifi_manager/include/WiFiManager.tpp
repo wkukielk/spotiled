@@ -21,6 +21,7 @@ WiFiManager<T>::WiFiManager(HandlerFactory handler_factory) noexcept
 }
 
 template <WiFiManagerTypes T> WiFiManager<T>::~WiFiManager() {
+    Handler::set_on_fail({});
     auto err = WiFi::get().stop();
     if (err != ESP_OK)
         ESP_LOGI("WiFiManager", "wifi stop: %d", err);
@@ -79,6 +80,11 @@ template <WiFiManagerTypes T> int WiFiManager<T>::reprovision() {
     if (status == ESP_OK)
         esp_restart();
     return status;
+}
+
+// provisioning is reset once the device is provisioned (switch_to_no_prov).
+template <WiFiManagerTypes T> bool WiFiManager<T>::will_provision() const {
+    return provisioning.has_value() && !provisioning->is_provisioned();
 }
 
 template <WiFiManagerTypes T> void WiFiManager<T>::switch_to_prov() {

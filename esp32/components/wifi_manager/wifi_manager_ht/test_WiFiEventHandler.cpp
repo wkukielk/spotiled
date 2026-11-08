@@ -120,6 +120,37 @@ TEST_F(WiFiEventHandlerTest, connectThenStop) {
                   {wifi::success_bit, false}});
 }
 
+TEST_F(WiFiEventHandlerTest, onFailCalledWhenGivingUp) {
+    auto calls = 0;
+    WiFiEventHandler<MockWiFiEventHandlerTypes>::set_on_fail([&] { ++calls; });
+    eloop.post(WIFI_EVENT, WIFI_EVENT_STA_START, nullptr, 0);
+    eloop.post(WIFI_EVENT, WIFI_EVENT_STA_DISCONNECTED, &disc_unrec,
+               sizeof(disc_unrec));
+    WiFiEventHandler<MockWiFiEventHandlerTypes>::set_on_fail({});
+    ASSERT_EQ(calls, 1);
+}
+
+TEST_F(WiFiEventHandlerTest, onFailNotCalledWhileRetrying) {
+    auto calls = 0;
+    WiFiEventHandler<MockWiFiEventHandlerTypes>::set_on_fail([&] { ++calls; });
+    eloop.post(WIFI_EVENT, WIFI_EVENT_STA_START, nullptr, 0);
+    eloop.post(WIFI_EVENT, WIFI_EVENT_STA_DISCONNECTED, &disc_rec,
+               sizeof(disc_rec));
+    WiFiEventHandler<MockWiFiEventHandlerTypes>::set_on_fail({});
+    ASSERT_EQ(calls, 0);
+}
+
+TEST_F(WiFiEventHandlerTest, onFailCalledOnDisconnectAfterConnect) {
+    auto calls = 0;
+    WiFiEventHandler<MockWiFiEventHandlerTypes>::set_on_fail([&] { ++calls; });
+    eloop.post(WIFI_EVENT, WIFI_EVENT_STA_START, nullptr, 0);
+    eloop.post(IP_EVENT, IP_EVENT_STA_GOT_IP, nullptr, 0);
+    eloop.post(WIFI_EVENT, WIFI_EVENT_STA_DISCONNECTED, &disc_rec,
+               sizeof(disc_rec));
+    WiFiEventHandler<MockWiFiEventHandlerTypes>::set_on_fail({});
+    ASSERT_EQ(calls, 1);
+}
+
 TEST_F(WiFiEventHandlerTest, failThenConnect) {
     eloop.post(WIFI_EVENT, WIFI_EVENT_STA_START, nullptr, 0);
     eloop.post(WIFI_EVENT, WIFI_EVENT_STA_DISCONNECTED, &disc_unrec,

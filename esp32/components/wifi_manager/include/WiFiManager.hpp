@@ -18,6 +18,10 @@ class I_WiFiManager {
     virtual int disconnect() = 0;
     virtual bool is_connected() = 0;
     virtual int reprovision() = 0;
+    virtual bool will_provision() const = 0;
+    // cb runs in the event loop task when WiFi gives up reconnecting.
+    // Register before connect(); keep cb short and non-blocking.
+    virtual void set_on_disconnected(std::function<void()> cb) = 0;
 };
 
 template <typename T>
@@ -43,6 +47,10 @@ template <WiFiManagerTypes T> class WiFiManager : public I_WiFiManager {
     int disconnect() override;
     bool is_connected() override;
     int reprovision() override;
+    bool will_provision() const override;
+    void set_on_disconnected(std::function<void()> cb) override {
+        Handler::set_on_fail(std::move(cb));
+    }
 
   protected:
     int connect_without_prov();

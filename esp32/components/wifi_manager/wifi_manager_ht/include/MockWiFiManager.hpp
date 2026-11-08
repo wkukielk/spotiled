@@ -11,6 +11,9 @@ class MockWiFiManager : public I_WiFiManager {
     MOCK_METHOD(int, disconnect, (), (override));
     MOCK_METHOD(bool, is_connected, (), (override));
     MOCK_METHOD(int, reprovision, (), (override));
+    MOCK_METHOD(bool, will_provision, (), (const, override));
+    MOCK_METHOD(void, set_on_disconnected, (std::function<void()> cb),
+                (override));
 };
 
 #endif

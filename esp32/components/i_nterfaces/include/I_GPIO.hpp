@@ -27,7 +27,7 @@ concept I_GPIO_IN = requires(const T &ct) {
 
 template <typename T>
 concept I_GPIO_OUT = requires(T t, const T &ct, gpio::level level) {
-    { t.set_level(level) } -> std::same_as<void>;
+    { t.set_level(level) } noexcept -> std::same_as<void>;
 } && std::is_constructible_v<T, gpio_num_t>;
 
 #endif

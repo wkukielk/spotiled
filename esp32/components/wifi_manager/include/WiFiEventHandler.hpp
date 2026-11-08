@@ -8,6 +8,7 @@
 #include "freertos/event_groups.h"
 #include "util.hpp"
 #include "wifi_aux.hpp"
+#include <functional>
 
 template <typename T>
 concept WiFiEventHandlerTypes = WiFiHandle<typename T::WiFi> &&
@@ -28,6 +29,12 @@ template <WiFiEventHandlerTypes T> class WiFiEventHandler {
     WiFiEventHandler &operator=(const WiFiEventHandler &) = delete;
     WiFiEventHandler(WiFiEventHandler &&other) noexcept;
 
+    // Called from the event loop task when the connection is given up
+    // (fail_bit set). Shared by all instances; set it before starting WiFi.
+    static void set_on_fail(std::function<void()> cb) {
+        on_fail = std::move(cb);
+    }
+
   private:
     esp_err_t register_self() noexcept;
     static void handler(void *arg, esp_event_base_t event_base,
@@ -38,6 +45,7 @@ template <WiFiEventHandlerTypes T> class WiFiEventHandler {
     static EGroup *event_group;
     static uint8_t max_retries;
     static int8_t retries_left;
+    inline static std::function<void()> on_fail{};
 
     esp_event_handler_instance_t instance{};
     esp_event_handler_instance_t ip_instance{};

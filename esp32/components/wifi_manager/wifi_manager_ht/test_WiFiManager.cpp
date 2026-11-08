@@ -81,6 +81,27 @@ TEST_F(ProvisionedWiFiManagerTest, connectFail) {
     ASSERT_EQ(manager.connect(), ESP_FAIL);
 }
 
+TEST_F(ProvisionedWiFiManagerTest, setOnDisconnectedForwardsToHandler) {
+    auto called = false;
+    manager.set_on_disconnected([&] { called = true; });
+    ASSERT_TRUE(StubWiFiEventHandler::on_fail);
+    StubWiFiEventHandler::on_fail();
+    ASSERT_TRUE(called);
+}
+
+TEST(WiFiManagerTest, destructorClearsOnDisconnected) {
+    TimeHandle time_handle{mkuptr<NiceMock<MockTime>>()};
+    NiceMock<MockHandlerFactory> factory{};
+    {
+        TestableProvisionedWiFiManager manager{
+            [&](auto &egroup) { return factory.call(egroup); }};
+        EXPECT_CALL(manager.get_event_group(), wait(end_bit))
+            .Times(AnyNumber());
+        manager.set_on_disconnected([] {});
+    }
+    ASSERT_FALSE(StubWiFiEventHandler::on_fail);
+}
+
 class NotProvisionedWiFiManagerTest : public Test {
   protected:
     TimeHandle time_handle{mkuptr<MockTime>()};

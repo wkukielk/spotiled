@@ -88,13 +88,11 @@ void ProvEventHandler<EGroup, ELoop>::handler(void *arg,
         break;
     case (int32_t)ProvEvent::CRED_FAIL: {
         reason = *static_cast<ProvReason *>(event_data);
-        ESP_LOGE(PEH_TAG,
-                 "Provisioning failed!\n\tReason : %s"
-                 "\n\tPlease reset to factory and retry provisioning",
+        ESP_LOGE(PEH_TAG, "Provisioning failed!\n\tReason : %s",
                  (reason == ProvReason::AUTH_ERROR)
                      ? "Wi-Fi station authentication failed"
                      : "Wi-Fi access-point not found");
-        event_group->set(wifi::fail_bit || wifi::end_bit);
+        event_group->set(wifi::fail_bit);
         break;
     }
     case (int32_t)ProvEvent::END:

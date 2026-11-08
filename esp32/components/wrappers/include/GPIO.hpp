@@ -17,7 +17,7 @@ class GPIO_OUT {
   public:
     GPIO_OUT(gpio_num_t pin);
     ~GPIO_OUT() noexcept;
-    void set_level(gpio::level level);
+    void set_level(gpio::level level) noexcept;
 
   private:
     gpio_num_t pin;

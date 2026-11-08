@@ -72,8 +72,11 @@ void WiFiEventHandler<T>::handler(void *arg, esp_event_base_t event_base,
         if (wifi::is_disconnect_recoverable(reason) && --retries_left > 0) {
             ESP_LOGI("WiFiEventHandler", "Retrying...");
             WiFi::get().connect();
-        } else
+        } else {
             event_group->set(wifi::fail_bit);
+            if (on_fail)
+                on_fail();
+        }
         break;
     }
     case WIFI_EVENT_STA_STOP:

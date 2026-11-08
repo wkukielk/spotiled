@@ -25,6 +25,10 @@ class CredentialsWiFiManager : public I_WiFiManager {
     int disconnect() override;
     bool is_connected() override;
     int reprovision() override;
+    bool will_provision() const override { return false; }
+    void set_on_disconnected(std::function<void()> cb) override {
+        Handler::set_on_fail(std::move(cb));
+    }
 
   private:
     std::string ssid{};

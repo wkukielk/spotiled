@@ -8,22 +8,30 @@
 #include "MockWiFi.hpp"
 #include "WiFiManager.hpp"
 
+// Stands in for WiFiEventHandler; records the registered fail callback.
+struct StubWiFiEventHandler {
+    static void set_on_fail(std::function<void()> cb) {
+        on_fail = std::move(cb);
+    }
+    inline static std::function<void()> on_fail{};
+};
+
 class MockHandlerFactory {
   public:
-    MOCK_METHOD(int, call, (MockEventGroup &));
+    MOCK_METHOD(StubWiFiEventHandler, call, (MockEventGroup &));
 };
 
 struct ProvisionedWiFiManagerMockTypes {
     using WiFi = Handle<::testing::NiceMock<MockWiFi>>;
     using EventGroup = MockEventGroup;
-    using EventHandler = int;
+    using EventHandler = StubWiFiEventHandler;
     using Provisioning = MockProvisioningIsProvisioned;
 };
 
 struct NotProvisionedWiFiManagerMockTypes {
     using WiFi = Handle<::testing::NiceMock<MockWiFi>>;
     using EventGroup = MockEventGroup;
-    using EventHandler = int;
+    using EventHandler = StubWiFiEventHandler;
     using Provisioning = MockProvisioningNotProvisioned;
 };
 
