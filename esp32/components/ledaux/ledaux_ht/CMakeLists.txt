@@ -2,6 +2,7 @@ idf_component_register(
     SRCS "test_animator.cpp"
          "test_channel.cpp"
          "test_LEDC.cpp"
+         "test_button.cpp"
     INCLUDE_DIRS "include"
     REQUIRES ledaux
     WHOLE_ARCHIVE
