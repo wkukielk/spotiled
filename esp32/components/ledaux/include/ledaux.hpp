@@ -69,17 +69,17 @@ template <I_LED LED> class ChannelConfig {
 };
 
 template <I_LED LED> class Channel {
-    using channel_t = ledc_channel_t;
-
   public:
-    Channel(channel_t channel, gpio_num_t pin);
+    Channel(ledc_channel_t channel, gpio_num_t pin);
     esp_err_t fade(uint32_t target_duty, uint32_t duration_ms) noexcept;
     esp_err_t set_color(uint32_t target_duty) noexcept;
     uint32_t get_duty() const;
 
   private:
-    channel_t channel_;
+    ledc_channel_t channel_;
     ChannelConfig<LED> config_;
+    LED &led;
+    const ledc_mode_t mode = led::PWM::MODE;
 };
 }; // namespace led
 
@@ -94,13 +94,14 @@ template <I_LED LED> class LEDCConfigurer {
 };
 
 template <typename T>
-concept I_LEDC =
-    std::default_initializable<T> &&
-    requires(T t, const T &ct, RGB rgb, uint32_t duration_ms) {
-        { t.fade_to(rgb, duration_ms) } noexcept -> std::same_as<esp_err_t>;
-        { t.set_color(rgb) } noexcept -> std::same_as<esp_err_t>;
-        { ct.get_current_color() } noexcept -> std::same_as<RGB>;
-    };
+concept I_LEDC = std::default_initializable<T> &&
+                 requires(T t, const T &ct, RGB rgb, uint32_t duration_ms) {
+                     {
+                         t.fade_to(rgb, duration_ms)
+                     } noexcept -> std::same_as<esp_err_t>;
+                     { t.set_color(rgb) } noexcept -> std::same_as<esp_err_t>;
+                     { ct.get_current_color() } noexcept -> std::same_as<RGB>;
+                 };
 
 template <I_LED LED> class LEDC {
   public:

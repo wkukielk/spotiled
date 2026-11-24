@@ -28,29 +28,27 @@ template <I_LED LED> ChannelConfig<LED>::~ChannelConfig() noexcept {
 }
 
 template <I_LED LED>
-Channel<LED>::Channel(channel_t channel, gpio_num_t pin)
-    : channel_{channel}, config_{channel, pin} {}
+Channel<LED>::Channel(ledc_channel_t channel, gpio_num_t pin)
+    : channel_{channel}, config_{channel, pin}, led{Handle<LED>::get()} {}
 
 template <I_LED LED>
 esp_err_t Channel<LED>::fade(uint32_t target_duty,
                              uint32_t duration_ms) noexcept {
-    UTIL_RETURN(Handle<LED>::get().stop_fade(led::PWM::MODE, channel_));
-    return Handle<LED>::get().set_fade_time_and_start(
-        led::PWM::MODE, channel_, target_duty, duration_ms, LEDC_FADE_NO_WAIT);
+    UTIL_RETURN(led.stop_fade(mode, channel_));
+    return led.set_fade_time_and_start(mode, channel_, target_duty, duration_ms,
+                                       LEDC_FADE_NO_WAIT);
 }
 
 template <I_LED LED>
 esp_err_t Channel<LED>::set_color(uint32_t target_duty) noexcept {
-    UTIL_RETURN(Handle<LED>::get().stop_fade(led::PWM::MODE, channel_));
-    UTIL_RETURN(
-        Handle<LED>::get().set_duty(led::PWM::MODE, channel_, target_duty));
-    return Handle<LED>::get().update_duty(led::PWM::MODE, channel_);
+    UTIL_RETURN(led.stop_fade(mode, channel_));
+    UTIL_RETURN(led.set_duty(mode, channel_, target_duty));
+    return led.update_duty(mode, channel_);
 }
 
 template <I_LED LED> uint32_t Channel<LED>::get_duty() const {
     uint32_t duty{};
-    auto err =
-        Handle<LED>::get().get_duty(led::PWM::MODE, channel_, std::ref(duty));
+    auto err = led.get_duty(mode, channel_, std::ref(duty));
     UTIL_THROW(err, RuntimeError, "channel get_duty");
     return duty;
 }

@@ -48,7 +48,7 @@ idf.py build
 scripts/flash_encrypted.sh
 ```
 
-Similarly to "cfg" partition, "encnvs" is populated based on `firmware/nvs/encnvs.csv`. This file can
+Similarly to "cfg" partition, "encnvs" is populated based on `firmware/nvs/nvs.csv`. This file can
 be generated automatically, refer to backend's README.
 
 #### Compile
@@ -56,4 +56,13 @@ be generated automatically, refer to backend's README.
 ```
 idf.py set-target esp32s3
 idf.py build
+```
+
+#### Test
+
+```
+apt install libbsd-dev
+cd host_tests
+idf.py build
+./build/host_test.elf
 ```
