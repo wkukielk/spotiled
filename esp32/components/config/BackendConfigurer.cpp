@@ -18,9 +18,8 @@ BackendConfigurer::BackendConfigurer(I_NVS &cfgnvs, I_NVS &eccnvs) noexcept
     : cfgnvs{&cfgnvs}, encnvs{&eccnvs} {}
 
 backend_config_t BackendConfigurer::get() const {
-    const auto len =
-        (size_t)(cert_pem_end -
-                 cert_pem_start); // NOLINT(clang-analyzer-security.PointerSub)
+    // NOLINT(clang-analyzer-security.PointerSub)
+    const auto len = (uintptr_t)cert_pem_end - (uintptr_t)cert_pem_start;
     return {.base_url = URL{cfgnvs->read(key::BACKEND_URL)},
             .auth_header{"Bearer " + encnvs->read(key::API_KEY)},
             .cert_pem = (const char *)cert_pem_start,

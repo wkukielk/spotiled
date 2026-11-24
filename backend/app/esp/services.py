@@ -11,16 +11,18 @@ from .models import (
 
 def is_up_to_date(requested: RequestedFirmware,
                   owned_version: SpecificVersion | None) -> bool:
-    return (requested.is_latest and owned_version is not None
-            and owned_version >= requested.firmware.version)
+    if owned_version is None:
+        return False
+    return requested.is_latest and owned_version >= requested.firmware.version
 
 
 def firmware_path(firmware: Firmware) -> Path:
     return settings.firmware_root_folder / firmware.relative_path
 
 
-async def get_firmware(session: AsyncSession, chip: Chip, version: Version,
-                       blacklist: list[SpecificVersion] = []) -> Firmware | None:
+async def get_firmware(
+        session: AsyncSession, chip: Chip, version: Version,
+        blacklist: list[SpecificVersion] = []) -> Firmware | None:
     if version == "latest":
         return await _get_latest_firmware(session, chip, blacklist)
     else:

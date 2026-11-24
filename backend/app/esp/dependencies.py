@@ -14,7 +14,8 @@ type PathVersion = Annotated[str, Path(pattern=r"^(\d+\.\d+|latest)$",
                                        examples=["1.11", "latest"])]
 
 type VersionStr = Annotated[str, StringConstraints(pattern=r"^\d+\.\d+$")]
-type Blacklist = Annotated[list[VersionStr], Query(examples=[["1.11", "1.12"]])]
+type Blacklist = Annotated[list[VersionStr],
+                           Query(examples=[["1.11", "1.12"]])]
 
 
 def _parse_version(version: str) -> Version:
@@ -37,6 +38,8 @@ async def validate_requested_firmware(
 
 
 async def validate_owned_version(
-        owned_version: Annotated[VersionStr | None, Header(examples=["1.11"])] = None
+    owned_version: Annotated[VersionStr | None, Header(examples=["1.11"])] = None
 ) -> SpecificVersion | None:
-    return None if owned_version is None else parse_specific_version(owned_version)
+    if owned_version is None:
+        return None
+    return parse_specific_version(owned_version)

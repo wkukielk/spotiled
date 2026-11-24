@@ -18,12 +18,13 @@ auto Runtime<T>::make_ota_client() -> std::expected<T_OTAClient, esp_err_t> {
     auto otaurl =
         base->get() + "/api/esp/firmware/" + CONFIG_IDF_TARGET "/latest";
 
-    auto otacfg = ota::HTTPSConfig{.url = move(otaurl),
-                                   .auth_header = move(backend_cfg.auth_header),
-                                   .cert_pem = backend_cfg.cert_pem,
-                                   .cert_len = backend_cfg.cert_len,
-                                   .skip_cn_check = backend_cfg.skip_cn_check,
-                                   .skip_blacklist = force_update::is_scheduled()};
+    auto otacfg =
+        ota::HTTPSConfig{.url = move(otaurl),
+                         .auth_header = move(backend_cfg.auth_header),
+                         .cert_pem = backend_cfg.cert_pem,
+                         .cert_len = backend_cfg.cert_len,
+                         .skip_cn_check = backend_cfg.skip_cn_check,
+                         .skip_blacklist = force_update::is_scheduled()};
     return T_OTAClient{std::move(otacfg)};
 }
 

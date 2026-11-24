@@ -5,11 +5,14 @@ on:
       - master
   workflow_dispatch:
 
+env:
+  CI_SDKCONFIG_DEFAULTS: "sdkconfig.defaults;sdkconfig.defaults.ci"
+
 jobs:
   build:
     runs-on: self-hosted
     container:
-      image: espressif/idf:release-v5.4
+      image: espressif/idf:release-v6.1
     needs: clang-format
     steps:
       - uses: actions/checkout@v6
@@ -19,23 +22,27 @@ jobs:
           path: esp32/build/
           key: gcc-${{github.ref_name}}-${{hashFiles('esp32/components/**/*')}}
           restore-keys: gcc-${{github.ref_name}}
-      - run: . $IDF_PATH/export.sh
-          && idf.py build -DCI=on
+      - run: |
+          . "$IDF_PATH/export.sh"
+          rm sdkconfig
+          idf.py -D SDKCONFIG_DEFAULTS="$CI_SDKCONFIG_DEFAULTS" build
         working-directory: ./esp32
 
   clang-tidy:
     runs-on: self-hosted
     container:
-      image: wkukielk/esp-idf-clang:v5.5
+      image: wkukielk/esp-idf-clang:v6.1
       credentials:
         username: ${{ vars.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKERHUB_PASSWORD }}
     needs: build
     steps:
       - uses: actions/checkout@v6
-      - run: . $IDF_PATH/export.sh
-          && IDF_TOOLCHAIN=clang idf.py reconfigure -DCI=on
-          && ./scripts/tidy.sh
+      - run: |
+          . $IDF_PATH/export.sh
+          rm sdkconfig
+          IDF_TOOLCHAIN=clang idf.py -D SDKCONFIG_DEFAULTS="$CI_SDKCONFIG_DEFAULTS" reconfigure
+          ./scripts/tidy.sh
         working-directory: ./esp32
 
   clang-format:
@@ -44,8 +51,7 @@ jobs:
       image: alpine:3.23
     steps:
       - uses: actions/checkout@v6
-      - run: apk add clang-extra-tools
-          && ./scripts/format.sh
+      - run: apk add clang-extra-tools && ./scripts/format.sh
         working-directory: ./esp32
 
   test-backend:
@@ -54,8 +60,10 @@ jobs:
       image: python:3.12-slim
     steps:
       - uses: actions/checkout@v6
-      - run: pip install uv
-          && uv sync --frozen --all-groups
-          && python3 -m flake8 --ignore='' app/
-          && python3 -m pytest
+      - run: |
+          cp example_config.yaml config.yaml
+          pip install uv
+          uv sync --frozen --all-groups
+          uv run flake8 --ignore="" app/
+          uv run pytest
         working-directory: ./backend

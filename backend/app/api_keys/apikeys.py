@@ -1,7 +1,6 @@
 from ..database import get_session
 from app.config import settings
 
-import os
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import Depends

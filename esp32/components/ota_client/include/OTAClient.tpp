@@ -68,8 +68,7 @@ OTAClient<T_OTA>::get_invalid_version() const noexcept {
     return std::string{desc.version};
 }
 
-template <typename T_OTA>
-std::string OTAClient<T_OTA>::get_update_url() const {
+template <typename T_OTA> std::string OTAClient<T_OTA>::get_update_url() const {
     if (httpcfg.skip_blacklist)
         return httpcfg.url;
     auto invalid = get_invalid_version();

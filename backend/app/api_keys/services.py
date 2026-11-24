@@ -7,6 +7,7 @@ from fastapi import Depends, HTTPException
 
 from typing import Annotated
 
+
 async def create_key(session: Annotated[AsyncSession, Depends(get_session)],
                      name: str) -> tuple[ApiKey, str]:
     svc = await get_api_key_svc(session)

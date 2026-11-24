@@ -4,6 +4,7 @@ managed_components/
 firmware/nvs/
 sdkconfig.old
 *.pem
+!cert_stub.pem
 .claude/settings.local.json
 .vscode/
 .cache/
