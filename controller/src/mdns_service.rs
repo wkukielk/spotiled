@@ -1,5 +1,6 @@
 use std::io;
 use std::net::IpAddr;
+use std::net::UdpSocket;
 
 pub struct MdnsService {
     _responder: libmdns::Responder,
@@ -8,10 +9,9 @@ pub struct MdnsService {
 
 impl MdnsService {
     pub fn new(service_type: &str, instance_name: &str, port: u16) -> io::Result<Self> {
-        let responder = libmdns::Responder::spawn_with_ip_list_and_hostname(
+        let responder = libmdns::Responder::spawn_with_ip_list(
             &tokio::runtime::Handle::current(),
-            advertised_ips()?,
-            format!("{instance_name}-spotiled"),
+            vec![advertised_ip()?],
         )?;
         let service = responder.register(service_type, instance_name, port, &[]);
 
@@ -22,19 +22,8 @@ impl MdnsService {
     }
 }
 
-fn advertised_ips() -> io::Result<Vec<IpAddr>> {
-    let ips: Vec<IpAddr> = if_addrs::get_if_addrs()?
-        .into_iter()
-        .filter(|iface| !iface.name.starts_with("lo") && iface.ip().is_ipv4())
-        .map(|iface| iface.ip())
-        .collect();
-
-    if ips.is_empty() {
-        return Err(io::Error::new(
-            io::ErrorKind::NotFound,
-            "no non-loopback IPv4 interfaces found; refusing to start mDNS unrestricted",
-        ));
-    }
-
-    Ok(ips)
+fn advertised_ip() -> io::Result<IpAddr> {
+    let sock = UdpSocket::bind("0.0.0.0:0")?;
+    sock.connect("8.8.8.8:53")?;
+    Ok(sock.local_addr()?.ip())
 }

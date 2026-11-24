@@ -3,3 +3,4 @@ project.code-workspace
 .DS_Store
 certbot/
 .env
+.clangd
